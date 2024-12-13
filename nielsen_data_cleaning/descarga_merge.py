@@ -175,7 +175,7 @@ def extra_attributes_file():
 def main():
     #os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
 
-    # movements_data = movements_file()
+    movements_data = movements_file()
     stores_data = stores_file()
     products_data = products_file()
     extra_attributes_data = extra_attributes_file()
@@ -201,6 +201,7 @@ def main():
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis/1.compiled_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     print('fin')
+
 
 
 if __name__=='__main__':
