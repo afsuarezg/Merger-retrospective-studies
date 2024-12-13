@@ -10,6 +10,14 @@ import collections
 import datetime
 
 
+DIRECTORY_NAME = 'Reynolds_Lorillard'
+DEPARTMENT_CODE = 4510 #aka product_group_code
+PRODUCT_MODULE = 7460
+NROWS = 10000000
+YEAR = 2014
+WEEKS = [20140125, 20140201]
+
+
 def match_patterns(elements, patterns):
     return [el for el in elements if any(re.search(pattern, el) for pattern in patterns)]
 
@@ -165,13 +173,8 @@ def extra_attributes_file():
 
 
 def main():
-    DIRECTORY_NAME = 'Reynolds_Lorillard'
-    DEPARTMENT_CODE = 4510 #aka product_group_code
-    PRODUCT_MODULE = 7460
-    NROWS = 10000000
-    YEAR = 2014
-    WEEKS = [20140125, 20140201]
-    os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
+
+    #os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
 
     movements_data = movements_file()
     stores_data = stores_file()
