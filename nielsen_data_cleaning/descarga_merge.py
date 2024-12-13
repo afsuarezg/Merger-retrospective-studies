@@ -173,7 +173,7 @@ def extra_attributes_file():
 
 
 def main():
-    #os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
+    os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
 
     movements_data = movements_file()
     stores_data = stores_file()
@@ -203,6 +203,7 @@ def main():
     print('fin')
 
 
+main()
 
 if __name__=='__main__':
     main()
