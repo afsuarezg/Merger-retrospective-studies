@@ -1,0 +1,125 @@
+{
+    "Philip Morris USA (a subsidiary of Altria Group)": {
+        "brands": [
+            "VIRGINIA SLIMS", 
+            "BASIC", 
+            "BENSON & HEDGES", 
+            "MARLBORO", 
+            "MARLBORO 100'S", 
+            "WIDES", 
+            "L & M", 
+            "MARLBORO BLEND NO. 27", 
+            "MARLBORO SPECIAL BLEND", 
+            "MARLBORO 25'S", 
+            "CHESTERFIELD", 
+            "MARLBORO SKYLINE", 
+            "1", 
+            "VIRGINIA SLIMS SUPERSLIMS"
+        ],
+        "id": 1
+    },
+    "Reynolds American Inc.": {
+        "brands": [
+            "SALEM", 
+            "CAMEL SIGNATURE", 
+            "PALL MALL", 
+            "CAMEL CRUSH", 
+            "NATURAL AMERICAN SPIRIT", 
+            "CAMEL WIDES", 
+            "SALEM GREEN LABEL", 
+            "TRUE", 
+            "CAMEL"
+        ],
+        "id": 2
+    },
+    "Liggett Group LLC": {
+        "brands": [
+            "CANYON", 
+            "GRAND PRIX", 
+            "SONOMA", 
+            "EAGLE"
+        ],
+        "id": 3
+    },
+    "Lorillard Inc.": {
+        "brands": [
+            "NEWPORT SMOOTH SELECT", 
+            "NEWPORT", 
+            "BLU CIGS"
+        ],
+        "id": 4
+    },
+    "Commonwealth Brands (a subsidiary of Imperial Tobacco Group)": {
+        "brands": [
+            "KENTUCKY'S BEST", 
+            "USA GOLD", 
+            "PYRAMID", 
+            "WILD HORSE", 
+            "MAJOR BRAND"
+        ],
+        "id": 5
+    },
+    "Seneca Manufacturing Company": {
+        "brands": [
+            "SENECA"
+        ],
+        "id": 6
+    },
+    "Smokin Joes (owned by the Tuscarora Indian Nation)": {
+        "brands": [
+            "USA"
+        ],
+        "id": 7
+    },
+    "Altadis USA (a subsidiary of Imperial Tobacco Group)": {
+        "brands": [
+            "FORTUNA"
+        ],
+        "id": 8
+    },
+    "Santa Fe Natural Tobacco Company (a subsidiary of Reynolds American Inc.)": {
+        "brands": [
+            "NATURAL AMERICAN SPIRIT"
+        ],
+        "id": 9
+    },
+    "Nat Sherman International Inc.": {
+        "brands": [
+            "SHERMAN'S MCD", 
+            "SHERMAN'S", 
+            "NAT SHERMAN FANTASIA"
+        ],
+        "id": 10
+    },
+    "U.S. Flue-Cured Tobacco Growers, Inc.": {
+        "brands": [
+            "1839"
+        ],
+        "id": 11
+    },
+    "Dosal Tobacco Corporation": {
+        "brands": [
+            "305'S"
+        ],
+        "id": 12
+    },
+    "Cheyenne International LLC": {
+        "brands": [
+            "CHEYENNE"
+        ],
+        "id": 13
+    },
+    "Good Times USA, LLC": {
+        "brands": [
+            "BAILEY'S", 
+            "TUSCANY"
+        ],
+        "id": 14
+    },
+    "Various smaller manufacturers or unlisted companies": {
+        "brands": [
+            "NBL-NO COMPANY LISTED"
+        ],
+        "id": 15
+    }
+}

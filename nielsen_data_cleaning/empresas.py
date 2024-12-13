@@ -1,2 +1,62 @@
-def myfunction():
-    print('hola')
+import os
+import numpy as np
+import pandas as pd
+import pyblp
+import re
+import matplotlib.pyplot as plt
+import json
+import sys 
+import collections
+import datetime
+import math
+import time
+
+
+with open('..brands_by_company/cigarettes.json', 'r') as file:
+    brands_by_company = json.load(file)
+
+
+def list_unique_elements_per_group(df, group_col, value_col):
+    """
+    Lists the unique elements in the 'value_col' for each group defined by 'group_col'.
+    
+    Parameters:
+    - df: DataFrame
+    - group_col: str, the column name to group by
+    - value_col: str, the column name containing values to list
+    
+    Returns:
+    - A DataFrame with group_col and the list of unique elements in value_col for each group
+    """
+    return df.groupby(group_col)[value_col].apply(lambda x: list(x.unique())).reset_index()
+
+
+def list_of_files():
+    dir_name = '/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis'
+    # Get list of all files only in the given directory
+    list_of_files = filter( lambda x: os.path.isfile(os.path.join(dir_name, x)),
+                            os.listdir(dir_name) )
+    # Sort list of files based on last modification time in ascending order
+    list_of_files = sorted( list_of_files,
+                            key = lambda x: os.path.getmtime(os.path.join(dir_name, x))
+                            )
+    
+    return list_of_files
+
+
+def find_company(row):
+    for company in brands_by_company.keys():
+        if row['brand_descr'] in brands_by_company[company]['brands']:
+            return company
+    else:
+        return 0
+
+
+def main():
+    os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')  
+    product_data_file = list_of_files()[-1]    
+    product_data = pd.read_csv(product_data_file)
+
+
+if __name__ == '__main__':
+    print(brands_by_company)   
