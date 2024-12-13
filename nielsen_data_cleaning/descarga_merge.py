@@ -173,14 +173,14 @@ def main():
     WEEKS = [20140125, 20140201]
     os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
 
-    movements_file = movements_file()
-    stores_file = stores_file()
-    products_file = products_file()
-    extra_attributes_file = extra_attributes_file()
+    movements_data = movements_file()
+    stores_data = stores_file()
+    products_data = products_file()
+    extra_attributes_data = extra_attributes_file()
 
-    product_data = pd.merge(movements_file, stores_file, on='store_code_uc', how='left')
-    product_data = pd.merge(product_data, products_file, on='upc', how='left')
-    product_data = pd.merge(product_data, extra_attributes_file, on='upc', how='left')
+    product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
+    product_data = pd.merge(product_data, products_data, on='upc', how='left')
+    product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
     product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
@@ -200,8 +200,6 @@ def main():
 
     print('fin')
 
-
-main()
 
 if __name__=='__main__':
     main()
