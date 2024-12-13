@@ -164,7 +164,7 @@ def products_file():
     return products_file
 
 
-def extra_attributes_file():
+def extra_attributes_file(movements_data):
     unique_upcs = set(movements_data['upc'])
     products_extra_attributes = pd.read_csv('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/nielsen_extracts/RMS/2015/Annual_Files/products_extra_2015.tsv', sep  = '\t', header = 0)
     products_extra_attributes = products_extra_attributes[products_extra_attributes['upc'].isin(unique_upcs)]
@@ -179,7 +179,7 @@ def main():
     stores_data = stores_file()
     products_data = products_file()
     print('cambio')
-    extra_attributes_data = extra_attributes_file()
+    extra_attributes_data = extra_attributes_file(movements_data)
 
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
     product_data = pd.merge(product_data, products_data, on='upc', how='left')
