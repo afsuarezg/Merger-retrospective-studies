@@ -333,7 +333,7 @@ def main():
     # product_data = product_data[product_data['brand_code_uc'].notna()]
 
 
-main()
+
 
 if __name__ == '__main__':
     print(main()) 
