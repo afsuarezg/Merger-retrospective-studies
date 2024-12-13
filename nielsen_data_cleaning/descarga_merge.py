@@ -137,7 +137,7 @@ def store_dict_to_json(data, filename):
 
 
 def movements_file():
-    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None) #, nrows = NROWS)
+    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None, nrows = NROWS)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
@@ -197,6 +197,11 @@ def main():
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis/1.compiled_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+
+    print('fin')
+
+
+main()
 
 if __name__=='__main__':
     main()
