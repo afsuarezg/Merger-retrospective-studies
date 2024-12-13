@@ -1,6 +1,6 @@
 from nielsen_data_cleaning.descarga_merge import *
 
-
+print(dir())
 
 def main():
     DIRECTORY_NAME = 'Reynolds_Lorillard'
