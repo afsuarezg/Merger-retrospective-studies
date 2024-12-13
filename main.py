@@ -1,6 +1,7 @@
 from nielsen_data_cleaning.descarga_merge import *
 
 
+
 def main():
     DIRECTORY_NAME = 'Reynolds_Lorillard'
     DEPARTMENT_CODE = 4510 #aka product_group_code

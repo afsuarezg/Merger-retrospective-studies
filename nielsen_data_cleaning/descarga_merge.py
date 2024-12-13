@@ -165,7 +165,7 @@ def products_file():
 
 
 def extra_attributes_file():
-    unique_upcs = set(movements_file['upc'])
+    unique_upcs = set(movements_data['upc'])
     products_extra_attributes = pd.read_csv('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/nielsen_extracts/RMS/2015/Annual_Files/products_extra_2015.tsv', sep  = '\t', header = 0)
     products_extra_attributes = products_extra_attributes[products_extra_attributes['upc'].isin(unique_upcs)]
     products_extra_attributes = products_extra_attributes[['upc','style_code','style_descr','type_code','type_descr','strength_code','strength_descr']]
