@@ -1,12 +1,7 @@
 import os
-import numpy as np
 import pandas as pd
-import pyblp
 import re
-import matplotlib.pyplot as plt
 import json
-import sys 
-import collections
 import datetime
 
 
@@ -203,8 +198,6 @@ def main():
 
     print('fin')
 
-
-main()
 
 if __name__=='__main__':
     main()

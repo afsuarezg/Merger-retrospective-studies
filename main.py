@@ -1,14 +1,14 @@
-from nielsen_data_cleaning.descarga_merge import *
+from nielsen_data_cleaning import *
 
 print(dir())
 
 def main():
     DIRECTORY_NAME = 'Reynolds_Lorillard'
     DEPARTMENT_CODE = 4510 #aka product_group_code
-    PRODUCT_MODULE = 7460
-    NROWS = 10000000
+    # PRODUCT_MODULE = 7460
+    # NROWS = 10000000
     YEAR = 2014
-    WEEKS = [20140125, 20140201]
+    # WEEKS = [20140125, 20140201]
     os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
 
     movements_file = movements_file()

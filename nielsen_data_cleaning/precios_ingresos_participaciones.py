@@ -7,6 +7,14 @@ import time
 import bisect
 
 
+DIRECTORY_NAME = 'Reynolds_Lorillard'
+DEPARTMENT_CODE = 4510 #aka product_group_code
+PRODUCT_MODULE = 7460
+NROWS = 10000000
+YEAR = 2014
+WEEKS = [20140125, 20140201]
+
+
 def match_patterns(elements, patterns):
     return [el for el in elements if any(re.search(pattern, el) for pattern in patterns)]
 
@@ -331,8 +339,6 @@ def main():
     #                               how ='left',
     #                               on=['market_ids','store_code_uc'])
     # product_data = product_data[product_data['brand_code_uc'].notna()]
-
-
 
 
 if __name__ == '__main__':

@@ -1,6 +1,4 @@
-cleaned_data/*
-raw_data/*
-*.ipynb
+/brands_by_company/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

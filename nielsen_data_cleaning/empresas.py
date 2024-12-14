@@ -1,18 +1,17 @@
 import os
-import numpy as np
 import pandas as pd
-import pyblp
-import re
-import matplotlib.pyplot as plt
 import json
-import sys 
-import collections
-import datetime
-import math
-import time
 
+# Get the directory of the current file (empresas.py)
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-with open('..brands_by_company/cigarettes.json', 'r') as file:
+# Construct the absolute path to cigarettes.json
+absolute_path = os.path.join(current_dir, "../brands_by_company/cigarettes.json")
+
+# Normalize the path (handles "..")
+absolute_path = os.path.normpath(absolute_path)
+
+with open(absolute_path, 'r') as file:
     brands_by_company = json.load(file)
 
 
@@ -56,6 +55,8 @@ def main():
     os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')  
     product_data_file = list_of_files()[-1]    
     product_data = pd.read_csv(product_data_file)
+    product_data['firm']=product_data.apply(find_company, axis=1)
+    product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
 
 if __name__ == '__main__':

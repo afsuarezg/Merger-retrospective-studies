@@ -5,6 +5,7 @@ setup(
     name='nielsen_data_cleaning',
     version='0.1.4',
     packages=find_packages(),
+    py_modules=['main'],
     install_requires=[
         'pandas',
         'numpy',
