@@ -10,6 +10,9 @@ from .instrumentos import *
 from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas
 
 
+def prueba():
+    return 'listo'
+
 def run():
     DIRECTORY_NAME = 'Reynolds_Lorillard'
     DEPARTMENT_CODE = 4510 #aka product_group_code
