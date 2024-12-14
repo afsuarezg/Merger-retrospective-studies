@@ -13,6 +13,10 @@ YEAR = 2014
 WEEKS = [20140125, 20140201]
 
 
+def test():
+    return 'test'
+
+
 def match_patterns(elements, patterns):
     return [el for el in elements if any(re.search(pattern, el) for pattern in patterns)]
 
