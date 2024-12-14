@@ -2,16 +2,16 @@ import os
 import pandas as pd
 import json
 
-# Get the directory of the current file (empresas.py)
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# # Get the directory of the current file (empresas.py)
+# current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Construct the absolute path to cigarettes.json
-absolute_path = os.path.join(current_dir, "../brands_by_company/cigarettes.json")
+# # Construct the absolute path to cigarettes.json
+# absolute_path = os.path.join(current_dir, "../brands_by_company/cigarettes.json")
 
-# Normalize the path (handles "..")
-absolute_path = os.path.normpath(absolute_path)
+# # Normalize the path (handles "..")
+# absolute_path = os.path.normpath(absolute_path)
 
-with open(absolute_path, 'r') as file:
+with open("../brands_by_company/cigarettes.json", 'r') as file:
     brands_by_company = json.load(file)
 
 
