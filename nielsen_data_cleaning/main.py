@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import datetime
 
 # from dotenv import load_dotenv
 
@@ -14,13 +15,13 @@ from .precios_ingresos_participaciones import total_income, total_units, unitary
 # # load_dotenv()
 # # github_repo_key = os.getenv('github_repo_token')
 
-
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
 # PRODUCT_MODULE = 7460
 # NROWS = 10000000
 YEAR = 2014
 # WEEKS = [20140125, 20140201]
+
 
 def prueba():
     return 'listo'
