@@ -1,8 +1,16 @@
-from nielsen_data_cleaning import *
+import os
+import pandas as pd
 
-print(dir())
+from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
+from .caracteristicas_productos import match_brands_to_characteristics, list_of_files
+from .empresas import find_company
+from .filtrar_mercados import *
+from .informacion_poblacional import *
+from .instrumentos import *
+from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas
 
-def main():
+
+def run():
     DIRECTORY_NAME = 'Reynolds_Lorillard'
     DEPARTMENT_CODE = 4510 #aka product_group_code
     # PRODUCT_MODULE = 7460
@@ -40,4 +48,4 @@ def main():
 
 
 if __name__=='__main__':
-    main()
+    run()

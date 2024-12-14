@@ -58,6 +58,7 @@ def match_brands_to_characteristics(product_data, characteristics, threshold=85)
 
     return output
 
+
 def main():
     os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')
 
