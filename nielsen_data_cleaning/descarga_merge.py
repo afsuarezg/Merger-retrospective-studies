@@ -14,7 +14,7 @@ WEEKS = [20140125, 20140201]
 
 
 def test():
-    return 'test'
+    return 'test test'
 
 
 def match_patterns(elements, patterns):
