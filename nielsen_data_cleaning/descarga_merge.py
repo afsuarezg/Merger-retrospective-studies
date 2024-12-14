@@ -177,7 +177,6 @@ def main():
     movements_data = movements_file()
     stores_data = stores_file()
     products_data = products_file()
-    print('cambiooo')
     extra_attributes_data = extra_attributes_file(movements_data)
 
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
