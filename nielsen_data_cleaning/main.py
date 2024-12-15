@@ -199,6 +199,52 @@ def run():
     quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
     quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
 
+    # Agregando información sociodemográfica
+
+    # encoding_guessed = read_file_with_guessed_encoding(r'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    # output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    # agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    # # Create a list of column names
+    # column_names = output.keys()
+    # # Set the column names of the DataFrame
+    # agent_data_pop.columns = column_names
+    # agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
+    # # prompt: how to create a new column that concatenates as strings two ints variables contained in the dataframe?
+    # agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
+    # agent_data_pop.reset_index(inplace=True, drop=True)
+    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    # demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    # demographic_sample.replace(-1, np.nan, inplace=True)
+    # demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC',
+    #                                                             'PRTAGE',
+    #                                                             'HRNUMHOU',
+    #                                                             'PTDTRACE',
+    #                                                             'PEEDUCA']]),
+    #                             columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
+    #                                     'ptdtrace_imputed', 'peeduca_imputed'])
+
+
+    # # Group by the 'Category' column
+    # grouped = demographic_sample.groupby('GESTFIPS').size()
+    # # Create a new column with 1 / count of rows per category
+    # demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
+    # demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
+    # demographic_sample = add_random_nodes(demographic_sample)
+
+    # demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
+    #                                         'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
+    #                                         'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
+    #                                         'ptdtrace_imputed', 'peeduca_imputed']]
+    
+    # agent_data = pd.merge(product_data[['market_ids',
+    #                                 'market_ids_string',
+    #                                 'GESTFIPS']].drop_duplicates(),
+    #                                   demographic_sample, 
+    #                                   how='inner', 
+    #                                   left_on='GESTFIPS',
+    #                                   right_on='GESTFIPS')
+
+    # Guardar dataframes
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
