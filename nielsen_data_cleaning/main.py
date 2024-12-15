@@ -6,7 +6,7 @@ import datetime
 
 from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
 from .caracteristicas_productos import match_brands_to_characteristics, list_of_files
-# from .empresas import find_company
+from .empresas import find_company, brands_by_company
 # from .filtrar_mercados import *
 # from .informacion_poblacional import *
 # from .instrumentos import *
@@ -116,9 +116,11 @@ def run():
                                   on=['market_ids','store_code_uc'])
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
+    product_data['firm']=product_data.apply(find_company, axis=1)
+    product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
     nivel_de_agregacion = 'retailer'
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis/1.compiled_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     print('fin')
 
