@@ -382,6 +382,7 @@ def main():
        'total_income','total_income_market', 'total_income_market_known_brands',
        'fraction_identified_earnings',  
        'CENSUS_2020_POP']]
+    product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
 

@@ -3,7 +3,6 @@ import pandas as pd
 import datetime
 import pyblp
 
-
 # from dotenv import load_dotenv
 
 from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
@@ -12,7 +11,7 @@ from .empresas import find_company, brands_by_company
 # from .filtrar_mercados import *
 # from .informacion_poblacional import *
 # from .instrumentos import *
-from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros
+from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 
 # # load_dotenv()
 # # github_repo_key = os.getenv('github_repo_token')
@@ -136,13 +135,11 @@ def run():
        'total_income','total_income_market', 'total_income_market_known_brands',
        'fraction_identified_earnings',  
        'CENSUS_2020_POP']]
+    product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
-
-
 
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
-
 
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
     match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
@@ -186,7 +183,6 @@ def run():
     del product_data['index']
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
-
 
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
        'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
