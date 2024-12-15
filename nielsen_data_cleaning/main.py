@@ -107,7 +107,8 @@ def run():
     product_data = product_data.merge(total_sales_identified_per_marketid, 
                                   how='left',
                                   on=['market_ids','store_code_uc'])
-    product_data['total_income_market_known_brands'].fillna(0.0, inplace=True)
+    product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
+    # product_data['total_income_market_known_brands'].fillna(0.0, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
     total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids',
                                                                  'store_code_uc'], as_index=False).agg({'units': 'sum'}))
@@ -188,19 +189,19 @@ def run():
        'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
        'nicotine_mg_per_cig'])
     
-    formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
-    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
-    blp_instruments = pd.DataFrame(blp_instruments)
-    blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
+    # formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
+    # blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
+    # blp_instruments = pd.DataFrame(blp_instruments)
+    # blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
-    local_instruments = pyblp.build_differentiation_instruments(
-    formulation,
-    product_data)
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
-    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
+    # local_instruments = pyblp.build_differentiation_instruments(
+    # formulation,
+    # product_data)
+    # local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    # local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
-    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
-    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
+    # quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
+    # quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
