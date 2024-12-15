@@ -5,7 +5,7 @@ import datetime
 # from dotenv import load_dotenv
 
 from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
-from .caracteristicas_productos import match_brands_to_characteristics, list_of_files
+from .caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
 from .empresas import find_company, brands_by_company
 # from .filtrar_mercados import *
 # from .informacion_poblacional import *
@@ -118,6 +118,37 @@ def run():
 
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
+
+
+    product_data['brand_descr']=product_data['brand_descr'].str.lower()
+    match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
+    characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
+    product_data = product_data.merge(characteristics_matches, how='left', left_on='brand_descr', right_on='from_nielsen')
+    product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
+    product_data = product_data[['market_ids', 'market_ids_fips',
+                             #variables relativas a la ubicacion
+                             'store_code_uc', 'zip', 'fip', 'fips_state_code',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
+                             #variables relativas al tiempo
+                             'week_end', 'week_end_ID', 
+                             #variables relativas a la compania y a la marca
+                             'firm', 'firm_ids', 'brand_code_uc', 'brand_descr',
+                             #varibles relativas a cantidades
+                             'units', 'total_individual_units', 'total_units_retailer',
+                             #variables relativas a partipación del mercado 
+                             'shares', 'poblacion_census_2020',
+                             #variables relativas a ingresos totales
+                             'total_income', 'total_income_market_known_brands','total_income_market', 'fraction_identified_earnings',
+                             #variablers relagtivas a los precios 
+                             'prices',
+                             #variables relativas a caracteristicas del producto obtenidas de Nielsen      
+#                            'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr', 
+                             #variables para hacer el merge con las características de los productos
+                            'from_nielsen', 'from_characteristics', 'name', 
+                             #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
+                             'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
+    product_data = product_data[product_data['name'].notna()]
+
+
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)

@@ -4,6 +4,10 @@ import json
 from thefuzz import process
 
 
+with open('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/cleaned_data.json', 'r') as file:
+    characteristics = pd.DataFrame(json.load(file))
+
+
 def list_unique_elements_per_group(df, group_col, value_col):
     """
     Lists the unique elements in the 'value_col' for each group defined by 'group_col'.
@@ -61,9 +65,6 @@ def match_brands_to_characteristics(product_data, characteristics, threshold=85)
 
 def main():
     os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')
-
-    with open('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/cleaned_data.json', 'r') as file:
-        characteristics = pd.DataFrame(json.load(file))
 
     product_data_file = list_of_files()[-1]    
     product_data = pd.read_csv(product_data_file)
