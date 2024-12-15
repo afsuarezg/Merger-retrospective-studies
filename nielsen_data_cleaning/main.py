@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import datetime
+import pyblp
+
 
 # from dotenv import load_dotenv
 
@@ -10,7 +12,7 @@ from .empresas import find_company, brands_by_company
 # from .filtrar_mercados import *
 # from .informacion_poblacional import *
 # from .instrumentos import *
-from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas
+from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros
 
 # # load_dotenv()
 # # github_repo_key = os.getenv('github_repo_token')
@@ -116,6 +118,28 @@ def run():
                                   on=['market_ids','store_code_uc'])
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
+    fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
+    fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
+
+    fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int  ')
+    fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
+    product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
+    fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
+    product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
+
+    product_data = product_data[['market_ids', 'store_code_uc', 'zip','fip', 'week_end', 'week_end_ID',
+       'market_ids_fips',  'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr', 
+       'firm_ids', 'brand_code_uc','brand_descr', 
+       'units',  'prices', 'unitary_price_x_reemplazar','price_x_reemplazar',
+       'total_individual_units',  'total_units_retailer',
+       'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr',
+       'total_income','total_income_market', 'total_income_market_known_brands',
+       'fraction_identified_earnings',  
+       'CENSUS_2020_POP']]
+    product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
+
+
+
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
@@ -148,7 +172,39 @@ def run():
                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
     product_data = product_data[product_data['name'].notna()]
 
+    product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+    markets_characterization =product_data[['zip',
+                          'market_ids_string',
+                          'market_ids',
+                          'total_income_market',
+                          'total_income_market_known_brands',
+                          'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'],
+                                                                                         axis=0,
+                                                                                         ascending=False)
+    product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    del product_data['index']
+    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+    product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
 
+
+    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
+       'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
+       'nicotine_mg_per_cig'])
+    
+    formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
+    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
+    blp_instruments = pd.DataFrame(blp_instruments)
+    blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
+
+    local_instruments = pyblp.build_differentiation_instruments(
+    formulation,
+    product_data)
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
+
+    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
+    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)

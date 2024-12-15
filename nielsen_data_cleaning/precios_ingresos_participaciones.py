@@ -148,6 +148,7 @@ def count_values(variable):
     # Return the dictionary
     return value_counts
 
+
 def unique(list1):
     # initialize a null list
     unique_list = []
@@ -253,6 +254,29 @@ def group_common_elements(df, groupby_column, target_column):
     return grouped
 
 
+def prepend_zeros(row) :
+    return str(row['fips_state_code'])+str(row['fips_county_code']).zfill(3)
+
+
+def obtain_zip(row):
+    return row['Geographic Area Name'][-5:-2]
+
+
+def zip(row):
+    return row['zip'][-5:-3]
+
+
+def percentage_match(list1, list2):
+    # Find the intersection (common elements) of the two lists
+    matches = set(list1) & set(list2)
+    
+    return (len(matches) / len(set(list1))) * 100
+
+
+def shares_with_outside_good(row):
+    return row['units']/(row['fraction_identified_earnings']*row['CENSUS_2020_POP']*0.78*4)
+
+
 def main():
     dir_name = '/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis'
     # Get list of all files only in the given directory
@@ -339,6 +363,26 @@ def main():
     #                               how ='left',
     #                               on=['market_ids','store_code_uc'])
     # product_data = product_data[product_data['brand_code_uc'].notna()]
+
+    fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
+    fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
+
+    fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int  ')
+    fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
+    product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
+    fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
+    product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
+
+    product_data = product_data[['market_ids', 'store_code_uc', 'zip','fip', 'week_end', 'week_end_ID',
+       'market_ids_fips',  'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr', 
+       'firm_ids', 'brand_code_uc','brand_descr', 
+       'units',  'prices', 'unitary_price_x_reemplazar','price_x_reemplazar',
+       'total_individual_units',  'total_units_retailer',
+       'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr',
+       'total_income','total_income_market', 'total_income_market_known_brands',
+       'fraction_identified_earnings',  
+       'CENSUS_2020_POP']]
+    product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
 
 if __name__ == '__main__':
