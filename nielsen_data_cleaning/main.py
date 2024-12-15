@@ -121,7 +121,7 @@ def run():
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
 
-    fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int  ')
+    fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int')
     fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
     product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
     fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})

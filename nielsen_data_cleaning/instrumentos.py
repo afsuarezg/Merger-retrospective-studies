@@ -4,7 +4,6 @@ import re
 import json
 import math
 
-
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
 PRODUCT_MODULE = 7460
