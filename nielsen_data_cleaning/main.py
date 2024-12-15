@@ -180,14 +180,14 @@ def run():
                           'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'],
                                                                                          axis=0,
                                                                                          ascending=False)
-    product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    del product_data['index']
-    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
-    product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
+    # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    # del product_data['index']
+    # product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+    # product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
 
-    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
-       'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
-       'nicotine_mg_per_cig'])
+    # product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
+    #    'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
+    #    'nicotine_mg_per_cig'])
     
     # formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     # blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
