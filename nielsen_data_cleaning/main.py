@@ -41,23 +41,23 @@ def run():
     product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)
     product_data['firm_ids'] = None
 
-    product_data = product_data[['store_code_uc','market_ids','market_ids_fips','store_zip3','week_end','week_end_ID',#mercado tiempo y espacio
-                        'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr',
-                        'upc','firm_ids', 'brand_code_uc','brand_descr', ##companía y marca
-                        'units', 'multi', 'price', 'prmult', #cantidades y precio 
-                        'style_code','style_descr', 'type_code', 'type_descr','strength_code','strength_descr']]# características del producto
+    # product_data = product_data[['store_code_uc','market_ids','market_ids_fips','store_zip3','week_end','week_end_ID',#mercado tiempo y espacio
+    #                     'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr',
+    #                     'upc','firm_ids', 'brand_code_uc','brand_descr', ##companía y marca
+    #                     'units', 'multi', 'price', 'prmult', #cantidades y precio 
+    #                     'style_code','style_descr', 'type_code', 'type_descr','strength_code','strength_descr']]# características del producto
 
     product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
     product_data['total_income'] = product_data.apply(total_income, axis=1)
     product_data['total_individual_units'] = product_data.apply(total_units, axis=1)
     product_data['unitary_price'] = product_data.apply(unitary_price, axis=1)
 
-    product_data = product_data[['store_code_uc', 'market_ids', 'market_ids_fips',  'store_zip3', 'week_end', 'week_end_ID',
-                             'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr',
-       'upc', 'firm_ids', 'brand_code_uc', 'brand_descr', 
-       'units', 'multi', 'price', 'prmult','unitary_price', 'total_income',
-       'total_individual_units',
-       'style_code', 'style_descr', 'type_code','type_descr', 'strength_code', 'strength_descr']]
+    # product_data = product_data[['store_code_uc', 'market_ids', 'market_ids_fips',  'store_zip3', 'week_end', 'week_end_ID',
+    #                          'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr',
+    #    'upc', 'firm_ids', 'brand_code_uc', 'brand_descr', 
+    #    'units', 'multi', 'price', 'prmult','unitary_price', 'total_income',
+    #    'total_individual_units',
+    #    'style_code', 'style_descr', 'type_code','type_descr', 'strength_code', 'strength_descr']]
     
     product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
 
@@ -127,15 +127,16 @@ def run():
     fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
     product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
 
-    product_data = product_data[['market_ids', 'store_code_uc', 'zip','fip', 'week_end', 'week_end_ID',
-       'market_ids_fips',  'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr', 
-       'firm_ids', 'brand_code_uc','brand_descr', 
-       'units',  'prices', 'unitary_price_x_reemplazar','price_x_reemplazar',
-       'total_individual_units',  'total_units_retailer',
-       'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr',
-       'total_income','total_income_market', 'total_income_market_known_brands',
-       'fraction_identified_earnings',  
-       'CENSUS_2020_POP']]
+    # product_data = product_data[['market_ids', 'store_code_uc', 'zip','fip', 'week_end', 'week_end_ID',
+    #    'market_ids_fips',  'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr', 
+    #    'firm_ids', 'brand_code_uc','brand_descr', 
+    #    'units',  'prices', 'unitary_price_x_reemplazar','price_x_reemplazar',
+    #    'total_individual_units',  'total_units_retailer',
+    #    'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr',
+    #    'total_income','total_income_market', 'total_income_market_known_brands',
+    #    'fraction_identified_earnings',  
+    #    'CENSUS_2020_POP']]
+    
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
@@ -147,6 +148,7 @@ def run():
     characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
     product_data = product_data.merge(characteristics_matches, how='left', left_on='brand_descr', right_on='from_nielsen')
     product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
+
     product_data = product_data[['market_ids', 'market_ids_fips',
                              #variables relativas a la ubicacion
                              'store_code_uc', 'zip', 'fip', 'fips_state_code',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
