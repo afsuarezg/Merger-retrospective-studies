@@ -138,10 +138,10 @@ def count_values(variable):
             value_counts['nan']+=1
         elif value in value_counts:
         # Increment the count for the value
-        value_counts[value] += 1
+            value_counts[value] += 1
         else:
         # Add the value to the dictionary with a count of 1
-        value_counts[value] = 1
+            value_counts[value] = 1
 
     # Return the dictionary
     return value_counts
@@ -155,9 +155,7 @@ def preprend_zero(row):
 
 def main():
     product_data = pd.read_csv(list_of_files[-1])
-    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
-       'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
-       'nicotine_mg_per_cig'])
+    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
     
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
