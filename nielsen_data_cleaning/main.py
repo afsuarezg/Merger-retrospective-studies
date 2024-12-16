@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import datetime
 import pyblp
+import numpy as np
 
 # from dotenv import load_dotenv
 
@@ -194,8 +195,7 @@ def run():
     quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
 
     # Agregando información sociodemográfica
-
-    encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
     column_names = output.keys()
