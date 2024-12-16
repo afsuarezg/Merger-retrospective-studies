@@ -18,11 +18,11 @@ def rename_instruments(data):
 
 def main():
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids)')
-    # X1_formulation = pyblp.Formulation('0 + prices ')
     X2_formulation = pyblp.Formulation('1 + nicotine + tar ')
-    # X2_formulation = pyblp.Formulation('1 + style_code + type_code + strength_code')
+
     product_formulations = (X1_formulation, X2_formulation)
     
+    # Definición del método de integración 
     mc_integration = pyblp.Integration('monte_carlo', size=100)
     pr_integration = pyblp.Integration('product', size=25)
 
@@ -31,14 +31,22 @@ def main():
     dict_rename = rename_instruments(blp_data)
     blp_data = blp_data.rename(columns=dict_rename)
 
+    # Algoritmo de optimización
     bfgs = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-1})
     optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
     optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-1})
+
+    # Problema
     mc_problem = pyblp.Problem(product_formulations, blp_data, integration=mc_integration)
     pr_problem = pyblp.Problem(product_formulations, blp_data, integration=pr_integration)
+
+    # Bounds
     sigma_lower = np.zeros((3,3))
     sigma_upper = np.tril(np.ones((3, 3))) * np.inf
+    
+    # Resultados
     results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper), optimization=optimization)
+
     elasticities = results1.compute_elasticities()
     diversions = results1.compute_diversion_ratios()
 

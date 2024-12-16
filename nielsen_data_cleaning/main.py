@@ -84,7 +84,7 @@ def run():
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
 
-    # Identificar porción de ventas a través de ingresos identificadas para cada tienda
+    # Identificar porción de ventas identificadas para cada tienda a través de ingresos 
     total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
     total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
     total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids','store_code_uc'],
@@ -111,7 +111,7 @@ def run():
     # Elimina ventas que no tienen identificada la marca
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
-    # Adición de información poblacional
+    # Adición de información poblacional.
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
 
@@ -121,11 +121,11 @@ def run():
     fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
     product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
    
-    # calculo de participaciones de mercado incluyendo la participación del bien externo. 
+    # Calculo de participaciones de mercado incluyendo la participación del bien externo. 
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
-    # Identificación de las marcas por empresa 
+    # Asignación de las marcas por empresa 
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
@@ -230,6 +230,10 @@ def run():
                                       how='inner', 
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
+    
+    # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
+    product_data = product_data[product_data['fraction_identified_earnings']>=0.5].reset_index()
+
     
     # Guardar dataframes
     nivel_de_agregacion = 'retailer'

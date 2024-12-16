@@ -1,9 +1,6 @@
-import os
 import pandas as pd
 import pyblp
-import numpy as np
-import time 
-import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
 
 
 # prompt: create a dict that returns keys equal to the value of the variable and values equal to the number of times the value appears in the variable
@@ -58,19 +55,26 @@ def create_instrument_dict(product_data):
 def main():
     product_data = pd.concat([product_data, quad_inst], axis=1)
     inst_dict =  create_instrument_dict(product_data)
-    product_data.rename(columns=inst_dict, inplace=True)
-    # Baseline 
-    problem = pyblp.Problem(pyblp.Formulation('1+ prices'), product_data)
-    ols_results = problem.solve(method='1s')
-    logit_results = problem.solve()
+    product_data.rename(columns=inst_dict, inplace=True)    
+    
+    # Plain logit without intercept
+    logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
+    problem = pyblp.Problem(logit_formulation, product_data)
+    logit_results = problem.solve(method='1s')
 
-    # No fixed effects
-    problem = pyblp.Problem(pyblp.Formulation('1+ prices + tar + co + nicotine + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig '), product_data)
-    ols_results = problem.solve(method='1s')
-    logit_results = problem.solve()
+    # Plain logit with intercept
+    logit_formulation = pyblp.Formulation('1+ prices')
+    problem = pyblp.Problem(logit_formulation, product_data)
+    logit_results = problem.solve(method='1s')
+    
+    # Logit problem with products' characteristics || No fixed effects
+    logit_formulation = pyblp.Formulation('1 + prices + tar + co + nicotine')
+    logit_problem = pyblp.Problem(logit_formulation, product_data)
+    logit_results = logit_problem.solve(method='1s')
 
     # Fixed effects
-    fe_problem = pyblp.Problem(pyblp.Formulation('1 + prices', absorb='C(market_ids) + C(product_ids)'), product_data)
+    logit_formulation = pyblp.Formulation('1 + prices', absorb='C(market_ids) + C(product_ids)')
+    fe_problem = pyblp.Problem(logit_formulation, product_data)
     fe_results = fe_problem.solve(method='1s')
 
 
