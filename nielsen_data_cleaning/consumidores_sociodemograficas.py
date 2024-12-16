@@ -2,17 +2,11 @@ import os
 import pandas as pd
 import chardet
 import re
-import matplotlib.pyplot as plt
 import numpy as np
-# import seaborn as sns
-import datetime
-import pyblp
-import numpy as np
-from scipy import stats
-import time
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer
+
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
@@ -566,32 +560,27 @@ def add_random_nodes(demographic_sample, mean=0, std_dev=1, num_nodes=5):
 
 def main():
     product_data = pd.read_csv('6.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-04 18:37:37.916473.csv')
-    encoding_guessed = read_file_with_guessed_encoding(r'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
-    # Create a list of column names
     column_names = output.keys()
-    # Set the column names of the DataFrame
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-    # prompt: how to create a new column that concatenates as strings two ints variables contained in the dataframe?
     agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
     agent_data_pop.reset_index(inplace=True, drop=True)
+
     product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    
     demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
     demographic_sample.replace(-1, np.nan, inplace=True)
-    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC',
-                                                                'PRTAGE',
-                                                                'HRNUMHOU',
-                                                                'PTDTRACE',
-                                                                'PEEDUCA']]),
+
+    knn_imputer = KNNImputer(n_neighbors=2)
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
                                 columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
                                         'ptdtrace_imputed', 'peeduca_imputed'])
 
-
-    # Group by the 'Category' column
     grouped = demographic_sample.groupby('GESTFIPS').size()
-    # Create a new column with 1 / count of rows per category
+
     demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
     demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
     demographic_sample = add_random_nodes(demographic_sample)
@@ -601,9 +590,7 @@ def main():
                                             'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
                                             'ptdtrace_imputed', 'peeduca_imputed']]
     
-    agent_data = pd.merge(product_data[['market_ids',
-                                    'market_ids_string',
-                                    'GESTFIPS']].drop_duplicates(),
+    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
                                       demographic_sample, 
                                       how='inner', 
                                       left_on='GESTFIPS',

@@ -8,13 +8,9 @@ import pyblp
 from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
 from .caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
 from .empresas import find_company, brands_by_company
-# from .filtrar_mercados import *
-# from .informacion_poblacional import *
-# from .instrumentos import *
+from .consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 
-# # load_dotenv()
-# # github_repo_key = os.getenv('github_repo_token')
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
@@ -22,7 +18,6 @@ DEPARTMENT_CODE = 4510 #aka product_group_code
 # NROWS = 10000000
 YEAR = 2014
 # WEEKS = [20140125, 20140201]
-
 
 def run():
     os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
@@ -129,7 +124,7 @@ def run():
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
-    # Identificación de las compañías por empresa 
+    # Identificación de las marcas por empresa 
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
@@ -141,7 +136,7 @@ def run():
     product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
     
-    # Organiznaod el dataframe
+    # Organizando el dataframe
     product_data = product_data[['market_ids', 'market_ids_fips',
                              #variables relativas a la ubicacion
                              'store_code_uc', 'zip', 'fip', 'fips_state_code',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
@@ -164,7 +159,7 @@ def run():
                              #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
-    # Cambio de nombre de IDS de mercados y genera indicador para numérico para estos 
+    # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
     
@@ -174,25 +169,24 @@ def run():
                           'market_ids',
                           'total_income_market',
                           'total_income_market_known_brands',
-                          'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'],
-                                                                                         axis=0,
-                                                                                         ascending=False)
+                          'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
+    
+    # Creación de identificador numérico para los productos
     # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
 
+    # Elimina productos con características no identificadas
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
        'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
        'nicotine_mg_per_cig'])
     
+    # Creación de instrumentos
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
     blp_instruments = pd.DataFrame(blp_instruments)
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
-    local_instruments = pyblp.build_differentiation_instruments(
-    formulation,
-    product_data)
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
@@ -201,55 +195,49 @@ def run():
 
     # Agregando información sociodemográfica
 
-    # encoding_guessed = read_file_with_guessed_encoding(r'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    # output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    # agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
-    # # Create a list of column names
-    # column_names = output.keys()
-    # # Set the column names of the DataFrame
-    # agent_data_pop.columns = column_names
-    # agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-    # # prompt: how to create a new column that concatenates as strings two ints variables contained in the dataframe?
-    # agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
-    # agent_data_pop.reset_index(inplace=True, drop=True)
-    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
-    # demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
-    # demographic_sample.replace(-1, np.nan, inplace=True)
-    # demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC',
-    #                                                             'PRTAGE',
-    #                                                             'HRNUMHOU',
-    #                                                             'PTDTRACE',
-    #                                                             'PEEDUCA']]),
-    #                             columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
-    #                                     'ptdtrace_imputed', 'peeduca_imputed'])
+    encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    column_names = output.keys()
+    agent_data_pop.columns = column_names
+    agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
+    agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
+    agent_data_pop.reset_index(inplace=True, drop=True)
 
-
-    # # Group by the 'Category' column
-    # grouped = demographic_sample.groupby('GESTFIPS').size()
-    # # Create a new column with 1 / count of rows per category
-    # demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
-    # demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
-    # demographic_sample = add_random_nodes(demographic_sample)
-
-    # demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
-    #                                         'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-    #                                         'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-    #                                         'ptdtrace_imputed', 'peeduca_imputed']]
+    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
     
-    # agent_data = pd.merge(product_data[['market_ids',
-    #                                 'market_ids_string',
-    #                                 'GESTFIPS']].drop_duplicates(),
-    #                                   demographic_sample, 
-    #                                   how='inner', 
-    #                                   left_on='GESTFIPS',
-    #                                   right_on='GESTFIPS')
+    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    demographic_sample.replace(-1, np.nan, inplace=True)
 
+    knn_imputer = KNNImputer(n_neighbors=2)
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
+                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
+                                        'ptdtrace_imputed', 'peeduca_imputed'])
+
+    grouped = demographic_sample.groupby('GESTFIPS').size()
+
+    demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
+    demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
+    demographic_sample = add_random_nodes(demographic_sample)
+
+    demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
+                                            'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
+                                            'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
+                                            'ptdtrace_imputed', 'peeduca_imputed']]
+    
+    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
+                                      demographic_sample, 
+                                      how='inner', 
+                                      left_on='GESTFIPS',
+                                      right_on='GESTFIPS')
+    
     # Guardar dataframes
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     print('fin')
 
