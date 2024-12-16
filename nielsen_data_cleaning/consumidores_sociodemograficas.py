@@ -268,6 +268,8 @@ def process_file(file_path):
 
 
 def process_file(file_path):
+    encoding_guessed =  read_file_with_guessed_encoding(file_path)
+
     with open(file_path, 'r', encoding=encoding_guessed) as file:
         lines = file.readlines()
 
