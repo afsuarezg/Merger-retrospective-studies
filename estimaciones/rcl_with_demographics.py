@@ -8,15 +8,17 @@ import matplotlib.pyplot as plt
 from .rcl_without_demographics import rename_instruments
 
 
-
-
-def main():
+def rcl_with_demographics(product_data: pd.DataFrame,
+                          blp_inst: pd.DataFrame, 
+                          local_inst: pd.DataFrame, 
+                          quad_inst: pd.DataFrame, 
+                          agent_data: pd.DataFrame):
     # Bases de datos
-    product_data = pd.read_csv('7.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.030184.csv')
-    agent_data = pd.read_csv('7.agent_data_Reynolds_Lorillard_retailer_2024-12-12 04:37:46.542282.csv')
-    blp_inst = pd.read_csv('7.blp_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:27.990693.csv')
-    local_inst = pd.read_csv('7.local_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.020910.csv')
-    quad_inst = pd.read_csv('7.quadratic_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.024438.csv')
+    # product_data = pd.read_csv('7.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.030184.csv')
+    # agent_data = pd.read_csv('7.agent_data_Reynolds_Lorillard_retailer_2024-12-12 04:37:46.542282.csv')
+    # blp_inst = pd.read_csv('7.blp_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:27.990693.csv')
+    # local_inst = pd.read_csv('7.local_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.020910.csv')
+    # quad_inst = pd.read_csv('7.quadratic_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.024438.csv')
     
     blp_data=pd.concat([product_data,blp_inst], axis=1)
     dict_rename = rename_instruments(blp_data)
