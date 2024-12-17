@@ -8,7 +8,7 @@ import datetime
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
 PRODUCT_MODULE = 7460
-NROWS = 10000000
+NROWS = 20000000
 YEAR = 2014
 WEEKS = [20140125, 20140201]
 
@@ -144,7 +144,7 @@ def store_dict_to_json(data, filename):
 
 
 def movements_file():
-    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None) #, nrows = NROWS)
+    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None, nrows = NROWS)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file

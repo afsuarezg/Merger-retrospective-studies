@@ -11,6 +11,7 @@ from .caracteristicas_productos import match_brands_to_characteristics, list_of_
 from .empresas import find_company, brands_by_company
 from .consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
+from ..estimaciones.plain_logit import plain_logit
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -234,7 +235,9 @@ def run():
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     product_data = product_data[product_data['fraction_identified_earnings']>=0.5].reset_index()
 
-    
+    plain_logit(product_data = product_data, inst_data = local_instruments)
+
+
     # Guardar dataframes
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)

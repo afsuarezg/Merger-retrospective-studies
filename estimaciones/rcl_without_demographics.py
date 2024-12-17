@@ -16,7 +16,11 @@ def rename_instruments(data):
     return dict_rename
 
 
-def main():
+def rcl_without_demographics(product_data: pd.DataFrame, 
+                blp_inst: pd.DataFrame, 
+                local_inst: pd.DataFrame,
+                quad_inst: pd.DataFrame,
+                ):
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids)')
     X2_formulation = pyblp.Formulation('1 + nicotine + tar ')
 
@@ -27,7 +31,7 @@ def main():
     pr_integration = pyblp.Integration('product', size=25)
 
     # BLP 
-    blp_data=pd.concat([product_data,blp_inst], axis=1)
+    blp_data=pd.concat([product_data, blp_inst], axis=1)
     dict_rename = rename_instruments(blp_data)
     blp_data = blp_data.rename(columns=dict_rename)
 
@@ -82,4 +86,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    pass
