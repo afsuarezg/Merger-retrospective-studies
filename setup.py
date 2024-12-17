@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='nielsen_data_cleaning',
+    name='merger_retrospective_studies',
     version='0.1.7',
     packages=find_packages(),
     install_requires=[

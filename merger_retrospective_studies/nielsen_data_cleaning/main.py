@@ -85,6 +85,7 @@ def run():
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
 
+
     # Identificar porción de ventas identificadas para cada tienda a través de ingresos 
     total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
     total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
@@ -235,16 +236,24 @@ def run():
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     product_data = product_data[product_data['fraction_identified_earnings']>=0.5].reset_index()
 
-    plain_logit(product_data = product_data, inst_data = local_instruments)
-
-
-    # Guardar dataframes
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+
+
+    plain_logit(product_data = product_data, inst_data = local_instruments)
+
+
+    # Guardar dataframes
+    # nivel_de_agregacion = 'retailer'
+    # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    # blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    # local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    # quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    # agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     print('fin')
 
