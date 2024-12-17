@@ -56,8 +56,12 @@ def plain_logit(product_data: pd.DataFrame,
                 inst_data: pd.DataFrame):
     product_data = pd.concat([product_data, inst_data], axis=1)
     inst_dict =  create_instrument_dict(product_data)
+    
     product_data.rename(columns=inst_dict, inplace=True)    
     
+    # Eliminate missing values from a specific column
+    product_data = product_data.dropna(subset=['prices'])
+
     # Plain logit without intercept
     logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
     problem = pyblp.Problem(logit_formulation, product_data)

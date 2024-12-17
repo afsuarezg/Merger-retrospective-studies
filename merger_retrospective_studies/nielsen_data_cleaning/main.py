@@ -234,7 +234,12 @@ def run():
                                       right_on='GESTFIPS')
     
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
-    product_data = product_data[product_data['fraction_identified_earnings']>=0.5].reset_index()
+    condition = product_data['fraction_identified_earnings']>=0.5
+    product_data = product_data[condition].reset_index()
+    blp_instruments = blp_instruments[condition].reset_index()
+    local_instruments = local_instruments[condition].reset_index()
+    quadratic_instruments = quadratic_instruments[condition].reset_index()
+
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
@@ -242,7 +247,6 @@ def run():
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-
 
     plain_logit(product_data = product_data, inst_data = local_instruments)
 
