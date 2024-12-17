@@ -235,11 +235,15 @@ def run():
     
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     condition = product_data['fraction_identified_earnings']>=0.5
-    product_data = product_data[condition].reset_index()
-    blp_instruments = blp_instruments[condition].reset_index()
-    local_instruments = local_instruments[condition].reset_index()
-    quadratic_instruments = quadratic_instruments[condition].reset_index()
+    product_data = product_data[condition]
+    blp_instruments = blp_instruments[product_data.index]
+    local_instruments = local_instruments[product_data.index]
+    quadratic_instruments = quadratic_instruments[product_data.index]
 
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
