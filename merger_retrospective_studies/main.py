@@ -232,31 +232,20 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
-    # Combinando product_data con instrumentos 
-    # condition = product_data['fraction_identified_earnings']>=0.5
-    # blp_product_data = pd.concat([product_data, blp_instruments], axis=1)[condition].reset_index(drop=True)
-    # local_product_data = pd.concat([blp_product_data, local_instruments], axis=1)[condition].reset_index(drop=True)
-    # quad_product_data = pd.concat([blp_product_data, quadratic_instruments], axis=1)[condition].reset_index(drop=True)
-
-
-    # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # blp_product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # local_product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # quad_product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
 
-    # condition = product_data['fraction_identified_earnings']>=0.5
-    # product_data = product_data[condition]
-    # blp_instruments = blp_instruments[product_data.index]
-    # local_instruments = local_instruments[product_data.index]
-    # quadratic_instruments = quadratic_instruments[product_data.index]
+    condition = product_data['fraction_identified_earnings']>=0.5
+    kept_data = product_data.loc[condition].index
 
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
+    product_data = product_data.loc[kept_data]
+    blp_instruments = blp_instruments.loc[product_data]
+    local_instruments = local_instruments.loc[product_data]
+    quadratic_instruments = quadratic_instruments.loc[product_data]
+
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
 
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
