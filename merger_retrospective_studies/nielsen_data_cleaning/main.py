@@ -238,6 +238,8 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
+    product_data = product_data.reset_index()
+    
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     print(product_data.shape)
     print(blp_instruments.shape)
