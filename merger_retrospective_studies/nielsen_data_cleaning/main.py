@@ -235,10 +235,12 @@ def run():
     
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     condition = product_data['fraction_identified_earnings']>=0.5
-    product_data = product_data[condition]
-    blp_instruments = blp_instruments[product_data.index]
-    local_instruments = local_instruments[product_data.index]
-    quadratic_instruments = quadratic_instruments[product_data.index]
+    kept_data = product_data.loc[condition].index
+
+    product_data = product_data.loc[kept_data]
+    blp_instruments = blp_instruments.loc[product_data]
+    local_instruments = local_instruments.loc[product_data]
+    quadratic_instruments = quadratic_instruments.loc[product_data]
 
     product_data.reset_index(drop=True, inplace=True)
     blp_instruments.reset_index(drop=True, inplace=True)
