@@ -40,50 +40,95 @@ def rcl_without_demographics(product_data: pd.DataFrame,
     optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
     optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-1})
 
-    # Problema
-    mc_problem = pyblp.Problem(product_formulations, blp_data, integration=mc_integration)
-    pr_problem = pyblp.Problem(product_formulations, blp_data, integration=pr_integration)
-
     # Bounds
     sigma_lower = np.zeros((3,3))
     sigma_upper = np.tril(np.ones((3, 3))) * np.inf
-    
-    # Resultados
-    results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper), optimization=optimization)
 
-    elasticities = results1.compute_elasticities()
-    diversions = results1.compute_diversion_ratios()
+    # Problema
+    try:
+        mc_problem = pyblp.Problem(product_formulations, blp_data, integration=mc_integration)
+        pr_problem = pyblp.Problem(product_formulations, blp_data, integration=pr_integration)    
+        # Resultados
+        try:
+            print('BLP 1')
+            results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+            elasticities = results1.compute_elasticities()
+            diversions = results1.compute_diversion_ratios()
+        except Exception as e:
+            print(e)
 
-    results2 = pr_problem.solve(sigma=np.ones((3, 3)),sigma_bounds = (sigma_lower, sigma_upper), optimization=optimization)
-    results3 = mc_problem.solve(sigma=np.eye(3),sigma_bounds = (sigma_lower, sigma_upper), optimization=optimization)
+        try:
+            print('BLP 2')
+            results2 = pr_problem.solve(sigma=np.ones((3, 3)), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+        except Exception as e:
+            print(e)
+
+        try:
+            print('BLP 3')
+            results3 = mc_problem.solve(sigma=np.eye(3), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+        except Exception as e:
+            print(e)
+    except Exception as e:
+        print(e)
 
     # Local
-    local_data=pd.concat([product_data, local_inst], axis=1)
-    dict_rename = rename_instruments(local_data)
-    local_data = local_data.rename(columns=dict_rename)
-    mc_problem = pyblp.Problem(product_formulations, local_data, integration=mc_integration)
-    pr_problem = pyblp.Problem(product_formulations, local_data, integration=pr_integration)
-    results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
-    elasticities = results1.compute_elasticities()
-    diversions = results1.compute_diversion_ratios()
+    try:
+        local_data=pd.concat([product_data, local_inst], axis=1)
+        dict_rename = rename_instruments(local_data)
+        local_data = local_data.rename(columns=dict_rename)
+        mc_problem = pyblp.Problem(product_formulations, local_data, integration=mc_integration)
+        pr_problem = pyblp.Problem(product_formulations, local_data, integration=pr_integration)
+        try:
+            print('LOCAL 1')
+            results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
+            elasticities = results1.compute_elasticities()
+            diversions = results1.compute_diversion_ratios()
+        except Exception as e:
+            print(e)
 
-    results2 = pr_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
-    results3 = mc_problem.solve(sigma=np.eye(3), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
+        try:
+            print('LOCAL 2')
+            results2 = pr_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
+        except Exception as e:
+            print(e)
+
+        try:
+            print('LOCAL 3')
+            results3 = mc_problem.solve(sigma=np.eye(3), sigma_bounds = (sigma_lower, sigma_upper),optimization=optimization)
+        except Exception as e:
+            print(e)
+    except Exception as e:
+        print(e)
 
     # Quadratic
-    quad_data=pd.concat([product_data, quad_inst], axis=1)
-    mc_problem = pyblp.Problem(product_formulations, quad_data, integration=mc_integration)
-    dict_rename = rename_instruments(local_data)
-    mc_problem = pyblp.Problem(product_formulations, quad_data, integration=mc_integration)
-    pr_problem = pyblp.Problem(product_formulations, quad_data, integration=pr_integration)
+    try:
+        quad_data = pd.concat([product_data, quad_inst], axis=1)
+        dict_rename = rename_instruments(quad_data)
+        quad_data = quad_data.rename(columns=dict_rename)
+        mc_problem = pyblp.Problem(product_formulations, quad_data, integration=mc_integration)
+        pr_problem = pyblp.Problem(product_formulations, quad_data, integration=pr_integration)
+        
+        try:
+            print('QUADRATIC 1')
+            results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+            elasticities = results1.compute_elasticities()
+            diversions = results1.compute_diversion_ratios()
+        except Exception as e:
+            print(e)
 
-    results1 = mc_problem.solve(sigma=np.ones((3, 3)), sigma_bounds = (sigma_lower, sigma_upper),optimization=bfgs)
-    elasticities = results1.compute_elasticities()
-    diversions = results1.compute_diversion_ratios()
+        try:
+            print('QUADRATIC 2')
+            results2 = pr_problem.solve(sigma=np.ones((3, 3)), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+        except Exception as e:
+            print(e)
 
-    results2 = pr_problem.solve(sigma=np.ones((3, 3)),sigma_bounds = (sigma_lower, sigma_upper), optimization=bfgs)
-    results3 = mc_problem.solve(sigma=np.eye(3), sigma_bounds = (sigma_lower, sigma_upper),optimization=bfgs)
-
+        try:
+            print('QUADRATIC 3')
+            results3 = mc_problem.solve(sigma=np.eye(3), sigma_bounds=(sigma_lower, sigma_upper), optimization=optimization)
+        except Exception as e:
+            print(e)
+    except Exception as e:
+        print(e)
 
 if __name__ == '__main__':
     pass
