@@ -13,15 +13,12 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                           local_inst: pd.DataFrame, 
                           quad_inst: pd.DataFrame, 
                           agent_data: pd.DataFrame):
-    # Bases de datos
-    # product_data = pd.read_csv('7.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.030184.csv')
-    # agent_data = pd.read_csv('7.agent_data_Reynolds_Lorillard_retailer_2024-12-12 04:37:46.542282.csv')
-    # blp_inst = pd.read_csv('7.blp_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:27.990693.csv')
-    # local_inst = pd.read_csv('7.local_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.020910.csv')
-    # quad_inst = pd.read_csv('7.quadratic_data_Reynolds_Lorillard_retailer_2024-12-12 04:28:28.024438.csv')
+
+    print('-'*10+'RCL with demographics'+ '-'*10)                      
     
     blp_data=pd.concat([product_data,blp_inst], axis=1)
     dict_rename = rename_instruments(blp_data)
+    blp_data=blp_data.rename(column=dict_rename)
 
     # Restringe la información del blp_data a aquella que tienen información del consumidor en el agent_data
     blp_data = blp_data[blp_data['market_ids'].isin(agent_data['market_ids'].unique())]
@@ -34,7 +31,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Algoritmo de optimización
     optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
     optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-1})
-    optimization = pyblp.Optimization('bfgs', {'gtol': 1e-5})
+    optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
 
     # Formulación del consumidor dentro del problema
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
@@ -44,8 +41,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                     product_formulations,
                     blp_data,
                     agent_formulation,
-                    agent_data
-                )
+                    agent_data)
     
     # Valores iniciales
     initial_sigma = np.diag([0.3302, 2.4526, 0.0163])
@@ -55,11 +51,16 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     [-0.2506,  0,     0,  0     ]
     ])
 
+    # Sigma bounds
+    sigma_lower = np.zeros((4,4))
+    sigma_upper = np.tril(np.ones((4, 4))) * np.inf
+
     # Resultados del problema
     results = problem.solve(
         initial_sigma,
         initial_pi,
         optimization=optimization,
+        sigma_bounds=(sigma_lower, sigma_upper),
         method='1s'
     )
 

@@ -14,6 +14,7 @@ from .consumidores_sociodemograficas import read_file_with_guessed_encoding, pro
 from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 from ..estimaciones.plain_logit import plain_logit
 from ..estimaciones.rcl_without_demographics import rcl_without_demographics
+from ..estimaciones.rcl_with_demographics import rcl_with_demographics
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -282,6 +283,11 @@ def run():
     plain_logit(product_data = product_data, inst_data = local_instruments)
     
     rcl_without_demographics(product_data=product_data,
+                             blp_inst=blp_instruments,
+                             local_inst=local_instruments,
+                             quad_inst=quadratic_instruments)
+    
+    rcl_with_demographics(product_data=product_data,
                              blp_inst=blp_instruments,
                              local_inst=local_instruments,
                              quad_inst=quadratic_instruments)

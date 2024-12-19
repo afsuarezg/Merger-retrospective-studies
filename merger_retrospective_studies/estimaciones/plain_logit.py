@@ -62,23 +62,34 @@ def plain_logit(product_data: pd.DataFrame,
     # Eliminate missing values from a specific column
     product_data = product_data.dropna(subset=['prices'])
 
-    # Plain logit without intercept
-    logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
-    problem = pyblp.Problem(logit_formulation, product_data)
-    logit_results = problem.solve(method='1s')
-    print(logit_results)
+    
+    try:
+        print('# Plain logit without intercept')
+        logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
+        problem = pyblp.Problem(logit_formulation, product_data)
+        logit_results = problem.solve(method='1s')
+        print(logit_results)
+    except Exception as e:
+        print(f"Error in plain logit without intercept: {e}")
 
-    # Plain logit with intercept
-    logit_formulation = pyblp.Formulation('1+ prices')
-    problem = pyblp.Problem(logit_formulation, product_data)
-    logit_results = problem.solve(method='1s')
-    print(logit_results)
+    try:
+        print('# Plain logit with intercept')
+        logit_formulation = pyblp.Formulation('1+ prices')
+        problem = pyblp.Problem(logit_formulation, product_data)
+        logit_results = problem.solve(method='1s')
+        print(logit_results)
+    except Exception as e:
+        print(f"Error in plain logit with intercept: {e}")
 
-    # Logit problem with products' characteristics || No fixed effects
-    logit_formulation = pyblp.Formulation('1 + prices + tar + co + nicotine')
-    logit_problem = pyblp.Problem(logit_formulation, product_data)
-    logit_results = logit_problem.solve(method='1s')
-    print(logit_results)
+    try:
+        print('# Logit problem with products characteristics || No fixed effects')
+        logit_formulation = pyblp.Formulation('1 + prices + tar + co + nicotine')
+        logit_problem = pyblp.Problem(logit_formulation, product_data)
+        logit_results = logit_problem.solve(method='1s')
+        print(logit_results)
+    except Exception as e:
+        print(f"Error in logit problem with products' characteristics: {e}")
+
 
     # Fixed effects
     # logit_formulation = pyblp.Formulation('1 + prices', absorb='C(market_ids) + C(product_ids)')
