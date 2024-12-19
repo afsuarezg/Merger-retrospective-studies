@@ -81,10 +81,10 @@ def plain_logit(product_data: pd.DataFrame,
     print(logit_results)
 
     # Fixed effects
-    logit_formulation = pyblp.Formulation('1 + prices', absorb='C(market_ids) + C(product_ids)')
-    fe_problem = pyblp.Problem(logit_formulation, product_data)
-    fe_results = fe_problem.solve(method='1s')
-    print(fe_results)
+    # logit_formulation = pyblp.Formulation('1 + prices', absorb='C(market_ids) + C(product_ids)')
+    # fe_problem = pyblp.Problem(logit_formulation, product_data)
+    # fe_results = fe_problem.solve(method='1s')
+    # print(fe_results)
 
 
 
