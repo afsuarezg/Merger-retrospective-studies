@@ -18,7 +18,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     
     blp_data=pd.concat([product_data,blp_inst], axis=1)
     dict_rename = rename_instruments(blp_data)
-    blp_data=blp_data.rename(column=dict_rename)
+    blp_data=blp_data.rename(columns=dict_rename)
 
     # Restringe la información del blp_data a aquella que tienen información del consumidor en el agent_data
     blp_data = blp_data[blp_data['market_ids'].isin(agent_data['market_ids'].unique())]
