@@ -7,14 +7,14 @@ import sys
 
 # from dotenv import load_dotenv
 
-from nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
-from nielsen_data_cleaning.caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
-from nielsen_data_cleaning.empresas import find_company, brands_by_company
-from nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
-from nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
-from estimaciones.plain_logit import plain_logit
-from estimaciones.rcl_without_demographics import rcl_without_demographics
-from estimaciones.rcl_with_demographics import rcl_with_demographics
+from .nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
+from .nielsen_data_cleaning.caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
+from .nielsen_data_cleaning.empresas import find_company, brands_by_company
+from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
+from .nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
+from .estimaciones.plain_logit import plain_logit
+from .estimaciones.rcl_without_demographics import rcl_without_demographics
+from .estimaciones.rcl_with_demographics import rcl_with_demographics
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
