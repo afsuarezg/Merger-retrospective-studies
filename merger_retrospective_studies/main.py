@@ -281,7 +281,6 @@ def run():
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
-    sys.exit()
     # Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas. 
     # Keep rows by 'market_ids' if they contain 2 or more samples
     market_counts = product_data['market_ids'].value_counts()
