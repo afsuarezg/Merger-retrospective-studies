@@ -273,14 +273,7 @@ def run():
     local_instruments.reset_index(drop=True, inplace=True)
     quadratic_instruments.reset_index(drop=True, inplace=True)
 
-    # Salvando datos
-    nivel_de_agregacion = 'retailer'
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-
+    
     # Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas. 
     # Keep rows by 'market_ids' if they contain 2 or more samples
     market_counts = product_data['market_ids'].value_counts()
@@ -304,17 +297,18 @@ def run():
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
-    plain_logit(product_data = product_data, inst_data = local_instruments)
+    # plain_logit(product_data = product_data, inst_data = local_instruments)
     
-    rcl_without_demographics(product_data=product_data,
-                             blp_inst=blp_instruments,
-                             local_inst=local_instruments,
-                             quad_inst=quadratic_instruments)
+    # rcl_without_demographics(product_data=product_data,
+    #                          blp_inst=blp_instruments,
+    #                          local_inst=local_instruments,
+    #                          quad_inst=quadratic_instruments)
     
     rcl_with_demographics(product_data=product_data,
-                             blp_inst=blp_instruments,
-                             local_inst=local_instruments,
-                             quad_inst=quadratic_instruments)
+                        blp_inst=blp_instruments,
+                        local_inst=local_instruments,
+                        quad_inst=quadratic_instruments,
+                        agent_data=agent_data)
     
     print('fin')
 
