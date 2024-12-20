@@ -273,6 +273,22 @@ def run():
     local_instruments.reset_index(drop=True, inplace=True)
     quadratic_instruments.reset_index(drop=True, inplace=True)
 
+    # Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas. 
+    # Keep rows by 'market_ids' if they contain 2 or more samples
+    market_counts = product_data['market_ids'].value_counts()
+    valid_markets = market_counts[market_counts >= 2].index
+    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+
+    local_instruments = local_instruments[product_data.index]
+    quadratic_instruments = quadratic_instruments[product_data.index]
+    blp_instruments = blp_instruments[product_data.index]
+
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
+
+    # Salvando datos
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
