@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import pyblp
 import numpy as np
+import sys
 
 # from dotenv import load_dotenv
 
@@ -12,6 +13,8 @@ from nielsen_data_cleaning.empresas import find_company, brands_by_company
 from nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 from estimaciones.plain_logit import plain_logit
+from estimaciones.rcl_without_demographics import rcl_without_demographics
+from estimaciones.rcl_with_demographics import rcl_with_demographics
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -190,10 +193,15 @@ def run():
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
     local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
     quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
     quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
+
+    print(type(blp_instruments))
+    print(type(local_instruments))
+    print(type(quadratic_instruments))
 
     # Agregando información sociodemográfica
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
@@ -232,15 +240,33 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
+    product_data = product_data.reset_index()
+    
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
+    print(product_data.shape)
+    print(blp_instruments.shape)
+    print(local_instruments.shape)
+    print(quadratic_instruments.shape) 
+
+    # Check if the index is sequential for all the four previous data frames
+    is_sequential_product_data = (product_data.index == range(len(product_data))).all()
+    is_sequential_blp_instruments = (blp_instruments.index == range(len(blp_instruments))).all()
+    is_sequential_local_instruments = (local_instruments.index == range(len(local_instruments))).all()
+    is_sequential_quadratic_instruments = (quadratic_instruments.index == range(len(quadratic_instruments))).all()
+
+    print("Is the product_data index sequential?", is_sequential_product_data)
+    print("Is the blp_instruments index sequential?", is_sequential_blp_instruments)
+    print("Is the local_instruments index sequential?", is_sequential_local_instruments)
+    print("Is the quadratic_instruments index sequential?", is_sequential_quadratic_instruments)
 
     condition = product_data['fraction_identified_earnings']>=0.5
     kept_data = product_data.loc[condition].index
 
     product_data = product_data.loc[kept_data]
-    blp_instruments = blp_instruments.loc[product_data]
-    local_instruments = local_instruments.loc[product_data]
-    quadratic_instruments = quadratic_instruments.loc[product_data]
+
+    local_instruments = local_instruments.loc[kept_data]
+    quadratic_instruments = quadratic_instruments.loc[kept_data]
+    blp_instruments = blp_instruments.loc[kept_data]
 
     product_data.reset_index(drop=True, inplace=True)
     blp_instruments.reset_index(drop=True, inplace=True)
@@ -255,17 +281,20 @@ def run():
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     plain_logit(product_data = product_data, inst_data = local_instruments)
-
-
-    # Guardar dataframes
-    # nivel_de_agregacion = 'retailer'
-    # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    # agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/agent_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-
+    
+    rcl_without_demographics(product_data=product_data,
+                             blp_inst=blp_instruments,
+                             local_inst=local_instruments,
+                             quad_inst=quadratic_instruments)
+    
+    rcl_with_demographics(product_data=product_data,
+                             blp_inst=blp_instruments,
+                             local_inst=local_instruments,
+                             quad_inst=quadratic_instruments)
+    
     print('fin')
+
+
 
 
 if __name__=='__main__':
