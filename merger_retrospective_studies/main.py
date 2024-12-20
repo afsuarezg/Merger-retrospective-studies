@@ -288,9 +288,9 @@ def run():
     valid_markets = market_counts[market_counts >= 2].index
     product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
-    local_instruments = local_instruments[product_data.index]
-    quadratic_instruments = quadratic_instruments[product_data.index]
-    blp_instruments = blp_instruments[product_data.index]
+    local_instruments = local_instruments.loc[product_data.index]
+    quadratic_instruments = quadratic_instruments.loc[product_data.index]
+    blp_instruments = blp_instruments.loc[product_data.index]
 
     product_data.reset_index(drop=True, inplace=True)
     blp_instruments.reset_index(drop=True, inplace=True)
