@@ -299,16 +299,16 @@ def run():
 
     # plain_logit(product_data = product_data, inst_data = local_instruments)
     
-    # rcl_without_demographics(product_data=product_data,
-    #                          blp_inst=blp_instruments,
-    #                          local_inst=local_instruments,
-    #                          quad_inst=quadratic_instruments)
+    rcl_without_demographics(product_data=product_data,
+                             blp_inst=blp_instruments,
+                             local_inst=local_instruments,
+                             quad_inst=quadratic_instruments)
     
-    rcl_with_demographics(product_data=product_data,
-                        blp_inst=blp_instruments,
-                        local_inst=local_instruments,
-                        quad_inst=quadratic_instruments,
-                        agent_data=agent_data)
+    # rcl_with_demographics(product_data=product_data,
+    #                     blp_inst=blp_instruments,
+    #                     local_inst=local_instruments,
+    #                     quad_inst=quadratic_instruments,
+    #                     agent_data=agent_data)
     
     print('fin')
 
