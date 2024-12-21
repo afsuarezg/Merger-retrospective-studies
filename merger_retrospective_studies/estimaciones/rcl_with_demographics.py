@@ -30,8 +30,8 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     # Algoritmo de optimización
     optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
-    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-1})
     optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
+    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-10})
 
     # Formulación del consumidor dentro del problema
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
@@ -46,14 +46,14 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Valores iniciales
     initial_sigma = np.diag([0.3302, 2.4526, 0.0163])
     initial_pi = np.array([
-    [ 5.4819,  0,      0.2037,  0   ],
-    [15.8935, 0, 0,       0],
-    [-0.2506,  0,     0,  0     ]
+    [ 5.4819, 0, 0.2037, 0],
+    [15.8935, 0, 0, 0],
+    [-0.2506, 0, 0, 0]
     ])
 
     # Sigma bounds
-    sigma_lower = np.zeros((4,4))
-    sigma_upper = np.tril(np.ones((4, 4))) * np.inf
+    sigma_lower = np.zeros((3,3))
+    sigma_upper = np.tril(np.ones((3, 3))) * np.inf
 
     # Resultados del problema
     results = problem.solve(
@@ -80,6 +80,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     profits = results.compute_profits(costs=costs)
     cs = results.compute_consumer_surpluses()
 
+    print('rcl with dem completed')
 
 
 
