@@ -248,16 +248,15 @@ def run():
     print(local_instruments.shape)
     print(quadratic_instruments.shape) 
 
-    # Check if the index is sequential for all the four previous data frames
-    is_sequential_product_data = (product_data.index == range(len(product_data))).all()
-    is_sequential_blp_instruments = (blp_instruments.index == range(len(blp_instruments))).all()
-    is_sequential_local_instruments = (local_instruments.index == range(len(local_instruments))).all()
-    is_sequential_quadratic_instruments = (quadratic_instruments.index == range(len(quadratic_instruments))).all()
+    # is_sequential_product_data = (product_data.index == range(len(product_data))).all()
+    # is_sequential_blp_instruments = (blp_instruments.index == range(len(blp_instruments))).all()
+    # is_sequential_local_instruments = (local_instruments.index == range(len(local_instruments))).all()
+    # is_sequential_quadratic_instruments = (quadratic_instruments.index == range(len(quadratic_instruments))).all()
 
-    print("Is the product_data index sequential?", is_sequential_product_data)
-    print("Is the blp_instruments index sequential?", is_sequential_blp_instruments)
-    print("Is the local_instruments index sequential?", is_sequential_local_instruments)
-    print("Is the quadratic_instruments index sequential?", is_sequential_quadratic_instruments)
+    # print("Is the product_data index sequential?", is_sequential_product_data)
+    # print("Is the blp_instruments index sequential?", is_sequential_blp_instruments)
+    # print("Is the local_instruments index sequential?", is_sequential_local_instruments)
+    # print("Is the quadratic_instruments index sequential?", is_sequential_quadratic_instruments)
 
     condition = product_data['fraction_identified_earnings']>=0.5
     kept_data = product_data.loc[condition].index
@@ -289,6 +288,11 @@ def run():
     local_instruments.reset_index(drop=True, inplace=True)
     quadratic_instruments.reset_index(drop=True, inplace=True)
 
+    # Manteniendo la información en agents y data con iguales market_ids
+    agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
+    product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+
     # Salvando datos
     nivel_de_agregacion = 'retailer'
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
@@ -299,16 +303,16 @@ def run():
 
     # plain_logit(product_data = product_data, inst_data = local_instruments)
     
-    rcl_without_demographics(product_data=product_data,
-                             blp_inst=blp_instruments,
-                             local_inst=local_instruments,
-                             quad_inst=quadratic_instruments)
+    # rcl_without_demographics(product_data=product_data,
+    #                          blp_inst=blp_instruments,
+    #                          local_inst=local_instruments,
+    #                          quad_inst=quadratic_instruments)
     
-    # rcl_with_demographics(product_data=product_data,
-    #                     blp_inst=blp_instruments,
-    #                     local_inst=local_instruments,
-    #                     quad_inst=quadratic_instruments,
-    #                     agent_data=agent_data)
+    rcl_with_demographics(product_data=product_data,
+                        blp_inst=blp_instruments,
+                        local_inst=local_instruments,
+                        quad_inst=quadratic_instruments,
+                        agent_data=agent_data)
     
     print('fin')
 
