@@ -6,6 +6,7 @@ import time
 import matplotlib.pyplot as plt
 
 from .rcl_without_demographics import rename_instruments
+from .estimaciones_utils import generate_random_sparse_array, generate_random_array, generate_random_floats
 
 
 def rcl_with_demographics(product_data: pd.DataFrame,
@@ -24,14 +25,14 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     blp_data = blp_data[blp_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
     # Formulación del problema sin interacción con información demográfica
-    X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids)')
-    X2_formulation = pyblp.Formulation('1 + nicotine + tar ')
+    X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
+    X2_formulation = pyblp.Formulation('0 + nicotine + tar + co + nicotine_mg_per_g + nicotine_mg_per_cig + nicotine_mg_per_g_dry_weight_basis')
     product_formulations = (X1_formulation, X2_formulation)
 
     # Algoritmo de optimización
-    optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
-    optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
-    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-10})
+    # optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
+    # optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
+    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-12})
 
     # Formulación del consumidor dentro del problema
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
@@ -44,16 +45,20 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                     agent_data)
     
     # Valores iniciales
-    initial_sigma = np.diag([0.3302, 2.4526, 0.0163])
-    initial_pi = np.array([
-    [ 5.4819, 0, 0.2037, 0],
-    [15.8935, 0, 0, 0],
-    [-0.2506, 0, 0, 0]
-    ])
+    initial_sigma = np.diag(generate_random_floats(5, 0,4))
+    # np.diag([0.3302, 2.4526, 0.0163])
+    initial_pi = generate_random_sparse_array((6,4), -5,5, 6)
+    
+    # np.array([
+    # [ 5.4819, 0, 0.2037, 0],
+    # [15.8935, 0, 0, 0],
+    # [-0.2506, 0, 0, 0]
+    # ])
 
     # Sigma bounds
     sigma_lower = np.zeros((3,3))
-    sigma_upper = np.tril(np.ones((3, 3))) * np.inf
+    sigma_lower = np.zeros(initial_sigma.shape)
+    sigma_upper = np.tril(np.ones(initial_sigma.shape)) * np.inf
 
     # Resultados del problema
     results = problem.solve(
@@ -64,21 +69,22 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         method='1s'
     )
 
-    # Post-estimation results
-    elasticities = results.compute_elasticities()
-    diversions = results.compute_diversion_ratios()
-    single_market = product_data['market_ids'] == '26115_0'
-    plt.colorbar(plt.matshow(elasticities[single_market]));  
-    means = results.extract_diagonal_means(elasticities)
-    aggregates = results.compute_aggregate_elasticities(factor=0.1)   
+    return results
+    # # Post-estimation results
+    # elasticities = results.compute_elasticities()
+    # diversions = results.compute_diversion_ratios()
+    # single_market = product_data['market_ids'] == '26115_0'
+    # plt.colorbar(plt.matshow(elasticities[single_market]));  
+    # means = results.extract_diagonal_means(elasticities)
+    # aggregates = results.compute_aggregate_elasticities(factor=0.1)   
 
-    # Marginal costs and mark-ups
-    costs = results.compute_costs()
+    # # Marginal costs and mark-ups
+    # costs = results.compute_costs()
 
-    # Mergers
-    hhi = results.compute_hhi()
-    profits = results.compute_profits(costs=costs)
-    cs = results.compute_consumer_surpluses()
+    # # Mergers
+    # hhi = results.compute_hhi()
+    # profits = results.compute_profits(costs=costs)
+    # cs = results.compute_consumer_surpluses()
 
     print('rcl with dem completed')
 
