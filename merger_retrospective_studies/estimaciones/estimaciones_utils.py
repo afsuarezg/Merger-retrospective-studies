@@ -1,4 +1,8 @@
 import random
+import json
+import os
+import numpy as np
+
 
 def generate_random_sparse_array(shape, start_range, end_range, k):
     """
@@ -99,3 +103,56 @@ def count_non_zero_one_strings(input_string):
     return sum(1 for element in elements if element not in {"0", "1"})
 
 
+def classify_dir_elements(obj):
+    """
+    Classify elements from dir(obj) into attributes and methods.
+
+    Args:
+        obj: The object to inspect.
+
+    Returns:
+        dict: A dictionary with two keys: 'attributes' and 'methods'.
+              - 'attributes' contains a list of non-callable elements.
+              - 'methods' contains a list of callable elements.
+    """
+    # Get all elements from dir()
+    elements = dir(obj)
+
+    # Classify elements
+    attributes = []
+    methods = []
+    for item in elements:
+        element = getattr(obj, item)
+        if callable(element):
+            methods.append(item)
+        else:
+            attributes.append(item)
+
+    return {"attributes": attributes, "methods": methods}
+
+
+def save_dict_json(dictionary, folder_path, file_name):
+    """
+    Save a dictionary as a JSON file in the specified folder, handling NumPy arrays.
+
+    Args:
+        dictionary (dict): The dictionary to save.
+        folder_path (str): The folder path where the file will be saved.
+        file_name (str): The name of the file (e.g., 'data.json').
+    """
+    # Convert NumPy arrays to lists
+    def convert_ndarray(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        raise TypeError(f"Type {type(obj)} not serializable")
+    
+    # Ensure the folder exists
+    os.makedirs(folder_path, exist_ok=True)
+
+    # Full file path
+    file_path = os.path.join(folder_path, file_name)
+
+    # Save the dictionary
+    with open(file_path, 'w') as file:
+        json.dump(dictionary, file, indent=4, default=convert_ndarray)
+    print(f"Dictionary saved to {file_path}")

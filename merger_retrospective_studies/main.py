@@ -15,6 +15,7 @@ from .nielsen_data_cleaning.precios_ingresos_participaciones import total_income
 from .estimaciones.plain_logit import plain_logit
 from .estimaciones.rcl_without_demographics import rcl_without_demographics
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
+from .estimaciones.estimaciones_utils import save_dict_json
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -308,12 +309,27 @@ def run():
     #                          local_inst=local_instruments,
     #                          quad_inst=quadratic_instruments)
     
-    rcl_with_demographics(product_data=product_data,
+
+    condition =  False
+    while results.converged == False:
+
+        results = rcl_with_demographics(product_data=product_data,
                         blp_inst=blp_instruments,
                         local_inst=local_instruments,
                         quad_inst=quadratic_instruments,
                         agent_data=agent_data)
+        if results.converged == True:
+            condition = True
+        
+    save_dict_json(results.to_dict(), '/oak/stanford/groups/polinsky/Mergers/cigarettes/results', 'iteration_1.json')
     
+
+    
+
+    
+
+
+
     print('fin')
 
 
