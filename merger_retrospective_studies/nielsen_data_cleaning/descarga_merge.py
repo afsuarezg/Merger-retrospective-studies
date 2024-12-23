@@ -10,8 +10,8 @@ DEPARTMENT_CODE = 4510 #aka product_group_code
 PRODUCT_MODULE = 7460
 NROWS = 20000000
 YEAR = 2014
-WEEKS = [20140125, 20140201]
-
+# WEEKS = [20140125, 20140201]
+WEEKS = [20140125]
 
 def test():
     return 'test test'
