@@ -311,7 +311,7 @@ def run():
     
 
     condition =  False
-    while results.converged == False:
+    while condition == False:
 
         results = rcl_with_demographics(product_data=product_data,
                         blp_inst=blp_instruments,
