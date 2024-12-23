@@ -26,7 +26,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     # Formulación del problema sin interacción con información demográfica
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
-    X2_formulation = pyblp.Formulation('0 + nicotine + tar + co + nicotine_mg_per_g + nicotine_mg_per_cig + nicotine_mg_per_g_dry_weight_basis')
+    X2_formulation = pyblp.Formulation('0 + nicotine + tar + co + nicotine_mg_per_g + nicotine_mg_per_cig ')
     product_formulations = (X1_formulation, X2_formulation)
 
     # Algoritmo de optimización
@@ -45,9 +45,9 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                     agent_data)
     
     # Valores iniciales
-    initial_sigma = np.diag(generate_random_floats(6, 0,4))
+    initial_sigma = np.diag(generate_random_floats(5, 0,4))
     # np.diag([0.3302, 2.4526, 0.0163])
-    initial_pi = generate_random_sparse_array((6,4), -5,5, 6)
+    initial_pi = generate_random_sparse_array((5,4), -5,5, 6)
     
     # np.array([
     # [ 5.4819, 0, 0.2037, 0],
