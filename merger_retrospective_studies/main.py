@@ -310,18 +310,17 @@ def run():
     #                          quad_inst=quadratic_instruments)
     
 
-    condition =  False
-    while condition == False:
-
+    iter =  0
+    while iter <= 50:
         results = rcl_with_demographics(product_data=product_data,
                         blp_inst=blp_instruments,
                         local_inst=local_instruments,
                         quad_inst=quadratic_instruments,
                         agent_data=agent_data)
-        if results.converged == True:
-            condition = True
-        
-    save_dict_json(results.to_dict(), '/oak/stanford/groups/polinsky/Mergers/cigarettes/results', 'iteration_1.json')
+        # if results.converged == True:
+        #     iter += 1
+        save_dict_json(results.to_dict(), '/oak/stanford/groups/polinsky/Mergers/cigarettes/results', f'iteration_{iter}.json')
+        iter += 1
     
 
     
