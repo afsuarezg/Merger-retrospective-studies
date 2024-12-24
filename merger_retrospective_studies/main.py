@@ -310,8 +310,12 @@ def run():
     #                          quad_inst=quadratic_instruments)
     
 
-    iter =  0
-    while iter <= 50:
+    iter =  50
+    while iter <= 100:
+        print('------------------------------')
+        print(iter)
+        print('------------------------------')
+
         results = rcl_with_demographics(product_data=product_data,
                         blp_inst=blp_instruments,
                         local_inst=local_instruments,
