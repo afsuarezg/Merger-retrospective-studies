@@ -32,7 +32,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Algoritmo de optimización
     # optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
     # optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
-    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-12})
+    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-8})
 
     # Formulación del consumidor dentro del problema
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
