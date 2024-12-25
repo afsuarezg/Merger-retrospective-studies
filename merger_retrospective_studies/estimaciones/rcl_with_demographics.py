@@ -17,12 +17,12 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     print('-'*10+'RCL with demographics'+ '-'*10)                      
     
-    blp_data=pd.concat([product_data,blp_inst], axis=1)
-    dict_rename = rename_instruments(blp_data)
-    blp_data=blp_data.rename(columns=dict_rename)
+    consolidated_product_data=pd.concat([product_data,blp_inst], axis=1)
+    dict_rename = rename_instruments(consolidated_product_data)
+    consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
 
-    # Restringe la información del blp_data a aquella que tienen información del consumidor en el agent_data
-    blp_data = blp_data[blp_data['market_ids'].isin(agent_data['market_ids'].unique())]
+    # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
+    consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
     # Formulación del problema sin interacción con información demográfica
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
@@ -40,7 +40,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Definición del problema con consumidor
     problem = pyblp.Problem(
                     product_formulations,
-                    blp_data,
+                    consolidated_product_data,
                     agent_formulation,
                     agent_data)
     
@@ -91,4 +91,4 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
 
 if __name__ == '__main__':
-    main()
+    pass
