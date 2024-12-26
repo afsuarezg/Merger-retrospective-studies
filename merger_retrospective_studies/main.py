@@ -310,8 +310,8 @@ def run():
     #                          quad_inst=quadratic_instruments)
     
 
-    iter =  100
-    while iter <= 150:
+    iter =  150
+    while iter <= 200:
         print('------------------------------')
         print(iter)
         print('------------------------------')
