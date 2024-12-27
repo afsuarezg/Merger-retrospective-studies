@@ -144,7 +144,8 @@ def store_dict_to_json(data, filename):
 
 
 def movements_file():
-    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None, nrows = NROWS)
+    # movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None, nrows = NROWS)
+    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
