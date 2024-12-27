@@ -47,9 +47,9 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                     agent_data)
     
     # Valores iniciales
-    initial_sigma = np.diag(generate_random_floats(5, 0,4))
+    initial_sigma = np.diag(generate_random_floats(4, 0,4))
     # np.diag([0.3302, 2.4526, 0.0163])
-    initial_pi = generate_random_sparse_array((5,4), -5,5, 6)
+    initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
     
     # np.array([
     # [ 5.4819, 0, 0.2037, 0],
