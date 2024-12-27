@@ -179,7 +179,8 @@ def run():
                           'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
     
     # Creación de identificador numérico para los productos
-    # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
 
     # Elimina productos con características no identificadas
