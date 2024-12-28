@@ -32,8 +32,6 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     product_formulations = (X1_formulation, X2_formulation)
 
     # Algoritmo de optimización
-    # optimization = pyblp.Optimization('trust-constr', {'gtol': 1e-8, 'xtol': 1e-8})
-    # optimization = pyblp.Optimization('bfgs', {'gtol': 1e-10})
     optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-12})
 
     # Formulación del consumidor dentro del problema
@@ -51,12 +49,6 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # np.diag([0.3302, 2.4526, 0.0163])
     initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
     
-    # np.array([
-    # [ 5.4819, 0, 0.2037, 0],
-    # [15.8935, 0, 0, 0],
-    # [-0.2506, 0, 0, 0]
-    # ])
-
     # Sigma bounds
     sigma_lower = np.zeros((3,3))
     sigma_lower = np.zeros(initial_sigma.shape)
@@ -89,6 +81,37 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # cs = results.compute_consumer_surpluses()
 
     print('rcl with dem completed')
+
+
+def results_optimal_instruments(results: pyblp.ProblemResults):
+    """
+    Computes optimal instruments, updates the problem with these instruments, 
+    and solves the updated problem.
+
+    Parameters:
+        results (pyblp.ProblemResults): The results object from an initial problem.
+
+    Returns:
+        pyblp.ProblemResults: The results object after solving the updated problem with optimal instruments.
+    """
+    # Step 1: Compute optimal instruments using the specified method
+    instrument_results = results.compute_optimal_instruments(method='approximate')
+
+    # Step 2: Create a new problem instance with the computed optimal instruments
+    updated_problem = instrument_results.to_problem()
+
+    # Step 3: Solve the updated problem with the same sigma and pi as the original results
+    # Use the 'bfgs' optimization method with a gradient tolerance of 1e-5, and solve using '1s' method
+    updated_results = updated_problem.solve(
+        sigma=results.sigma,
+        pi=results.pi,
+        optimization=pyblp.Optimization('bfgs', {'gtol': 1e-5}),
+        method='1s'
+    )
+
+    # Return the updated results
+    return updated_results
+
 
 
 
