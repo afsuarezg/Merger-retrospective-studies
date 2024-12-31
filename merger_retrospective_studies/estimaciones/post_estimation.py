@@ -2,6 +2,7 @@ import pyblp
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import List
 
 
 
@@ -174,5 +175,87 @@ def merger_impact_markups(results: pyblp.ProblemResults, product_data: pd.DataFr
     return fig
 
 
+def predict_prices(product_data: pd.DataFrame, results, merger: List[int]) -> pd.Series:
+    """
+    Predict prices after a merger between firms.
+
+    Parameters:
+    - product_data (pd.DataFrame): A dataframe containing product and firm information.
+                                   Must include a 'firm_ids' column.
+    - results: An object with methods to compute costs, markups, and prices.
+    - merger (List[int]): A list of two integers representing the merging firms' IDs.
+                          merger[1] will be replaced with merger[0].
+
+    Returns:
+    - pd.Series: A series of changed prices after the merger.
+    """
+    # Validate input
+    if 'firm_ids' not in product_data.columns:
+        raise ValueError("product_data must contain a 'firm_ids' column.")
+    
+    if len(merger) != 2:
+        raise ValueError("merger must be a list of two integers [merging_firm_id, replaced_firm_id].")
+    
+    if not all(isinstance(x, int) for x in merger):
+        raise TypeError("All elements of merger must be integers.")
+    
+    # Update firm IDs to reflect the merger
+    product_data['merger_ids'] = product_data['firm_ids'].replace({merger[1]: merger[0]})
+    
+    # Compute costs and initial markups
+    try:
+        costs = results.compute_costs()
+        markups = results.compute_markups(costs=costs)
+    except AttributeError as e:
+        raise AttributeError("The results object must have compute_costs and compute_markups methods.") from e
+    
+    # Compute changed prices after the merger
+    try:
+        changed_prices = results.compute_prices(firm_ids=product_data['merger_ids'], costs=costs)
+    except AttributeError as e:
+        raise AttributeError("The results object must have a compute_prices method.") from e
+    
+    return changed_prices
 
 
+def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, merger: List[int]) -> pd.Series:
+    """
+    Predict prices after a merger between firms.
+
+    Parameters:
+    - product_data (pd.DataFrame): A dataframe containing product and firm information.
+                                   Must include a 'firm_ids' column.
+    - results: An object with methods to compute costs, markups, and prices.
+    - merger (List[int]): A list of two integers representing the merging firms' IDs.
+                          merger[1] will be replaced with merger[0].
+
+    Returns:
+    - pd.Series: A series of changed prices after the merger.
+    """
+    # Validate input
+    if 'firm_ids' not in product_data.columns:
+        raise ValueError("product_data must contain a 'firm_ids' column.")
+    
+    if len(merger) != 2:
+        raise ValueError("merger must be a list of two integers [merging_firm_id, replaced_firm_id].")
+    
+    if not all(isinstance(x, int) for x in merger):
+        raise TypeError("All elements of merger must be integers.")
+    
+    # Update firm IDs to reflect the merger
+    product_data['merger_ids'] = product_data['firm_ids'].replace({merger[1]: merger[0]})
+    
+    # Compute costs and initial markups
+    try:
+        costs = results.compute_costs()
+        markups = results.compute_markups(costs=costs)
+    except AttributeError as e:
+        raise AttributeError("The results object must have compute_costs and compute_markups methods.") from e
+    
+    # Compute changed prices after the merger
+    try:
+        changed_prices = results.compute_prices(firm_ids=product_data['merger_ids'], costs=costs, iteration=pyblp.Iteration('return'))
+    except AttributeError as e:
+        raise AttributeError("The results object must have a compute_prices method.") from e
+    
+    return changed_prices
