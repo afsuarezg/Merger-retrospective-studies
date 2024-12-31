@@ -328,7 +328,7 @@ def run():
                         agent_data=agent_data)
         # if results.converged == True:
         #     iter += 1
-        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle/iteration_{iter}.pickle')
+        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle_results/iteration_{iter}.pickle')
         
         predicted_prices = predict_prices(product_data = product_data,
                                             results = results, 
