@@ -67,7 +67,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     )
 
     
-    return results
+    return results, consolidated_product_data
     # # Post-estimation results
     # elasticities = results.compute_elasticities()
     # diversions = results.compute_diversion_ratios()

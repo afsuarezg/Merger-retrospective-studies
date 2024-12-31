@@ -331,7 +331,7 @@ def run():
         
         predicted_prices = predicted_prices(product_data = product_data,
                                             results = results, 
-                                            [3,0])
+                                            merger=[3,0])
 
         predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.json'
         predicted_prices = predicted_prices.tolist()
