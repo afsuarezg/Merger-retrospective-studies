@@ -24,6 +24,9 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
     consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
+    # Sort del product_data
+    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True])
+
     # Formulación del problema sin interacción con información demográfica
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
     X1_formulation = pyblp.Formulation('0 + prices ')
@@ -63,6 +66,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         method='1s'
     )
 
+    
     return results
     # # Post-estimation results
     # elasticities = results.compute_elasticities()

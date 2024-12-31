@@ -16,6 +16,8 @@ from .estimaciones.plain_logit import plain_logit
 from .estimaciones.rcl_without_demographics import rcl_without_demographics
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
+from .estimaciones.post_estimation import predict_prices
+
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -311,8 +313,8 @@ def run():
     #                          quad_inst=quadratic_instruments)
     
 
-    iter =  200
-    while iter <= 250:
+    iter =  0
+    while iter <= 100:
         print('------------------------------')
         print(iter)
         print('------------------------------')
@@ -324,8 +326,17 @@ def run():
                         agent_data=agent_data)
         # if results.converged == True:
         #     iter += 1
-        save_dict_json(results.to_dict(), '/oak/stanford/groups/polinsky/Mergers/cigarettes/results', f'iteration_{iter}.json')
+        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle/iteration_{iter}.pickle')
+        
+        predicted_prices = predicted_prices(product_data = product_data,
+                                            results = results, 
+                                            [3,0])
+
+        predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.csv'
+        predicted_prices.to_csv(predicted_prices_path, index=False)
         iter += 1
+        
+
     
 
     
