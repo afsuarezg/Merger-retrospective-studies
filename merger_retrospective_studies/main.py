@@ -4,6 +4,7 @@ import datetime
 import pyblp
 import numpy as np
 import sys
+import json
 
 # from dotenv import load_dotenv
 
@@ -319,7 +320,7 @@ def run():
         print(iter)
         print('------------------------------')
 
-        results = rcl_with_demographics(product_data=product_data,
+        results, consolidated_product_data = rcl_with_demographics(product_data=product_data,
                         blp_inst=blp_instruments,
                         local_inst=local_instruments,
                         quad_inst=quadratic_instruments,
@@ -332,8 +333,12 @@ def run():
                                             results = results, 
                                             [3,0])
 
-        predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.csv'
-        predicted_prices.to_csv(predicted_prices_path, index=False)
+        predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.json'
+        predicted_prices = predicted_prices.tolist()
+        price_pred_df = consolidated_product_data[['market_ids', 'product_ids', 'brand_descr']].copy()
+        price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
+        price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions/price_predictions_{iter}.json', index=False)
+
         iter += 1
         
 
