@@ -18,6 +18,7 @@ from .estimaciones.rcl_without_demographics import rcl_without_demographics
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation import predict_prices
+from .estimaciones.optimal_instruments import results_optimal_instruments
 
 
 
@@ -329,7 +330,7 @@ def run():
         #     iter += 1
         results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle/iteration_{iter}.pickle')
         
-        predicted_prices = predicted_prices(product_data = product_data,
+        predicted_prices = predict_prices(product_data = product_data,
                                             results = results, 
                                             merger=[3,0])
 
@@ -339,8 +340,13 @@ def run():
         price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
         price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions/price_predictions_{iter}.json', index=False)
 
+        optimal_results = results_optimal_instruments(results)
+        
+
         iter += 1
         
+
+
 
     
 

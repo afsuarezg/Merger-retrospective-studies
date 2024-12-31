@@ -29,7 +29,7 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
     updated_results = updated_problem.solve(
         sigma=results.sigma,
         pi=results.pi,
-        optimization=pyblp.Optimization('bfgs', {'gtol': 1e-5}),
+        optimization=pyblp.Optimization('bfgs', {'gtol': 1e-10}),
         method='1s'
     )
 
