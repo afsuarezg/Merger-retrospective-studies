@@ -25,7 +25,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
     # Sort del product_data
-    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True])
+    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True], ignore_index=True)
 
     # Formulación del problema sin interacción con información demográfica
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
@@ -66,25 +66,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         method='1s'
     )
 
-    
     return results, consolidated_product_data
-    # # Post-estimation results
-    # elasticities = results.compute_elasticities()
-    # diversions = results.compute_diversion_ratios()
-    # single_market = product_data['market_ids'] == '26115_0'
-    # plt.colorbar(plt.matshow(elasticities[single_market]));  
-    # means = results.extract_diagonal_means(elasticities)
-    # aggregates = results.compute_aggregate_elasticities(factor=0.1)   
-
-    # # Marginal costs and mark-ups
-    # costs = results.compute_costs()
-
-    # # Mergers
-    # hhi = results.compute_hhi()
-    # profits = results.compute_profits(costs=costs)
-    # cs = results.compute_consumer_surpluses()
-
-    print('rcl with dem completed')
 
 
 def results_optimal_instruments(results: pyblp.ProblemResults):
@@ -115,8 +97,6 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
 
     # Return the updated results
     return updated_results
-
-
 
 
 if __name__ == '__main__':

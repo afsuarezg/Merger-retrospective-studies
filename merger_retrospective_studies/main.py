@@ -320,28 +320,30 @@ def run():
         print('------------------------------')
         print(iter)
         print('------------------------------')
+        try:
+            results, consolidated_product_data = rcl_with_demographics(product_data=product_data,
+                            blp_inst=blp_instruments,
+                            local_inst=local_instruments,
+                            quad_inst=quadratic_instruments,
+                            agent_data=agent_data)
+            # if results.converged == True:
+            #     iter += 1
+            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle_results/iteration_{iter}.pickle')
+            
+            predicted_prices = predict_prices(product_data = product_data,
+                                                results = results, 
+                                                merger=[3,0])
 
-        results, consolidated_product_data = rcl_with_demographics(product_data=product_data,
-                        blp_inst=blp_instruments,
-                        local_inst=local_instruments,
-                        quad_inst=quadratic_instruments,
-                        agent_data=agent_data)
-        # if results.converged == True:
-        #     iter += 1
-        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/pickle_results/iteration_{iter}.pickle')
-        
-        predicted_prices = predict_prices(product_data = product_data,
-                                            results = results, 
-                                            merger=[3,0])
+            predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.json'
+            predicted_prices = predicted_prices.tolist()
+            price_pred_df = consolidated_product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+            price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
+            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions/price_predictions_{iter}.json', index=False)
 
-        predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/iteration_{iter}.json'
-        predicted_prices = predicted_prices.tolist()
-        price_pred_df = consolidated_product_data[['market_ids', 'product_ids', 'brand_descr']].copy()
-        price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-        price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions/price_predictions_{iter}.json', index=False)
-
-        optimal_results = results_optimal_instruments(results)
-        
+            optimal_results = results_optimal_instruments(results)
+        except exception as e:
+            print(e)
+            
 
         iter += 1
         
