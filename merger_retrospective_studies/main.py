@@ -341,7 +341,7 @@ def run():
             price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions/price_predictions_{iter}.json', index=False)
 
             optimal_results = results_optimal_instruments(results)
-        except exception as e:
+        except Exception as e:
             print(e)
             
 
