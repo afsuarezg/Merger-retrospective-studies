@@ -89,6 +89,7 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
     # Step 3: Solve the updated problem with the same sigma and pi as the original results
     # Use the 'bfgs' optimization method with a gradient tolerance of 1e-5, and solve using '1s' method
     updated_results = updated_problem.solve(
+        beta=results.beta,
         sigma=results.sigma,
         pi=results.pi,
         optimization=pyblp.Optimization('bfgs', {'gtol': 1e-5}),
