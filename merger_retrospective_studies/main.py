@@ -314,7 +314,7 @@ def run():
     #                          blp_inst=blp_instruments,
     #                          local_inst=local_instruments,
     #                          quad_inst=quadratic_instruments)
-    
+    sys.exit()
 
     iter =  0
     while iter <= 100:
