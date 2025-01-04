@@ -142,8 +142,13 @@ def run():
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
+
+    print(characteristics.keys())
+    print(characteristics)
     match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
+    print(match_bases_datos)
     characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
+    print(characteristics_matches)
     product_data = product_data.merge(characteristics_matches, how='left', left_on='brand_descr', right_on='from_nielsen')
     product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
