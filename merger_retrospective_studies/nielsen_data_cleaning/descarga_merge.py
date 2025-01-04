@@ -144,29 +144,28 @@ def store_dict_to_json(data, filename):
 
 
 def movements_file():
-    # movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None, nrows = NROWS)
-    movements_file = pd.read_csv(f'{PRODUCT_MODULE}_{YEAR}.tsv',sep  = '\t', header = 0, index_col = None)
+    movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
 
 
-def stores_file():
-    stores_file = pd.read_csv(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Annual_Files/stores_{YEAR}.tsv',sep = '\t', header = 0)
+def stores_file(year: int):
+    stores_file = pd.read_csv(f'raw_data/{year}/Annual_Files/stores_{year}.tsv',sep = '\t', header = 0)
     stores_file = stores_file[['store_code_uc', 'store_zip3', 'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr']]
     return stores_file
 
 
 def products_file():
-    products_file = pd.read_csv(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
+    products_file = pd.read_csv(f'raw_data/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
     products_file = products_file[products_file['upc'].duplicated(keep=False)]
     products_file = products_file[['upc', 'upc_descr', 'brand_code_uc', 'brand_descr','multi', 'product_module_code', 'product_group_code']]
     return products_file
 
 
-def extra_attributes_file(movements_data):
-    unique_upcs = set(movements_data['upc'])
-    products_extra_attributes = pd.read_csv('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/nielsen_extracts/RMS/2015/Annual_Files/products_extra_2015.tsv', sep  = '\t', header = 0)
+def extra_attributes_file(moves_data: pd.DataFrame, year: int):
+    unique_upcs = set(moves_data['upc'])
+    products_extra_attributes = pd.read_csv(f'raw_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
     products_extra_attributes = products_extra_attributes[products_extra_attributes['upc'].isin(unique_upcs)]
     products_extra_attributes = products_extra_attributes[['upc','style_code','style_descr','type_code','type_descr','strength_code','strength_descr']]
     return products_extra_attributes

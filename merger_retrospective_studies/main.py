@@ -30,13 +30,14 @@ YEAR = 2014
 # WEEKS = [20140125, 20140201]
 
 def run():
-    os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
+    # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
+    os.chdir(f'/oak/stanford/groups/polinsky/Mergers/cigarettes')
 
     # Descarga los datos
     movements_data = movements_file()
-    stores_data = stores_file()
+    stores_data = stores_file(year=2013)
     products_data = products_file()
-    extra_attributes_data = extra_attributes_file(movements_data)
+    extra_attributes_data = extra_attributes_file(moves_data=movements_data, year=2013)
 
     # Combina los datos
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
