@@ -328,6 +328,7 @@ def run():
     #                          blp_inst=blp_instruments,
     #                          local_inst=local_instruments,
     #                          quad_inst=quadratic_instruments)
+    print('corrió')
     sys.exit()
 
     iter =  0
