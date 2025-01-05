@@ -29,19 +29,25 @@ DEPARTMENT_CODE = 4510 #aka product_group_code
 YEAR = 2014
 # WEEKS = [20140125, 20140201]
 
-def run():
+def product_data_main(main_dir: str,
+                      movements_path:str,
+                      stores_path:str,
+                      products_path:str,
+                      extra_attributes_path: str):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
-    os.chdir(f'/oak/stanford/groups/polinsky/Mergers/cigarettes')
+    os.chdir(path= main_dir)
 
     # Descarga los datos
-    movements_data = movements_file(filter_row_weeks)
+    movements_data = movements_file(movements_path=movements_path, filter_row_weeks=filter_row_weeks)
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    stores_data = stores_file(year=2013)
+    stores_data = stores_file(stores_path=stores_path, year=2013)
     print('stores_data: ', stores_data.shape)
-    products_data = products_file()
+    products_data = products_file(products_path=products_path)
     print('product_data: ', products_data.shape)
-    extra_attributes_data = extra_attributes_file(moves_data=movements_data, year=2013)
+    extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
+                                                  moves_data=movements_data,
+                                                  year=2013)
     print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
@@ -207,6 +213,18 @@ def run():
        'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
        'nicotine_mg_per_cig'])
     
+    return product_data
+
+
+
+
+def run():
+    product_data = product_data_main(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
+                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv' ,
+                                     stores_path='raw_data/2013/Annual_Files/stores_2013.tsv' ,
+                                     products_path='raw_data/Master_Files/Latest/products.tsv',
+                                     extra_attributes_path='raw_data/2013/Annual_Files/products_extra_2013.tsv')
+    
     # Creación de instrumentos
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
@@ -364,19 +382,7 @@ def run():
         iter += 1
         
 
-
-
-    
-
-    
-
-    
-
-
-
     print('fin')
-
-
 
 
 if __name__=='__main__':

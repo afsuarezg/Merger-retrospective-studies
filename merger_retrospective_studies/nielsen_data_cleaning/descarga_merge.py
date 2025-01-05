@@ -4,6 +4,7 @@ import re
 import json
 import datetime
 from functools import partial 
+from typing import Callable
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -151,8 +152,9 @@ def store_dict_to_json(data, filename):
         json.dump(data, f)
 
 
-def movements_file(filter_row_weeks):
-    movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
+def movements_file(movements_path: str, filter_row_weeks: Callable):
+    # movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
+    movements_file = pd.read_csv(filepath_or_buffer=movements_path, sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     # weeks = sorted(list(set(movements_file['week_end'])))[0]
     # weeks_filter_partial = partial(filter_row_weeks, weeks)
@@ -160,22 +162,26 @@ def movements_file(filter_row_weeks):
     return movements_file
 
 
-def stores_file(year: int):
-    stores_file = pd.read_csv(f'raw_data/{year}/Annual_Files/stores_{year}.tsv',sep = '\t', header = 0)
+def stores_file(stores_path: str, year: int):
+    # stores_file = pd.read_csv(f'raw_data/{year}/Annual_Files/stores_{year}.tsv', sep = '\t', header = 0)
+    stores_file = pd.read_csv(filepath_or_buffer=stores_path, sep = '\t', header = 0)
     stores_file = stores_file[['store_code_uc', 'store_zip3', 'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr']]
     return stores_file
 
 
-def products_file():
-    products_file = pd.read_csv(f'raw_data/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
+def products_file(products_path: str):
+    # products_file = pd.read_csv(f'raw_data/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
+    products_file = pd.read_csv(filepath_or_buffer=products_path, sep = '\t', encoding='latin1')
     products_file = products_file[products_file['upc'].duplicated(keep=False)]
     products_file = products_file[['upc', 'upc_descr', 'brand_code_uc', 'brand_descr','multi', 'product_module_code', 'product_group_code']]
     return products_file
 
 
-def extra_attributes_file(moves_data: pd.DataFrame, year: int):
+def extra_attributes_file(extra_attributes_path: str, moves_data: pd.DataFrame, year: int):
+    # products_extra_attributes = pd.read_csv(f'raw_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
+    products_extra_attributes = pd.read_csv(filepath_or_buffer=extra_attributes_path, sep  = '\t', header = 0)
     unique_upcs = set(moves_data['upc'])
-    products_extra_attributes = pd.read_csv(f'raw_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
+
     products_extra_attributes = products_extra_attributes[products_extra_attributes['upc'].isin(unique_upcs)]
     products_extra_attributes = products_extra_attributes[['upc','style_code','style_descr','type_code','type_descr','strength_code','strength_descr']]
     return products_extra_attributes
