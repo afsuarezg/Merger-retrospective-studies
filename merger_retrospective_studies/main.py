@@ -248,7 +248,8 @@ def run():
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv' ,
                                      stores_path='raw_data/2013/Annual_Files/stores_2013.tsv' ,
                                      products_path='raw_data/Master_Files/Latest/products.tsv',
-                                     extra_attributes_path='raw_data/2013/Annual_Files/products_extra_2013.tsv')
+                                     extra_attributes_path='raw_data/2013/Annual_Files/products_extra_2013.tsv', 
+                                     num_weeks=3)
     
     # Creación de instrumentos
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
