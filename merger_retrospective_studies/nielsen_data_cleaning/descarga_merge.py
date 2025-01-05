@@ -12,6 +12,7 @@ PRODUCT_MODULE = 7460
 NROWS = 20000000
 YEAR = 2014
 WEEKS = [20140125, 20140201]
+
 # WEEKS = [20140125]
 
 def test():
@@ -36,6 +37,10 @@ def filter_market_ids(row):
 
 def filter_row_weeks(row, weeks):
     return row['week_end'] in [weeks]
+
+
+def filter_row_weeks(row):
+    return row['week_end'] in WEEKS
 
 
 def unit_price(row):
@@ -147,9 +152,9 @@ def store_dict_to_json(data, filename):
 def movements_file(filter_row_weeks):
     movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
-    weeks = sorted(list(set(movements_file['week_end'])))[0]
-    weeks_filter_partial = partial(filter_row_weeks, weeks)
-    movements_file = movements_file[movements_file.apply(weeks_filter_partial, axis=1)]
+    # weeks = sorted(list(set(movements_file['week_end'])))[0]
+    # weeks_filter_partial = partial(filter_row_weeks, weeks)
+    # movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
 
 
