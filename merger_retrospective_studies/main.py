@@ -29,13 +29,113 @@ DEPARTMENT_CODE = 4510 #aka product_group_code
 YEAR = 2014
 # WEEKS = [20140125, 20140201]
 
-def product_data_main(main_dir: str,
+
+def product_data_comparison(main_dir: str,
                       movements_path:str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
                       first_week: int=0,
-                      num_weeks: int=2):
+                      num_weeks: int=2,
+                      rcl: bool= True):
+    # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
+    os.chdir(path= main_dir)
+
+    # Descarga los datos
+    movements_data = movements_file(movements_path=movements_path, 
+                                    filter_row_weeks=filter_row_weeks, 
+                                    first_week=first_week, 
+                                    num_weeks=num_weeks)
+    print('movements_data:', movements_data.shape)
+    print(sorted(set(movements_data['week_end'])))
+    sys.exit()
+    stores_data = stores_file(stores_path=stores_path, year=2013)
+    print('stores_data: ', stores_data.shape)
+    products_data = products_file(products_path=products_path)
+    print('product_data: ', products_data.shape)
+    extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
+                                                  moves_data=movements_data,
+                                                  year=2013)
+    print('extra_ats: ', extra_attributes_data.shape )
+
+    # Combina los datos
+    product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
+    print('1 product_data: ', product_data.shape)
+    product_data = pd.merge(product_data, products_data, on='upc', how='left')
+    print('2 product_data: ', product_data.shape)
+    product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
+    print('3 product_data: ', product_data.shape)
+
+    # Crea variables 
+    product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
+    product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
+    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)
+    product_data['firm_ids'] = None
+    product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
+    product_data['total_income'] = product_data.apply(total_income, axis=1)
+    product_data['total_individual_units'] = product_data.apply(total_units, axis=1)
+    product_data['unitary_price'] = product_data.apply(unitary_price, axis=1)
+   
+    # Cambia el nombre de una variable
+    product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
+
+    # Agrega ventas a nivel de tienda y marca 
+    product_data = product_data.groupby(['market_ids', 'brand_descr', 'store_code_uc'], as_index=False).agg({
+                'zip':'first' ,
+                'week_end':'first' ,
+                'week_end_ID':'first',
+            #     'upc':'first', # se pierde al agregar a través de marcas
+                'market_ids_fips':'first',
+                'fips_state_code':'first', 
+                'fips_state_descr':'first', 
+                'fips_county_code':'first', 
+                'fips_county_descr':'first',
+                'firm_ids':'first', #No está definido aún. 
+                'brand_code_uc': 'first',
+                'brand_descr':'first',
+                'units': 'sum',
+                'unitary_price':'mean',#,No vale la pena agregarlo porque no se puede calcular como el promedio simple de todas las observaciones
+                'price': 'mean',
+                'total_individual_units': 'sum',
+                'total_income': 'sum',
+                
+            #     'prices': 'mean'  ,
+            #     'total dollar sales': 'sum' ,
+                'style_code': 'mean' ,
+                'style_descr': 'first',
+                'type_code': 'mean' ,
+                'type_descr': 'first' ,
+                'strength_code': 'mean',
+                'strength_descr': 'first', 
+            #     'total dollar sales': 'sum',   # Summing up the 'Value1' column
+            #     'Value2': 'mean'   # Calculating mean of the 'Value2' column
+            })
+
+    product_data.rename(columns={'unitary_price':'unitary_price_x_reemplazar', 'price':'price_x_reemplazar'}, inplace=True)
+    
+    # Crea variable precios
+    product_data['prices'] = product_data.apply(price, axis=1)
+
+    # Elimina ventas que no tienen identificada la marca
+    product_data = product_data[product_data['brand_code_uc'].notna()]
+
+    # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
+    product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+
+    return product_data
+
+
+
+
+def product_data_rcl(main_dir: str,
+                      movements_path:str,
+                      stores_path:str,
+                      products_path:str,
+                      extra_attributes_path: str,
+                      first_week: int=0,
+                      num_weeks: int=2,
+                      rcl: bool= True):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -244,7 +344,7 @@ def instruments_main(product_data: pd.DataFrame):
 
 
 def run():
-    product_data = product_data_main(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
+    product_data = product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv' ,
                                      stores_path='raw_data/2013/Annual_Files/stores_2013.tsv' ,
                                      products_path='raw_data/Master_Files/Latest/products.tsv',

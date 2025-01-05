@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 
-def load_price_predictions(data, directory):
+def load_price_predictions(data: pd.DataFrame, directory: str=os.getcwd()):
     pattern = 'price_predictions_'
     iteration = 1
     files = sorted(os.listdir(directory), key=lambda x: int(re.search(r'_(\d+)\.json', x).group(1)))
@@ -15,6 +15,8 @@ def load_price_predictions(data, directory):
             this_data = json.load(f)
         data[f'price_prediction_{iteration}'] = this_data['price_prediction']
         iteration += 1
+    
+    return data
 
 
 def calculate_stats(row):
@@ -43,5 +45,25 @@ def plot_histogram(data_descriptive, prediction_columns):
     plt.show()
 
 
+def main():
+    os.chdir('/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions')      
+    with open('price_predictions_0.json', 'r') as file:
+        data = json.load(file)
+    
+    data = load_price_predictions(data=data)
+    data = pd.DataFrame(data)
+    
+    prediction_columns = [col for col in data.columns if col.startswith("price_prediction")]
+
+    stats = data[prediction_columns].apply(calculate_stats, axis=1)
+    data = pd.concat([data, stats], axis=1)
+
+    print('ran')
+
+    
+
+
 if __name__ == '__main__':
-    pass
+    main()
+    
+
