@@ -33,7 +33,8 @@ def product_data_main(main_dir: str,
                       movements_path:str,
                       stores_path:str,
                       products_path:str,
-                      extra_attributes_path: str):
+                      extra_attributes_path: str,
+                      week: int=1):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -41,6 +42,7 @@ def product_data_main(main_dir: str,
     movements_data = movements_file(movements_path=movements_path, filter_row_weeks=filter_row_weeks)
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
+    sys.exit()
     stores_data = stores_file(stores_path=stores_path, year=2013)
     print('stores_data: ', stores_data.shape)
     products_data = products_file(products_path=products_path)
@@ -216,6 +218,25 @@ def product_data_main(main_dir: str,
     return product_data
 
 
+def instruments_main(product_data: pd.DataFrame):
+    # Creación de instrumentos
+    formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
+    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
+    blp_instruments = pd.DataFrame(blp_instruments)
+    blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
+
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
+
+    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
+    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
+
+    print(type(blp_instruments))
+    print(type(local_instruments))
+    print(type(quadratic_instruments))
+
+    return formulation, blp_instruments, local_instruments, quadratic_instruments
 
 
 def run():
