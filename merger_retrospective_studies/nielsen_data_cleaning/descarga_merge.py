@@ -12,6 +12,7 @@ PRODUCT_MODULE = 7460
 NROWS = 20000000
 YEAR = 2014
 WEEKS = [20140125, 20140201]
+WEEKS = [20130105, 20130112]
 
 # WEEKS = [20140125]
 
@@ -154,7 +155,7 @@ def movements_file(filter_row_weeks):
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     # weeks = sorted(list(set(movements_file['week_end'])))[0]
     # weeks_filter_partial = partial(filter_row_weeks, weeks)
-    # movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
+    movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
 
 
