@@ -35,14 +35,21 @@ def run():
 
     # Descarga los datos
     movements_data = movements_file()
+    print('movements_data:', movements_data.shape)
     stores_data = stores_file(year=2013)
+    print('stores_data: ', stores_data.shape)
     products_data = products_file()
+    print('product_data: ', products_data.shape)
     extra_attributes_data = extra_attributes_file(moves_data=movements_data, year=2013)
+    print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
+    print('1 product_data: ', product_data.shape)
     product_data = pd.merge(product_data, products_data, on='upc', how='left')
+    print('2 product_data: ', product_data.shape)
     product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
+    print('3 product_data: ', product_data.shape)
 
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
@@ -142,7 +149,7 @@ def run():
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
-    
+
     print(0, set(product_data['brand_descr']))
     print(1, characteristics.keys())
     print(2, characteristics)
