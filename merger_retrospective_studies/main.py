@@ -36,6 +36,7 @@ def run():
     # Descarga los datos
     movements_data = movements_file(filter_row_weeks)
     print('movements_data:', movements_data.shape)
+    print(set(movements_file['week_end']))
     sys.exit()
     stores_data = stores_file(year=2013)
     print('stores_data: ', stores_data.shape)
