@@ -3,6 +3,7 @@ import pandas as pd
 import re
 import json
 import datetime
+from functools import partial 
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -33,7 +34,7 @@ def filter_market_ids(row):
     return row['market_ids'] in MARKET_IDS_FILTER
 
 
-def filter_row_weeks(row):
+def filter_row_weeks(row, weeks):
     return row['week_end'] in weeks
 
 
@@ -143,11 +144,12 @@ def store_dict_to_json(data, filename):
         json.dump(data, f)
 
 
-def movements_file():
+def movements_file(filter_row_weeks):
     movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     weeks = sorted(list(set(movements_file['week_end'])))[0]
-    movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
+    weeks_filter_partial = partial(filter_row_weeks, weeks)
+    movements_file = movements_file[movements_file.apply(weeks_filter_partial, axis=1)]
     return movements_file
 
 

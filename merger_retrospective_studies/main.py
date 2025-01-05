@@ -8,7 +8,7 @@ import json
 
 # from dotenv import load_dotenv
 
-from .nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
+from .nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier, filter_row_weeks
 from .nielsen_data_cleaning.caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
 from .nielsen_data_cleaning.empresas import find_company, brands_by_company
 from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
@@ -34,7 +34,7 @@ def run():
     os.chdir(f'/oak/stanford/groups/polinsky/Mergers/cigarettes')
 
     # Descarga los datos
-    movements_data = movements_file()
+    movements_data = movements_file(filter_row_weeks)
     print('movements_data:', movements_data.shape)
     sys.exit()
     stores_data = stores_file(year=2013)
