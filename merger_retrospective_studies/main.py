@@ -36,6 +36,7 @@ def run():
     # Descarga los datos
     movements_data = movements_file()
     print('movements_data:', movements_data.shape)
+    sys.exit()
     stores_data = stores_file(year=2013)
     print('stores_data: ', stores_data.shape)
     products_data = products_file()
