@@ -34,12 +34,16 @@ def product_data_main(main_dir: str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
-                      week: int=1):
+                      first_week: int=0,
+                      num_weeks: int=2):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
     # Descarga los datos
-    movements_data = movements_file(movements_path=movements_path, filter_row_weeks=filter_row_weeks)
+    movements_data = movements_file(movements_path=movements_path, 
+                                    filter_row_weeks=filter_row_weeks, 
+                                    first_week=first_week, 
+                                    num_weeks=num_weeks)
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
     sys.exit()

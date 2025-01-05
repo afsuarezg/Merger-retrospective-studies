@@ -152,11 +152,11 @@ def store_dict_to_json(data, filename):
         json.dump(data, f)
 
 
-def movements_file(movements_path: str, filter_row_weeks: Callable):
+def movements_file(movements_path: str, filter_row_weeks: Callable, first_week: int=0, num_weeks: int=1):
     # movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = pd.read_csv(filepath_or_buffer=movements_path, sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
-    weeks = list(sorted(list(set(movements_file['week_end'])))[0:2])
+    weeks = list(sorted(list(set(movements_file['week_end'])))[first_week:first_week+num_weeks])
     # Apply the filtering function
     movements_file = movements_file[movements_file.apply(lambda row: filter_row_weeks(row, weeks), axis=1)]
 
