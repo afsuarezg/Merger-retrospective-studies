@@ -35,7 +35,7 @@ def filter_market_ids(row):
 
 
 def filter_row_weeks(row, weeks):
-    return row['week_end'] in weeks
+    return row['week_end'] in [weeks]
 
 
 def unit_price(row):
