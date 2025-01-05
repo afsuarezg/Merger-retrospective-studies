@@ -34,7 +34,7 @@ def filter_market_ids(row):
 
 
 def filter_row_weeks(row):
-    return row['week_end'] in WEEKS
+    return row['week_end'] in weeks
 
 
 def unit_price(row):
@@ -146,6 +146,7 @@ def store_dict_to_json(data, filename):
 def movements_file():
     movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
+    weeks = sorted(list(set(movements_file['week_end'])))[0]
     movements_file = movements_file[movements_file.apply(filter_row_weeks, axis=1)]
     return movements_file
 
