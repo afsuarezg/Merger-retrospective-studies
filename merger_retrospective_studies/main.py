@@ -37,7 +37,6 @@ def run():
     movements_data = movements_file(filter_row_weeks)
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    sys.exit()
     stores_data = stores_file(year=2013)
     print('stores_data: ', stores_data.shape)
     products_data = products_file()
