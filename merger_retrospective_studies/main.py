@@ -159,7 +159,6 @@ def product_data_rcl(main_dir: str,
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    sys.exit()
     stores_data = stores_file(stores_path=stores_path, year=2013)
     print('stores_data: ', stores_data.shape)
     products_data = products_file(products_path=products_path)
