@@ -480,8 +480,8 @@ def run():
 
     ####### Agregando información sociodemográfica #########
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    output = process_file('raw_data/otros/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('raw_data/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    output = process_file('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
