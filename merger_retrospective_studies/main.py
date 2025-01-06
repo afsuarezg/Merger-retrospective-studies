@@ -159,13 +159,12 @@ def product_data_rcl(main_dir: str,
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    stores_data = stores_file(stores_path=stores_path, year=2013)
+    stores_data = stores_file(stores_path=stores_path)
     print('stores_data: ', stores_data.shape)
     products_data = products_file(products_path=products_path)
     print('product_data: ', products_data.shape)
     extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
-                                                  moves_data=movements_data,
-                                                  year=2013)
+                                                  moves_data=movements_data)
     print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
@@ -331,6 +330,8 @@ def product_data_rcl(main_dir: str,
        'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
        'nicotine_mg_per_cig'])
     
+    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+
     return product_data
 
 
@@ -357,10 +358,10 @@ def instruments_main(product_data: pd.DataFrame):
 
 def run():
     product_data = product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
-                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv' ,
-                                     stores_path='raw_data/2013/Annual_Files/stores_2013.tsv' ,
+                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
+                                     stores_path='raw_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='raw_data/Master_Files/Latest/products.tsv',
-                                     extra_attributes_path='raw_data/2013/Annual_Files/products_extra_2013.tsv', 
+                                     extra_attributes_path='raw_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=1,
                                      num_weeks=1)
     
@@ -397,7 +398,7 @@ def run():
     agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
     agent_data_pop.reset_index(inplace=True, drop=True)
 
-    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
     
     demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
     demographic_sample.replace(-1, np.nan, inplace=True)
@@ -424,7 +425,7 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
-    product_data = product_data.reset_index()
+    # product_data = product_data.reset_index()
     
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     print(product_data.shape)
@@ -442,10 +443,10 @@ def run():
     # print("Is the local_instruments index sequential?", is_sequential_local_instruments)
     # print("Is the quadratic_instruments index sequential?", is_sequential_quadratic_instruments)
 
-    condition = product_data['fraction_identified_earnings']>=0.5
-    kept_data = product_data.loc[condition].index
+    # condition = product_data['fraction_identified_earnings']>=0.4
+    # kept_data = product_data.loc[condition].index
 
-    product_data = product_data.loc[kept_data]
+    # product_data = product_data.loc[kept_data]
 
     local_instruments = local_instruments.loc[kept_data]
     quadratic_instruments = quadratic_instruments.loc[kept_data]
@@ -479,7 +480,6 @@ def run():
 
     # Salvando datos
     nivel_de_agregacion = 'retailer'
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/product_data_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/blp_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/local_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/quadratic_instruments_{nivel_de_agregacion}_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)

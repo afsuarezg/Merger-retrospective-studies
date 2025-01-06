@@ -166,7 +166,7 @@ def movements_file(movements_path: str, filter_row_weeks: Callable, first_week: 
     return movements_file
 
 
-def stores_file(stores_path: str, year: int):
+def stores_file(stores_path: str):
     # stores_file = pd.read_csv(f'raw_data/{year}/Annual_Files/stores_{year}.tsv', sep = '\t', header = 0)
     stores_file = pd.read_csv(filepath_or_buffer=stores_path, sep = '\t', header = 0)
     stores_file = stores_file[['store_code_uc', 'store_zip3', 'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr']]
@@ -181,7 +181,7 @@ def products_file(products_path: str):
     return products_file
 
 
-def extra_attributes_file(extra_attributes_path: str, moves_data: pd.DataFrame, year: int):
+def extra_attributes_file(extra_attributes_path: str, moves_data: pd.DataFrame):
     # products_extra_attributes = pd.read_csv(f'raw_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
     products_extra_attributes = pd.read_csv(filepath_or_buffer=extra_attributes_path, sep  = '\t', header = 0)
     unique_upcs = set(moves_data['upc'])
