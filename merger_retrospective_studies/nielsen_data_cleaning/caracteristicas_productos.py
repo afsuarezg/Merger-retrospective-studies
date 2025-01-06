@@ -4,7 +4,7 @@ import json
 from thefuzz import process
 
 
-with open('/oak/stanford/groups/polinsky/Mergers/cigarettes/caracteristicas_productos/caracteristicas_productos.json', 'r') as file:
+with open('/oak/stanford/groups/polinsky/Mergers/cigarettes/Caracteristicas_productos/caracteristicas_productos.json', 'r') as file:
     characteristics = pd.DataFrame(json.load(file))
 
 
