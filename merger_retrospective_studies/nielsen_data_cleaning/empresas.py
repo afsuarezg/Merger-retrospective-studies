@@ -11,7 +11,7 @@ import json
 # # Normalize the path (handles "..")
 # absolute_path = os.path.normpath(absolute_path)
 
-with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/firms_brands_mapping.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/firms_brands_mapping.json", 'r') as file:
     brands_by_company = json.load(file)
 
 

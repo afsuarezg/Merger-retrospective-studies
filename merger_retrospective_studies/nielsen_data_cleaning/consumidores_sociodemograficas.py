@@ -37,8 +37,8 @@ def read_non_whitespace_lines(filename):
 def read_file_with_guessed_encoding(file_path):
     # First, guess the encoding
     with open(file_path, 'rb') as file:
-        raw_data = file.read()
-    encoding_guessed = chardet.detect(raw_data).get('encoding')
+        Nielsen_data = file.read()
+    encoding_guessed = chardet.detect(Nielsen_data).get('encoding')
     print(encoding_guessed)
 
     # Now, read the file with the detected encoding

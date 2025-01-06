@@ -153,7 +153,7 @@ def store_dict_to_json(data, filename):
 
 
 def movements_file(movements_path: str, filter_row_weeks: Callable, first_week: int=0, num_weeks: int=1):
-    # movements_file = pd.read_csv(f'raw_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
+    # movements_file = pd.read_csv(f'Nielsen_data/2013/Movement_Files/4510_2013/7460_2013.tsv', sep  = '\t', header = 0, index_col = None)
     movements_file = pd.read_csv(filepath_or_buffer=movements_path, sep  = '\t', header = 0, index_col = None)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
     weeks = list(sorted(list(set(movements_file['week_end'])))[first_week:first_week+num_weeks])
@@ -167,14 +167,14 @@ def movements_file(movements_path: str, filter_row_weeks: Callable, first_week: 
 
 
 def stores_file(stores_path: str):
-    # stores_file = pd.read_csv(f'raw_data/{year}/Annual_Files/stores_{year}.tsv', sep = '\t', header = 0)
+    # stores_file = pd.read_csv(f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv', sep = '\t', header = 0)
     stores_file = pd.read_csv(filepath_or_buffer=stores_path, sep = '\t', header = 0)
     stores_file = stores_file[['store_code_uc', 'store_zip3', 'fips_state_code', 'fips_state_descr', 'fips_county_code', 'fips_county_descr']]
     return stores_file
 
 
 def products_file(products_path: str):
-    # products_file = pd.read_csv(f'raw_data/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
+    # products_file = pd.read_csv(f'Nielsen_data/Master_Files/Latest/products.tsv', sep = '\t', encoding='latin1')
     products_file = pd.read_csv(filepath_or_buffer=products_path, sep = '\t', encoding='latin1')
     products_file = products_file[products_file['upc'].duplicated(keep=False)]
     products_file = products_file[['upc', 'upc_descr', 'brand_code_uc', 'brand_descr','multi', 'product_module_code', 'product_group_code']]
@@ -182,7 +182,7 @@ def products_file(products_path: str):
 
 
 def extra_attributes_file(extra_attributes_path: str, moves_data: pd.DataFrame):
-    # products_extra_attributes = pd.read_csv(f'raw_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
+    # products_extra_attributes = pd.read_csv(f'Nielsen_data/{year}/Annual_Files/products_extra_{year}.tsv', sep  = '\t', header = 0)
     products_extra_attributes = pd.read_csv(filepath_or_buffer=extra_attributes_path, sep  = '\t', header = 0)
     unique_upcs = set(moves_data['upc'])
 

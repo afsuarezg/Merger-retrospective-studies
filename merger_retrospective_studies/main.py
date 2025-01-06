@@ -357,8 +357,8 @@ def creating_instruments_data(product_data: pd.DataFrame):
 
 
 def creating_agent_data(product_data: pd.DataFrame):
-    output = process_file('raw_data/otros/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('raw_data/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    output = process_file('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
@@ -448,10 +448,10 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
 
 def run():
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
-                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/raw_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
-                                     stores_path='raw_data/2014/Annual_Files/stores_2014.tsv' ,
-                                     products_path='raw_data/Master_Files/Latest/products.tsv',
-                                     extra_attributes_path='raw_data/2014/Annual_Files/products_extra_2014.tsv', 
+                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
+                                     stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
+                                     products_path='Nielsen_data/Master_Files/Latest/products.tsv',
+                                     extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=3,
                                      num_weeks=1)
     
