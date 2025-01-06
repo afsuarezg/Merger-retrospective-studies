@@ -452,7 +452,7 @@ def run():
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
-                                     first_week=3,
+                                     first_week=4,
                                      num_weeks=1)
     
     # Crea directorio para guardar las predicciones
