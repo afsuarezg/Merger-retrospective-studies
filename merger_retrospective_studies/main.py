@@ -443,9 +443,6 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
 
-
-
-
 def run():
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
