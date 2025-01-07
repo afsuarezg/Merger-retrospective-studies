@@ -70,13 +70,12 @@ def creating_product_data_for_comparison(main_dir: str,
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    stores_data = stores_file(stores_path=stores_path, year=2013)
+    stores_data = stores_file(stores_path=stores_path)
     print('stores_data: ', stores_data.shape)
     products_data = products_file(products_path=products_path)
     print('product_data: ', products_data.shape)
     extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
-                                                  moves_data=movements_data,
-                                                  year=2013)
+                                                  moves_data=movements_data)
     print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
