@@ -138,8 +138,6 @@ def creating_product_data_for_comparison(main_dir: str,
     return product_data
 
 
-
-
 def creating_product_data_rcl(main_dir: str,
                       movements_path:str,
                       stores_path:str,
@@ -224,7 +222,6 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
 
-
     # Identificar porción de ventas identificadas para cada tienda a través de ingresos 
     total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
     total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
@@ -234,9 +231,11 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data.merge(total_sales_per_marketid, 
                                     how ='left',
                                     on=['market_ids','store_code_uc'])
+
     product_data = product_data.merge(total_sales_identified_per_marketid, 
                                   how='left',
                                   on=['market_ids','store_code_uc'])
+    
     product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
     # product_data['total_income_market_known_brands'].fillna(0.0, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
@@ -244,7 +243,9 @@ def creating_product_data_rcl(main_dir: str,
     # Suma total de unidades vendidas por tienda 
     total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids',
                                                                  'store_code_uc'], as_index=False).agg({'units': 'sum'}))
+    
     total_sold_units_per_marketid.rename(columns={'units':'total_units_retailer'}, inplace=True)
+    
     product_data = product_data.merge(total_sold_units_per_marketid, 
                                   how ='left',
                                   on=['market_ids','store_code_uc'])
@@ -267,6 +268,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
     # Asignación de las marcas por empresa 
+    print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
@@ -451,6 +453,12 @@ def run():
                                      first_week=15,
                                      num_weeks=1)
     
+    # Save product_data DataFrame to the specified directory
+    output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
+    os.makedirs(output_dir, exist_ok=True)
+    product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
+    
+    sys.exit()
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}', exist_ok=True)
