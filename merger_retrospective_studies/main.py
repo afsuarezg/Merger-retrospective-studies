@@ -593,7 +593,7 @@ def run():
             #     iter += 1
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
             
-            predicted_prices = predict_prices(product_data = product_data,
+            predicted_prices = predict_prices(product_data = consolidated_product_data,
                                                 results = results, 
                                                 merger=[3,0])
 
