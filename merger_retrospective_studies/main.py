@@ -287,7 +287,7 @@ def creating_product_data_rcl(main_dir: str,
 
 
     product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from Nielsen')
-    product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
+    product_data = product_data.merge(characteristics, how='left', left_on='from characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
     
     # Organizando el dataframe
