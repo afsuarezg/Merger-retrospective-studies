@@ -286,7 +286,7 @@ def creating_product_data_rcl(main_dir: str,
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/brands_to_characteristics2.json')
 
 
-    product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from_nielsen')
+    product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from Nielsen')
     product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
     
