@@ -287,7 +287,9 @@ def creating_product_data_rcl(main_dir: str,
 
     print('4 product_data: ', product_data.shape)
     product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from Nielsen')
+    print('4.1 product_data: ', product_data.shape)
     product_data = product_data.merge(characteristics, how='left', left_on='from characteristics', right_on='name')
+    print('4.2 product_data: ', product_data.shape)
     product_data = product_data[product_data['name'].notna()]
     print('5 product_data: ', product_data.shape)
 
