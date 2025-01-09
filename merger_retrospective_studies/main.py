@@ -268,16 +268,16 @@ def creating_product_data_rcl(main_dir: str,
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
     # Asignación de las marcas por empresa 
-    print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
+    # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['firm']=product_data.apply(find_company, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
 
-    print(0, set(product_data['brand_descr']))
-    print(1, characteristics.keys())
-    print(2, characteristics)
+    # print(0, set(product_data['brand_descr']))
+    # print(1, characteristics.keys())
+    # print(2, characteristics)
     # match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
     # print(3, match_bases_datos)
     # characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
@@ -285,11 +285,12 @@ def creating_product_data_rcl(main_dir: str,
 
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/brands_to_characteristics2.json')
 
-
+    print('4 product_data: ', product_data.shape)
     product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from Nielsen')
     product_data = product_data.merge(characteristics, how='left', left_on='from characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
-    
+    print('5 product_data: ', product_data.shape)
+
     # Organizando el dataframe
     product_data = product_data[['market_ids', 'market_ids_fips',
                              #variables relativas a la ubicacion
@@ -316,7 +317,7 @@ def creating_product_data_rcl(main_dir: str,
     # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
-    
+    print('6 product_data: ', product_data.shape)
     # Creacion de dataframe organizando por nivel de ingresos identificados 
     markets_characterization =product_data[['zip',
                           'market_ids_string',
@@ -330,11 +331,10 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data[(product_data['fraction_identified_earnings'] >0.4 )].reset_index()
     del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
-
+    print('7 product_data: ', product_data.shape)
     # Elimina productos con características no identificadas
-    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co',
-       'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis',
-       'nicotine_mg_per_cig'])
+    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 
+                                               'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
     
     product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
 
