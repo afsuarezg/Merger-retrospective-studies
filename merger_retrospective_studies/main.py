@@ -278,11 +278,15 @@ def creating_product_data_rcl(main_dir: str,
     print(0, set(product_data['brand_descr']))
     print(1, characteristics.keys())
     print(2, characteristics)
-    match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
-    print(3, match_bases_datos)
-    characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
-    print(4, characteristics_matches)
-    product_data = product_data.merge(characteristics_matches, how='left', left_on='brand_descr', right_on='from_nielsen')
+    # match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
+    # print(3, match_bases_datos)
+    # characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
+    # print(4, characteristics_matches)
+
+    brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/brands_to_characteristics2.json')
+
+
+    product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from_nielsen')
     product_data = product_data.merge(characteristics, how='left', left_on='from_characteristics', right_on='name')
     product_data = product_data[product_data['name'].notna()]
     
@@ -322,7 +326,8 @@ def creating_product_data_rcl(main_dir: str,
                           'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
     
     # Creación de identificador numérico para los productos
-    product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    product_data = product_data[(product_data['fraction_identified_earnings'] >0.4 )].reset_index()
     del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
 
@@ -453,11 +458,13 @@ def run():
                                      first_week=15,
                                      num_weeks=1)
     
+
+    
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
-    
+
     sys.exit()
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None

@@ -11,7 +11,7 @@ import json
 # # Normalize the path (handles "..")
 # absolute_path = os.path.normpath(absolute_path)
 
-with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/firms_brands_mapping.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
     brands_by_company = json.load(file)
 
 
@@ -50,6 +50,14 @@ def find_company(row):
     else:
         return 0
 
+
+def find_company(row):
+    for company in brands_by_company.keys():
+        if row['brand_descr'] in brands_by_company[company]:
+            return company
+    else:
+        return 0
+    
 
 def main():
     os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')  
