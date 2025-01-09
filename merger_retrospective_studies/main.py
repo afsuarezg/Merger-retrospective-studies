@@ -273,7 +273,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
     # Adición de información sobre características de los productos
-    product_data['brand_descr']=product_data['brand_descr'].str.lower()
+    # product_data['brand_descr']=product_data['brand_descr'].str.lower()
+    
 
     # print(0, set(product_data['brand_descr']))
     # print(1, characteristics.keys())
