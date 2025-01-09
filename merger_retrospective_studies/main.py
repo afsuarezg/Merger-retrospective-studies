@@ -274,7 +274,11 @@ def creating_product_data_rcl(main_dir: str,
 
     # Adición de información sobre características de los productos
     # product_data['brand_descr']=product_data['brand_descr'].str.lower()
-    
+
+        # Save product_data DataFrame to the specified directory
+    output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
+    os.makedirs(output_dir, exist_ok=True)
+    product_data.to_csv(os.path.join(output_dir, 'product_data_previo.csv'), index=False)
 
     # print(0, set(product_data['brand_descr']))
     # print(1, characteristics.keys())
