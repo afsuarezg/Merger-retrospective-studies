@@ -309,7 +309,7 @@ def creating_product_data_rcl(main_dir: str,
                              #variables relativas a caracteristicas del producto obtenidas de Nielsen      
 #                            'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr', 
                              #variables para hacer el merge con las características de los productos
-                            'from_nielsen', 'from_characteristics', 'name', 
+                            'from Nielsen', 'from characteristics', 'name', 
                              #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
