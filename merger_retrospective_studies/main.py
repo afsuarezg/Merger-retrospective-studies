@@ -273,7 +273,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
     # Adición de información sobre características de los productos
-    # product_data['brand_descr']=product_data['brand_descr'].str.lower()
+    product_data['brand_descr']=product_data['brand_descr'].str.lower()
+
 
         # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
@@ -289,11 +290,12 @@ def creating_product_data_rcl(main_dir: str,
     # print(4, characteristics_matches)
 
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/brands_to_characteristics2.json')
+    brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
 
     print('4 product_data: ', product_data.shape)
-    product_data = product_data.merge(brands_to_characteristics, how='left', left_on='brand_descr', right_on='from Nielsen')
+    product_data = product_data.merge(brands_to_characteristics, how='inner', left_on='brand_descr', right_on='from Nielsen')
     print('4.1 product_data: ', product_data.shape)
-    product_data = product_data.merge(characteristics, how='left', left_on='from characteristics', right_on='name')
+    product_data = product_data.merge(characteristics, how='inner', left_on='from characteristics', right_on='name')
     print('4.2 product_data: ', product_data.shape)
     product_data = product_data[product_data['name'].notna()]
     print('5 product_data: ', product_data.shape)
