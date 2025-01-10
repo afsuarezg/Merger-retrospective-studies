@@ -17,7 +17,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     print('-'*10+'RCL with demographics'+ '-'*10)                      
     
-    consolidated_product_data=pd.concat([product_data,blp_inst], axis=1)
+    consolidated_product_data=pd.concat([product_data,local_inst], axis=1)
     dict_rename = rename_instruments(consolidated_product_data)
     consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
 
@@ -57,12 +57,17 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     sigma_lower = np.zeros(initial_sigma.shape)
     sigma_upper = np.tril(np.ones(initial_sigma.shape)) * np.inf
 
+    # beta bounds 
+    beta_lower = -100*np.ones((1,1))
+    beta_upper = np.zeros((1,1))
+
     # Resultados del problema
     results = problem.solve(
         initial_sigma,
         initial_pi,
         optimization=optimization,
         sigma_bounds=(sigma_lower, sigma_upper),
+        beta_bounds = (beta_lower, beta_upper), 
         method='1s'
     )
 
@@ -86,6 +91,10 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
     # Step 2: Create a new problem instance with the computed optimal instruments
     updated_problem = instrument_results.to_problem()
 
+    # beta bounds 
+    beta_lower = -100*np.ones((1,1))
+    beta_upper = np.zeros((1,1))
+
     # Step 3: Solve the updated problem with the same sigma and pi as the original results
     # Use the 'bfgs' optimization method with a gradient tolerance of 1e-5, and solve using '1s' method
     updated_results = updated_problem.solve(
@@ -93,7 +102,8 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
         sigma=results.sigma,
         pi=results.pi,
         optimization=pyblp.Optimization('bfgs', {'gtol': 1e-5}),
-        method='1s'
+        method='1s',
+        beta_bounds=(beta_lower, beta_upper)
     )
 
     # Return the updated results

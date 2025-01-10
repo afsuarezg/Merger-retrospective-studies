@@ -613,10 +613,13 @@ def run():
                             agent_data=agent_data)
             # if results.converged == True:
             #     iter += 1
-            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
+
+            optimal_results = results_optimal_instruments(results=results)
+
+            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
             
             predicted_prices = predict_prices(product_data = consolidated_product_data,
-                                                results = results, 
+                                                results = optimal_results, 
                                                 merger=[3,0])
 
             # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
