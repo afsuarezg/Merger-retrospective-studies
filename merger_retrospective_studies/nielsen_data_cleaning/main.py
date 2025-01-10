@@ -9,7 +9,7 @@ import sys
 
 from .descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier
 from .caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
-from .empresas import find_company, brands_by_company
+from .empresas import find_company_pre_merger, find_company_post_merger, brands_by_company
 from .consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from .precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 from ..estimaciones.plain_logit import plain_logit
@@ -131,7 +131,7 @@ def run():
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
     # Asignación de las marcas por empresa 
-    product_data['firm']=product_data.apply(find_company, axis=1)
+    product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
 
     # Adición de información sobre características de los productos

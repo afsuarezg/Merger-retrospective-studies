@@ -10,7 +10,7 @@ import json
 
 from .nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier, filter_row_weeks
 from .nielsen_data_cleaning.caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
-from .nielsen_data_cleaning.empresas import find_company, brands_by_company
+from .nielsen_data_cleaning.empresas import find_company_pre_merger, find_company_post_merger, brands_by_company
 from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from .nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 from .estimaciones.plain_logit import plain_logit
@@ -268,14 +268,18 @@ def creating_product_data_rcl(main_dir: str,
 
     # Asignación de las marcas por empresa 
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
-    product_data['firm']=product_data.apply(find_company, axis=1)
+    product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
+
+    product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
+    product_data['firm_ids_post_meger']=(pd.factorize(product_data['firm_post_merger']))[0]
+
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
 
 
-        # Save product_data DataFrame to the specified directory
+    # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data_previo.csv'), index=False)

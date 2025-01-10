@@ -6,13 +6,17 @@ import json
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # # Construct the absolute path to cigarettes.json
-# absolute_path = os.path.join(current_dir, "../brands_by_company/cigarettes.json")
+# absolute_path = os.path.join(current_dir, "../brands_by_company_pre_merger/cigarettes.json")
 
 # # Normalize the path (handles "..")
 # absolute_path = os.path.normpath(absolute_path)
 
 with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
-    brands_by_company = json.load(file)
+    brands_by_company_pre_merger = json.load(file)
+
+
+with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/cigarette_ownership_post_merger.json", 'r') as file:
+    brands_by_company_post_merger = json.load(file)
 
 
 def list_unique_elements_per_group(df, group_col, value_col):
@@ -43,21 +47,29 @@ def list_of_files():
     return list_of_files
 
 
-def find_company(row):
-    for company in brands_by_company.keys():
-        if row['brand_descr'] in brands_by_company[company]['brands']:
+def find_company_pre_merger_discontinued(row):
+    for company in brands_by_company_pre_merger.keys():
+        if row['brand_descr'] in brands_by_company_pre_merger[company]['brands']:
             return company
     else:
         return 0
 
 
-def find_company(row):
-    for company in brands_by_company.keys():
-        if row['brand_descr'] in brands_by_company[company]:
+def find_company_pre_merger(row):
+    for company in brands_by_company_pre_merger.keys():
+        if row['brand_descr'] in brands_by_company_pre_merger[company]:
             return company
     else:
         return 0
-    
+
+
+def find_company_post_merger(row):
+    for company in brands_by_company_pre_merger.keys():
+        if row['brand_descr'] in brands_by_company_post_merger[company]:
+            return company
+    else:
+        return 0
+
 
 def main():
     os.chdir('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis')  
@@ -68,4 +80,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print(brands_by_company)   
+    print(brands_by_company_pre_merger)   
