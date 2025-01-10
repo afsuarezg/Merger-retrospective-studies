@@ -49,7 +49,6 @@ def creating_product_data_for_comparison(main_dir: str,
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
-    sys.exit()
     stores_data = stores_file(stores_path=stores_path)
     print('stores_data: ', stores_data.shape)
     products_data = products_file(products_path=products_path)
@@ -474,7 +473,6 @@ def run():
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
 
-    sys.exit()
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}', exist_ok=True)
