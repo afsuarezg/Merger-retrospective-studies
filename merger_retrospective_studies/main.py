@@ -224,30 +224,18 @@ def creating_product_data_rcl(main_dir: str,
     # Identificar porción de ventas identificadas para cada tienda a través de ingresos 
     total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
     total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
-    total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids','store_code_uc'],
-                            as_index=False).agg({'total_income': 'sum'}))
+    total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids','store_code_uc'],as_index=False).agg({'total_income': 'sum'}))
     total_sales_identified_per_marketid = total_sales_identified_per_marketid.rename(columns={'total_income':'total_income_market_known_brands'})
-    product_data = product_data.merge(total_sales_per_marketid, 
-                                    how ='left',
-                                    on=['market_ids','store_code_uc'])
-
-    product_data = product_data.merge(total_sales_identified_per_marketid, 
-                                  how='left',
-                                  on=['market_ids','store_code_uc'])
+    product_data = product_data.merge(total_sales_per_marketid, how ='left', on=['market_ids','store_code_uc'])
+    product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on=['market_ids','store_code_uc'])
     
     product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
-    # product_data['total_income_market_known_brands'].fillna(0.0, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
 
     # Suma total de unidades vendidas por tienda 
-    total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids',
-                                                                 'store_code_uc'], as_index=False).agg({'units': 'sum'}))
-    
+    total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids', 'store_code_uc'], as_index=False).agg({'units': 'sum'}))
     total_sold_units_per_marketid.rename(columns={'units':'total_units_retailer'}, inplace=True)
-    
-    product_data = product_data.merge(total_sold_units_per_marketid, 
-                                  how ='left',
-                                  on=['market_ids','store_code_uc'])
+    product_data = product_data.merge(total_sold_units_per_marketid, how ='left', on=['market_ids','store_code_uc'])
 
     # Elimina ventas que no tienen identificada la marca
     product_data = product_data[product_data['brand_code_uc'].notna()]
@@ -255,7 +243,6 @@ def creating_product_data_rcl(main_dir: str,
     # Adición de información poblacional.
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
-
     fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int')
     fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
     product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
@@ -270,7 +257,6 @@ def creating_product_data_rcl(main_dir: str,
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
-
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
     product_data['firm_ids_post_meger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
