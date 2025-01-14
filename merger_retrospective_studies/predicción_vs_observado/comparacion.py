@@ -175,7 +175,7 @@ def main():
 
 
 def main2():
-    product_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
+    product_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                       movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2016/Movement_Files/4510_2016/7460_2016.tsv',
                       stores_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2016/Annual_Files/stores_2016.tsv',
                       products_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/Master_Files/Latest/products.tsv',

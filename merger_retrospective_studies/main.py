@@ -373,8 +373,8 @@ def creating_instruments_data(product_data: pd.DataFrame):
 
 
 def creating_agent_data(product_data: pd.DataFrame):
-    output = process_file('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
@@ -460,7 +460,7 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
 
 
 def run():
-    product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
+    product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
@@ -497,8 +497,8 @@ def run():
 
     ####### Agregando información sociodemográfica #########
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    output = process_file('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Mergers/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
