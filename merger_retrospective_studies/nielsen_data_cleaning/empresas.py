@@ -11,11 +11,11 @@ import json
 # # Normalize the path (handles "..")
 # absolute_path = os.path.normpath(absolute_path)
 
-with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
     brands_by_company_pre_merger = json.load(file)
 
 
-with open("/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/cigarette_ownership_post_merger.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger.json", 'r') as file:
     brands_by_company_post_merger = json.load(file)
 
 
@@ -64,7 +64,7 @@ def find_company_pre_merger(row):
 
 
 def find_company_post_merger(row):
-    for company in brands_by_company_pre_merger.keys():
+    for company in brands_by_company_post_merger.keys():
         if row['brand_descr'] in brands_by_company_post_merger[company]:
             return company
     else:

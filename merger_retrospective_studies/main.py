@@ -127,7 +127,7 @@ def creating_product_data_for_comparison(main_dir: str,
 
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    output_dir = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Observed/{week_dir}/'
+    output_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Observed/{week_dir}/'
     os.makedirs(output_dir, exist_ok=True)
     # product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
 
@@ -274,13 +274,11 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
     product_data['firm_ids_post_meger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
-
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
 
-
     # Save product_data DataFrame to the specified directory
-    output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
+    output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data_previo.csv'), index=False)
 
@@ -292,7 +290,7 @@ def creating_product_data_rcl(main_dir: str,
     # characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
     # print(4, characteristics_matches)
 
-    brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/cigarettes/Firmas_marcas/brands_to_characteristics2.json')
+    brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')
     brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
 
     print('4 product_data: ', product_data.shape)
@@ -463,25 +461,22 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
 
 def run():
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
-                                     movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
+                                     movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=15,
                                      num_weeks=1)
     
-
-    
     # Save product_data DataFrame to the specified directory
-    output_dir = '/oak/stanford/groups/polinsky/Mergers/cigarettes/Pruebas'
+    output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
 
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
-
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
 
     ########## Creación de instrumentos ##########
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
@@ -591,11 +586,11 @@ def run():
 
 
     ######### Salvando datos ###########
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/{week_dir}', exist_ok=True)
-    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
+    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     # plain_logit(product_data = product_data, inst_data = local_instruments)
     
@@ -620,17 +615,17 @@ def run():
 
             optimal_results = results_optimal_instruments(results=results)
 
-            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
+            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
             
             predicted_prices = predict_prices(product_data = consolidated_product_data,
                                                 results = optimal_results, 
                                                 merger=[3,0])
 
-            # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
+            # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
             predicted_prices = predicted_prices.tolist()
             price_pred_df = consolidated_product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
             price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Predicted/{week_dir}/price_predictions_{iter}.json', index=False)
+            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/price_predictions_{iter}.json', index=False)
 
             # optimal_results = results_optimal_instruments(results)
         except Exception as e:

@@ -17,7 +17,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     print('-'*10+'RCL with demographics'+ '-'*10)                      
     
-    consolidated_product_data=pd.concat([product_data,local_inst], axis=1)
+    consolidated_product_data=pd.concat([product_data,quad_inst], axis=1)
     dict_rename = rename_instruments(consolidated_product_data)
     consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
 

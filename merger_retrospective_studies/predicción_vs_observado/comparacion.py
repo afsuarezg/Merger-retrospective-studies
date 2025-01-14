@@ -148,7 +148,7 @@ def creating_product_data_for_comparison(main_dir: str,
 
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    output_dir = f'/oak/stanford/groups/polinsky/Mergers/cigarettes/Observed/{week_dir}/'
+    output_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Observed/{week_dir}/'
     os.makedirs(output_dir, exist_ok=True)
     # product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
 
@@ -159,7 +159,7 @@ def creating_product_data_for_comparison(main_dir: str,
 
 
 def main():
-    os.chdir('/oak/stanford/groups/polinsky/Mergers/cigarettes/results/price_predictions')      
+    os.chdir('/oak/stanford/groups/polinsky/Mergers/Cigarettes/results/price_predictions')      
     with open('price_predictions_0.json', 'r') as file:
         data = json.load(file)
     
@@ -176,10 +176,10 @@ def main():
 
 def main2():
     product_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/cigarettes',
-                      movements_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2016/Movement_Files/4510_2016/7460_2016.tsv',
-                      stores_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2016/Annual_Files/stores_2016.tsv',
-                      products_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/Master_Files/Latest/products.tsv',
-                      extra_attributes_path='/oak/stanford/groups/polinsky/Mergers/cigarettes/Nielsen_data/2016/Annual_Files/products_extra_2016.tsv',
+                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2016/Movement_Files/4510_2016/7460_2016.tsv',
+                      stores_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2016/Annual_Files/stores_2016.tsv',
+                      products_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/Master_Files/Latest/products.tsv',
+                      extra_attributes_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2016/Annual_Files/products_extra_2016.tsv',
                       first_week=4,
                       num_weeks=1)
 
