@@ -143,7 +143,8 @@ def creating_product_data_rcl(main_dir: str,
                       products_path:str,
                       extra_attributes_path: str,
                       first_week: int=0,
-                      num_weeks: int=1):
+                      num_weeks: int=1,
+                      fractioned_identfied_earning: float=0.5):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -324,7 +325,7 @@ def creating_product_data_rcl(main_dir: str,
     
     # Creación de identificador numérico para los productos
     # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    product_data = product_data[(product_data['fraction_identified_earnings'] >0.4 )].reset_index()
+    product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identfied_earning)].reset_index()
     del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
     print('7 product_data: ', product_data.shape)
@@ -452,7 +453,8 @@ def run():
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=15,
-                                     num_weeks=1)
+                                     num_weeks=1, 
+                                     fractioned_identfied_earning=0.3)
     
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
