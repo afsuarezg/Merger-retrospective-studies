@@ -481,7 +481,7 @@ def run():
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=16,
                                      num_weeks=1, 
-                                     fractioned_identified_earning=0.2)
+                                     fractioned_identified_earning=0.34)
     
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
