@@ -291,7 +291,7 @@ def creating_product_data_rcl(main_dir: str,
     # Organizando el dataframe
     product_data = product_data[['market_ids', 'market_ids_fips',
                              #variables relativas a la ubicacion
-                             'store_code_uc', 'zip', 'fip', 'fips_state_code',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
+                             'store_code_uc', 'zip', 'FIPS', 'GESTFIPS',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
                              #variables relativas al tiempo
                              'week_end', 'week_end_ID', 
                              #variables relativas a la compania y a la marca
@@ -600,7 +600,7 @@ def run():
     #                          quad_inst=quadratic_instruments)
 
     iter =  0
-    while iter <= 20:
+    while iter <= 2:
         print('------------------------------')
         print(iter)
         print('------------------------------')
