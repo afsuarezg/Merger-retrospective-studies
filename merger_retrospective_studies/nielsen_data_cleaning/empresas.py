@@ -12,13 +12,15 @@ import json
 # absolute_path = os.path.normpath(absolute_path)
 
 with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
-    brands_by_company_pre_merger = json.load(file)
-    brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_pre_merger.items()}
+    # brands_by_company_pre_merger = 
+    # brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_pre_merger.items()}
+    brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
+
 
 
 with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger.json", 'r') as file:
-    brands_by_company_post_merger = json.load(file)
-    brands_by_company_post_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_post_merger.items()}
+    # brands_by_company_post_merger = json.load(file)
+    brands_by_company_post_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
 
 
 def list_unique_elements_per_group(df, group_col, value_col):

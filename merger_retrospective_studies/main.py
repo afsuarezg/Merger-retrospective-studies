@@ -259,6 +259,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
+    
+
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
 
@@ -598,7 +600,7 @@ def run():
     #                          blp_inst=blp_instruments,
     #                          local_inst=local_instruments,
     #                          quad_inst=quadratic_instruments)
-
+    sys.exit()
     iter =  0
     while iter <= 2:
         print('------------------------------')
