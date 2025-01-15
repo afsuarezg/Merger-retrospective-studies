@@ -246,7 +246,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
     fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
     product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
-   
+    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+
     # Calculo de participaciones de mercado incluyendo la participación del bien externo. 
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
@@ -285,6 +286,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data[product_data['name'].notna()]
     print('5 product_data: ', product_data.shape)
 
+    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
+
     # Organizando el dataframe
     product_data = product_data[['market_ids', 'market_ids_fips',
                              #variables relativas a la ubicacion
@@ -322,15 +325,13 @@ def creating_product_data_rcl(main_dir: str,
     
     # Creación de identificador numérico para los productos
     # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identified_earning)].reset_index()
-    del product_data['index']
+    # product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identified_earning)].reset_index()
+    # del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
     print('7 product_data: ', product_data.shape)
     # Elimina productos con características no identificadas
-    product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 
-                                               'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
     
-    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+
 
     return product_data
 
@@ -480,9 +481,9 @@ def run():
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
-                                     first_week=15,
+                                     first_week=16,
                                      num_weeks=1, 
-                                     fractioned_identfied_earning=0.3)
+                                     fractioned_identfied_earning=0.2)
     
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
@@ -586,7 +587,6 @@ def run():
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
-
     ######### Salvando datos ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
@@ -602,7 +602,7 @@ def run():
     #                          quad_inst=quadratic_instruments)
 
     iter =  0
-    while iter <= 20:
+    while iter <= 2:
         print('------------------------------')
         print(iter)
         print('------------------------------')
@@ -707,7 +707,7 @@ def run2():
             optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
             
             predicted_prices = predict_prices(product_data = consolidated_product_data,
-                                                results = optimal_results, 
+                                                results = results, 
                                                 merger=[3,0])
 
             # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
