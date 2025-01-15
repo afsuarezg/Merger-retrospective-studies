@@ -149,8 +149,7 @@ def creating_product_data_rcl(main_dir: str,
     movements_data = movements_file(movements_path=movements_path, 
                                     filter_row_weeks=filter_row_weeks, 
                                     first_week=first_week, 
-                                    num_weeks=num_weeks,
-                                    nrows=50000)
+                                    num_weeks=num_weeks)
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
