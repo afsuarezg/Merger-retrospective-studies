@@ -538,7 +538,7 @@ def run():
 
 
     ##### Filtrar base a partir de ventas identificadas########
-    condition = product_data['fraction_identified_earnings']>=0.4
+    condition = product_data['fraction_identified_earnings']>=0.3
     kept_data = product_data.loc[condition].index
 
     product_data = product_data.loc[kept_data]
