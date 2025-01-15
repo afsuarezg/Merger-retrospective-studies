@@ -561,42 +561,42 @@ def add_random_nodes(demographic_sample, mean=0, std_dev=1, num_nodes=5):
 
 
 def main():
-    # product_data = pd.read_csv('6.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-04 18:37:37.916473.csv')
-    # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    # output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    # agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
-    # column_names = output.keys()
-    # agent_data_pop.columns = column_names
-    # agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-    # agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
-    # agent_data_pop.reset_index(inplace=True, drop=True)
+    product_data = pd.read_csv('6.product_data_postinst_Reynolds_Lorillard_retailer_2024-12-04 18:37:37.916473.csv')
+    encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    column_names = output.keys()
+    agent_data_pop.columns = column_names
+    agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
+    agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
+    agent_data_pop.reset_index(inplace=True, drop=True)
 
-    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
     
-    # demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
-    # demographic_sample.replace(-1, np.nan, inplace=True)
+    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    demographic_sample.replace(-1, np.nan, inplace=True)
 
-    # knn_imputer = KNNImputer(n_neighbors=2)
-    # demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
-    #                             columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
-    #                                     'ptdtrace_imputed', 'peeduca_imputed'])
+    knn_imputer = KNNImputer(n_neighbors=2)
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
+                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
+                                        'ptdtrace_imputed', 'peeduca_imputed'])
 
-    # grouped = demographic_sample.groupby('GESTFIPS').size()
+    grouped = demographic_sample.groupby('GESTFIPS').size()
 
-    # demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
-    # demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
-    # demographic_sample = add_random_nodes(demographic_sample)
+    demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
+    demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
+    demographic_sample = add_random_nodes(demographic_sample)
 
-    # demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
-    #                                         'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-    #                                         'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-    #                                         'ptdtrace_imputed', 'peeduca_imputed']]
+    demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
+                                            'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
+                                            'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
+                                            'ptdtrace_imputed', 'peeduca_imputed']]
     
-    # agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
-    #                                   demographic_sample, 
-    #                                   how='inner', 
-    #                                   left_on='GESTFIPS',
-    #                                   right_on='GESTFIPS')
+    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
+                                      demographic_sample, 
+                                      how='inner', 
+                                      left_on='GESTFIPS',
+                                      right_on='GESTFIPS')
 
 
 
