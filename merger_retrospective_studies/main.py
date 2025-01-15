@@ -122,10 +122,7 @@ def creating_product_data_for_comparison(main_dir: str,
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
 
-    # Save product_data DataFrame to the specified location
-
-
-    # Crea directorio para guardar las predicciones
+    # Save product_data DataFrame to the specified location     
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     output_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Observed/{week_dir}/'
     os.makedirs(output_dir, exist_ok=True)
@@ -144,7 +141,7 @@ def creating_product_data_rcl(main_dir: str,
                       extra_attributes_path: str,
                       first_week: int=0,
                       num_weeks: int=1,
-                      fractioned_identfied_earning: float=0.5):
+                      fractioned_identified_earning: float=0.5):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -325,7 +322,7 @@ def creating_product_data_rcl(main_dir: str,
     
     # Creación de identificador numérico para los productos
     # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identfied_earning)].reset_index()
+    product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identified_earning)].reset_index()
     del product_data['index']
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
     print('7 product_data: ', product_data.shape)
@@ -346,7 +343,6 @@ def creating_instruments_data(product_data: pd.DataFrame):
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
     local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
     quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
@@ -359,9 +355,13 @@ def creating_instruments_data(product_data: pd.DataFrame):
     return formulation, blp_instruments, local_instruments, quadratic_instruments
 
 
-def creating_agent_data(product_data: pd.DataFrame):
-    output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+def creating_agent_data(product_data: pd.DataFrame, 
+                        record_layout_path: str, 
+                        agent_data_path: str):
+    
+    output = process_file(record_layout_path)
+    agent_data_pop = pd.read_fwf(agent_data_path, widths= [int(elem) for elem in output.values()] )
+
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
@@ -401,9 +401,10 @@ def creating_agent_data(product_data: pd.DataFrame):
 def filtering_data_by_identified_sales(product_data: pd.DataFrame,
                                        blp_instruments: pd.DataFrame, 
                                        local_instruments: pd.DataFrame,
-                                       quadratic_instruments: pd.DataFrame):
+                                       quadratic_instruments: pd.DataFrame, 
+                                       threshold_identified_earnings: float=0.4):
     
-    condition = product_data['fraction_identified_earnings']>=0.4
+    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
 
     product_data = product_data.loc[kept_data]
@@ -423,9 +424,14 @@ def filtering_data_by_identified_sales(product_data: pd.DataFrame,
 def filtering_data_by_number_brands(product_data: pd.DataFrame,
                                     blp_instruments: pd.DataFrame, 
                                     local_instruments: pd.DataFrame,
-                                    quadratic_instruments: pd.DataFrame):
+                                    quadratic_instruments: pd.DataFrame, 
+                                    num_brands_by_market: int=2):
+    """
+    
+    
+    """
     market_counts = product_data['market_ids'].value_counts()
-    valid_markets = market_counts[market_counts >= 2].index
+    valid_markets = market_counts[market_counts >= num_brands_by_market].index
     product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
     local_instruments = local_instruments.loc[product_data.index]
@@ -444,6 +450,28 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
                                     agent_data: pd.DataFrame):
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+    return agent_data, product_data
+
+
+def save_processed_data(product_data, blp_instruments, local_instruments, quadratic_instruments, agent_data):
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
+    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+
+
+def save_product_data(product_data: pd.DataFrame, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+    product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
+
+
+def create_directories(product_data: pd.DataFrame):
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
 
 
 def run():
@@ -472,7 +500,6 @@ def run():
     blp_instruments = pd.DataFrame(blp_instruments)
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
     local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
@@ -520,24 +547,11 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
-    # product_data = product_data.reset_index()
-    
     # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
     print(product_data.shape)
     print(blp_instruments.shape)
     print(local_instruments.shape)
     print(quadratic_instruments.shape) 
-
-    # is_sequential_product_data = (product_data.index == range(len(product_data))).all()
-    # is_sequential_blp_instruments = (blp_instruments.index == range(len(blp_instruments))).all()
-    # is_sequential_local_instruments = (local_instruments.index == range(len(local_instruments))).all()
-    # is_sequential_quadratic_instruments = (quadratic_instruments.index == range(len(quadratic_instruments))).all()
-
-    # print("Is the product_data index sequential?", is_sequential_product_data)
-    # print("Is the blp_instruments index sequential?", is_sequential_blp_instruments)
-    # print("Is the local_instruments index sequential?", is_sequential_local_instruments)
-    # print("Is the quadratic_instruments index sequential?", is_sequential_quadratic_instruments)
-
 
     ##### Filtrar base a partir de ventas identificadas########
     condition = product_data['fraction_identified_earnings']>=0.3
@@ -626,5 +640,92 @@ def run():
     print('fin')
 
 
-if __name__=='__main__':
+
+def run2():
+    product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
+                                     movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
+                                     stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
+                                     products_path='Nielsen_data/Master_Files/Latest/products.tsv',
+                                     extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
+                                     first_week=15,
+                                     num_weeks=1, 
+                                     fractioned_identfied_earning=0.3)
+    
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+
+
+    ######### Save product_data DataFrame to the specified directory ###########
+    save_product_data(product_data, '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas')
+
+    ########## Creación de instrumentos ##########
+    formulation, blp_instruments, local_instruments, quadratic_instruments = creating_instruments_data(product_data=product_data)
+
+    ####### Agregando información sociodemográfica #########
+    agent_data = creating_agent_data(product_data=product_data, 
+                                    record_layout_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt',
+                                    agent_data_pop='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat')
+
+    ##### Filtrar base a partir de ventas identificadas########
+    product_data, blp_instruments, local_instruments, quadratic_instruments = filtering_data_by_identified_sales(product_data= product_data,
+                                                                                                                 blp_instruments=blp_instruments,
+                                                                                                                 local_instruments= local_instruments,
+                                                                                                                 quadratic_instruments=quadratic_instruments,
+                                                                                                                 threshold_identified_earnings=0.3)
+
+    ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## 
+    product_data, blp_instruments, local_instruments, quadratic_instruments = filtering_data_by_number_brands(product_data=product_data,
+                                                                                                              blp_instruments=blp_instruments, 
+                                                                                                              local_instruments=local_instruments,
+                                                                                                              quadratic_instruments=quadratic_instruments,
+                                                                                                              num_brands_by_market = 2)    
+
+    ######### Manteniendo la información en agents y data con iguales market_ids ##########
+    agent_data, product_data = matching_agent_and_product_data(product_data = product_data,
+                                                               agent_data = agent_data)
+
+    ######### Salvando datos ###########
+    create_directories(product_data)
+    save_processed_data(blp_instruments, local_instruments, quadratic_instruments, agent_data)
+
+    ###### Random coefficients logit ########
+    iter =  0
+    while iter <= 20:
+        print('------------------------------')
+        print(iter)
+        print('------------------------------')
+        try:
+            results, consolidated_product_data = rcl_with_demographics(product_data=product_data,
+                                                                        blp_inst=blp_instruments,
+                                                                        local_inst=local_instruments,
+                                                                        quad_inst=quadratic_instruments,
+                                                                        agent_data=agent_data)
+            # if results.converged == True:
+            #     iter += 1
+
+            optimal_results = results_optimal_instruments(results=results)
+
+            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
+            
+            predicted_prices = predict_prices(product_data = consolidated_product_data,
+                                                results = optimal_results, 
+                                                merger=[3,0])
+
+            # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
+            predicted_prices = predicted_prices.tolist()
+            price_pred_df = consolidated_product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+            price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
+            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/price_predictions_{iter}.json', index=False)
+
+            # optimal_results = results_optimal_instruments(results)
+        except Exception as e:
+            print(e)
+            
+
+        iter += 1
+        
+
+    print('fin')
+
+
+if __name__=='__main__': 
     run()
