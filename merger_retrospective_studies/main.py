@@ -149,7 +149,8 @@ def creating_product_data_rcl(main_dir: str,
     movements_data = movements_file(movements_path=movements_path, 
                                     filter_row_weeks=filter_row_weeks, 
                                     first_week=first_week, 
-                                    num_weeks=num_weeks)
+                                    num_weeks=num_weeks,
+                                    nrows=10000)
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
@@ -226,7 +227,6 @@ def creating_product_data_rcl(main_dir: str,
     total_sales_identified_per_marketid = total_sales_identified_per_marketid.rename(columns={'total_income':'total_income_market_known_brands'})
     product_data = product_data.merge(total_sales_per_marketid, how ='left', on=['market_ids','store_code_uc'])
     product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on=['market_ids','store_code_uc'])
-    
     product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
 
@@ -254,12 +254,12 @@ def creating_product_data_rcl(main_dir: str,
 
     # Asignación de las marcas por empresa 
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
+
+
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
-
-    
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
@@ -291,27 +291,27 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
 
     # Organizando el dataframe
-    product_data = product_data[['market_ids', 'market_ids_fips',
-                             #variables relativas a la ubicacion
-                             'store_code_uc', 'zip', 'FIPS', 'GESTFIPS',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
-                             #variables relativas al tiempo
-                             'week_end', 'week_end_ID', 
-                             #variables relativas a la compania y a la marca
-                             'firm', 'firm_ids', 'brand_code_uc', 'brand_descr',
-                             #varibles relativas a cantidades
-                             'units', 'total_individual_units', 'total_units_retailer',
-                             #variables relativas a partipación del mercado 
-                             'shares', 'poblacion_census_2020',
-                             #variables relativas a ingresos totales
-                             'total_income', 'total_income_market_known_brands','total_income_market', 'fraction_identified_earnings',
-                             #variablers relagtivas a los precios 
-                             'prices',
-                             #variables relativas a caracteristicas del producto obtenidas de Nielsen      
-#                            'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr', 
-                             #variables para hacer el merge con las características de los productos
-                            'from Nielsen', 'from characteristics', 'name', 
-                             #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
-                             'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
+#     product_data = product_data[['market_ids', 'market_ids_fips',
+#                              #variables relativas a la ubicacion
+#                              'store_code_uc', 'zip', 'FIPS', 'GESTFIPS',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
+#                              #variables relativas al tiempo
+#                              'week_end', 'week_end_ID', 
+#                              #variables relativas a la compania y a la marca
+#                              'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr',
+#                              #varibles relativas a cantidades
+#                              'units', 'total_individual_units', 'total_units_retailer',
+#                              #variables relativas a partipación del mercado 
+#                              'shares', 'poblacion_census_2020',
+#                              #variables relativas a ingresos totales
+#                              'total_income', 'total_income_market_known_brands','total_income_market', 'fraction_identified_earnings',
+#                              #variablers relagtivas a los precios 
+#                              'prices',
+#                              #variables relativas a caracteristicas del producto obtenidas de Nielsen      
+# #                            'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr', 
+#                              #variables para hacer el merge con las características de los productos
+#                             'from Nielsen', 'from characteristics', 'name', 
+#                              #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
+#                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
     # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
@@ -475,6 +475,21 @@ def create_directories(product_data: pd.DataFrame):
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
 
 
+def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
+
+    return product_data[['market_ids', 'market_ids_string',
+                        'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
+                        'week_end', 'week_end_ID',
+                        'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
+                        'units', 'total_individual_units', 'total_units_retailer',
+                        'shares', 'poblacion_census_2020',
+                        'total_income', 'total_income_market_known_brands', 'total_income_market', 'fraction_identified_earnings',
+                        'prices',
+                        'from Nielsen', 'from characteristics', 'name',
+                        'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
+
+
+
 def run():
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
@@ -485,6 +500,8 @@ def run():
                                      num_weeks=1, 
                                      fractioned_identified_earning=0.34)
     
+    product_data = select_product_data_columns(product_data=product_data)
+
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)

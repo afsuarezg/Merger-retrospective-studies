@@ -11,14 +11,13 @@ import json
 # # Normalize the path (handles "..")
 # absolute_path = os.path.normpath(absolute_path)
 
-with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger_lower_case.json", 'r') as file:
     # brands_by_company_pre_merger = 
     # brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_pre_merger.items()}
     brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
 
 
-
-with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger.json", 'r') as file:
+with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger_lower_case.json", 'r') as file:
     # brands_by_company_post_merger = json.load(file)
     brands_by_company_post_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
 
@@ -56,23 +55,25 @@ def find_company_pre_merger_discontinued(row):
         if row['brand_descr'] in brands_by_company_pre_merger[company]['brands']:
             return company
     else:
-        return 0
+        return 'unidentified'
 
 
 def find_company_pre_merger(row):
+    print( brands_by_company_pre_merger )
     for company in brands_by_company_pre_merger.keys():
         if row['brand_descr'] in brands_by_company_pre_merger[company]:
             return company
     else:
-        return 0
+        return 'unidentified'
 
 
 def find_company_post_merger(row):
+    print(brands_by_company_post_merger)
     for company in brands_by_company_post_merger.keys():
         if row['brand_descr'] in brands_by_company_post_merger[company]:
             return company
     else:
-        return 0
+        return 'unidentified'
 
 
 def main():
