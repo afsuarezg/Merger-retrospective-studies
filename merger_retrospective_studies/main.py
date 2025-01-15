@@ -257,7 +257,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
-    product_data['firm_ids_post_meger']=(pd.factorize(product_data['firm_post_merger']))[0]
+    product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
     # Adición de información sobre características de los productos
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
@@ -331,8 +331,6 @@ def creating_product_data_rcl(main_dir: str,
     print('7 product_data: ', product_data.shape)
     # Elimina productos con características no identificadas
     
-
-
     return product_data
 
 
@@ -483,7 +481,7 @@ def run():
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=16,
                                      num_weeks=1, 
-                                     fractioned_identfied_earning=0.2)
+                                     fractioned_identified_earning=0.2)
     
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
