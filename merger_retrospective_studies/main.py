@@ -22,42 +22,12 @@ from .estimaciones.post_estimation import predict_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
 
 
-# with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger_lower_case.json", 'r') as file:
-#     # brands_by_company_pre_merger = 
-#     # brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_pre_merger.items()}
-#     brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
-
-
-# with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger_lower_case.json", 'r') as file:
-#     # brands_by_company_post_merger = json.load(file)
-#     brands_by_company_post_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
-
-
-# def find_company_pre_merger(row, company_brands_dict: dict):
-#     # print( brands_by_company_pre_merger )
-#     for company in brands_by_company_pre_merger.keys():
-#         if row['brand_descr'] in brands_by_company_pre_merger[company]:
-#             return company
-#     else:
-#         return 'unidentified'
-
-
-# def find_company_post_merger(row):
-#     # print(brands_by_company_post_merger)
-#     for company in brands_by_company_post_merger.keys():
-#         if row['brand_descr'] in brands_by_company_post_merger[company]:
-#             return company
-#     else:
-#         return 'unidentified'
-
-
 DIRECTORY_NAME = 'Reynolds_Lorillard'
 DEPARTMENT_CODE = 4510 #aka product_group_code
 # PRODUCT_MODULE = 7460
 # NROWS = 10000000
 YEAR = 2014
 # WEEKS = [20140125, 20140201]
-
 
 
 
@@ -297,21 +267,11 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1, company_brands_dict=brands_by_company_post_merger)
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
-    # Adición de información sobre características de los productos
-
 
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data_previo.csv'), index=False)
-
-    # print(0, set(product_data['brand_descr']))
-    # print(1, characteristics.keys())
-    # print(2, characteristics)
-    # match_bases_datos = match_brands_to_characteristics(product_data, characteristics, threshold=85)
-    # print(3, match_bases_datos)
-    # characteristics_matches=pd.DataFrame.from_dict(match_bases_datos)
-    # print(4, characteristics_matches)
 
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')
     brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
@@ -325,29 +285,6 @@ def creating_product_data_rcl(main_dir: str,
     print('5 product_data: ', product_data.shape)
 
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
-
-    # Organizando el dataframe
-#     product_data = product_data[['market_ids', 'market_ids_fips',
-#                              #variables relativas a la ubicacion
-#                              'store_code_uc', 'zip', 'FIPS', 'GESTFIPS',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
-#                              #variables relativas al tiempo
-#                              'week_end', 'week_end_ID', 
-#                              #variables relativas a la compania y a la marca
-#                              'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr',
-#                              #varibles relativas a cantidades
-#                              'units', 'total_individual_units', 'total_units_retailer',
-#                              #variables relativas a partipación del mercado 
-#                              'shares', 'poblacion_census_2020',
-#                              #variables relativas a ingresos totales
-#                              'total_income', 'total_income_market_known_brands','total_income_market', 'fraction_identified_earnings',
-#                              #variablers relagtivas a los precios 
-#                              'prices',
-#                              #variables relativas a caracteristicas del producto obtenidas de Nielsen      
-# #                            'style_code', 'style_descr', 'type_code', 'type_descr', 'strength_code', 'strength_descr', 
-#                              #variables para hacer el merge con las características de los productos
-#                             'from Nielsen', 'from characteristics', 'name', 
-#                              #relativas a características del producto obtenidas de otras fuentes, incluyendo la necesaria para hacer el merge con la base de las características  
-#                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
     # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
@@ -608,7 +545,7 @@ def run():
     print(quadratic_instruments.shape) 
 
     ##### Filtrar base a partir de ventas identificadas########
-    condition = product_data['fraction_identified_earnings']>=0.3
+    condition = product_data['fraction_identified_earnings']>=0.4
     kept_data = product_data.loc[condition].index
 
     product_data = product_data.loc[kept_data]
