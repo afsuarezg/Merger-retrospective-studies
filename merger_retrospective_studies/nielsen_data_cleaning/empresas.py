@@ -50,27 +50,25 @@ def list_of_files():
     return list_of_files
 
 
-def find_company_pre_merger_discontinued(row):
-    for company in brands_by_company_pre_merger.keys():
-        if row['brand_descr'] in brands_by_company_pre_merger[company]['brands']:
+# def find_company_pre_merger_discontinued(row):
+#     for company in brands_by_company_pre_merger.keys():
+#         if row['brand_descr'] in brands_by_company_pre_merger[company]['brands']:
+#             return company
+#     else:
+#         return 'unidentified'
+
+
+def find_company_pre_merger(row, company_brands_dict:dict):
+    for company in company_brands_dict.keys():
+        if row['brand_descr'] in company_brands_dict[company]:
             return company
     else:
         return 'unidentified'
 
 
-def find_company_pre_merger(row):
-    print( brands_by_company_pre_merger )
-    for company in brands_by_company_pre_merger.keys():
-        if row['brand_descr'] in brands_by_company_pre_merger[company]:
-            return company
-    else:
-        return 'unidentified'
-
-
-def find_company_post_merger(row):
-    print(brands_by_company_post_merger)
-    for company in brands_by_company_post_merger.keys():
-        if row['brand_descr'] in brands_by_company_post_merger[company]:
+def find_company_post_merger(row, company_brands_dict:dict):
+    for company in company_brands_dict.keys():
+        if row['brand_descr'] in company_brands_dict[company]:
             return company
     else:
         return 'unidentified'

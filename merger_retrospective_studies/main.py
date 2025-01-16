@@ -21,13 +21,48 @@ from .estimaciones.post_estimation import predict_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
 
 
+# with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_pre_merger_lower_case.json", 'r') as file:
+#     # brands_by_company_pre_merger = 
+#     # brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in brands_by_company_pre_merger.items()}
+#     brands_by_company_pre_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
 
-DIRECTORY_NAME = 'Reynolds_Lorillard'
-DEPARTMENT_CODE = 4510 #aka product_group_code
+
+# with open("/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/cigarette_ownership_post_merger_lower_case.json", 'r') as file:
+#     # brands_by_company_post_merger = json.load(file)
+#     brands_by_company_post_merger = {key: [s.lower() for s in value] for key, value in json.load(file).items()}
+
+
+# def find_company_pre_merger(row, company_brands_dict: dict):
+#     # print( brands_by_company_pre_merger )
+#     for company in brands_by_company_pre_merger.keys():
+#         if row['brand_descr'] in brands_by_company_pre_merger[company]:
+#             return company
+#     else:
+#         return 'unidentified'
+
+
+# def find_company_post_merger(row):
+#     # print(brands_by_company_post_merger)
+#     for company in brands_by_company_post_merger.keys():
+#         if row['brand_descr'] in brands_by_company_post_merger[company]:
+#             return company
+#     else:
+#         return 'unidentified'
+
+
+# DIRECTORY_NAME = 'Reynolds_Lorillard'
+# DEPARTMENT_CODE = 4510 #aka product_group_code
 # PRODUCT_MODULE = 7460
 # NROWS = 10000000
-YEAR = 2014
+# YEAR = 2014
 # WEEKS = [20140125, 20140201]
+
+
+
+
+print(brands_by_company_pre_merger)
+
+print(brands_by_company_post_merger)
 
 
 def creating_product_data_for_comparison(main_dir: str,
@@ -255,9 +290,9 @@ def creating_product_data_rcl(main_dir: str,
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
 
 
-    product_data['firm']=product_data.apply(find_company_pre_merger, axis=1)
+    product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
-    product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1)
+    product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1, company_brands_dict=brands_by_company_post_merger)
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
     # Adición de información sobre características de los productos
