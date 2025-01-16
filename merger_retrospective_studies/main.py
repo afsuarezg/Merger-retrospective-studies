@@ -289,7 +289,8 @@ def creating_product_data_rcl(main_dir: str,
 
     # Asignación de las marcas por empresa 
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
-    print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).difference(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
+    product_data['brand_descr']=product_data['brand_descr'].str.lower()
+    print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).intersection(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
 
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
@@ -297,7 +298,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
     # Adición de información sobre características de los productos
-    product_data['brand_descr']=product_data['brand_descr'].str.lower()
+
 
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
