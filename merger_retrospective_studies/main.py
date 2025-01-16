@@ -5,6 +5,7 @@ import pyblp
 import numpy as np
 import sys
 import json
+from itertools import chain
 
 # from dotenv import load_dotenv
 
@@ -50,11 +51,11 @@ from .estimaciones.optimal_instruments import results_optimal_instruments
 #         return 'unidentified'
 
 
-# DIRECTORY_NAME = 'Reynolds_Lorillard'
-# DEPARTMENT_CODE = 4510 #aka product_group_code
+DIRECTORY_NAME = 'Reynolds_Lorillard'
+DEPARTMENT_CODE = 4510 #aka product_group_code
 # PRODUCT_MODULE = 7460
 # NROWS = 10000000
-# YEAR = 2014
+YEAR = 2014
 # WEEKS = [20140125, 20140201]
 
 
@@ -288,7 +289,7 @@ def creating_product_data_rcl(main_dir: str,
 
     # Asignación de las marcas por empresa 
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
-
+    print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).difference(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
 
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
