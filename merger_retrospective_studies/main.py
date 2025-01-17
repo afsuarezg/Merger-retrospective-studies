@@ -610,7 +610,7 @@ def run():
                             quad_inst = quadratic_instruments)
     
     iter =  0
-    while iter <= 20:
+    while iter <= 5:
         print('------------------------------')
         print(iter)
         print('------------------------------')
