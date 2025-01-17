@@ -58,6 +58,52 @@ def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
     return results
 
 
+def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
+
+    # Problem formulations without demographics
+    X1_formulation = pyblp.Formulation('0 + prices ')
+    X2_formulation = pyblp.Formulation('0 + nicotine + tar + co + nicotine_mg_per_g')
+    product_formulations = (X1_formulation, X2_formulation)
+
+    # Optimization algorithm
+    optimization = pyblp.Optimization('l-bfgs-b', {'gtol': 1e-12})
+
+    # Consumer
+    agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
+
+    # Definición del problema con consumidor
+    problem = pyblp.Problem(
+                    product_formulations,
+                    product_data,
+                    agent_formulation,
+                    agent_data)
+    
+    # Sigma initial values
+    initial_sigma = np.diag(generate_random_floats(4, 0,4))
+    initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
+    
+    # Sigma bounds
+    sigma_lower = np.zeros((3,3))
+    sigma_lower = np.zeros(initial_sigma.shape)
+    sigma_upper = np.tril(np.ones(initial_sigma.shape)) * np.inf
+
+    # beta bounds 
+    beta_lower = -100*np.ones((1,1))
+    beta_upper = np.zeros((1,1))
+
+    # Results
+    results = problem.solve(
+        initial_sigma,
+        initial_pi,
+        optimization=optimization,
+        sigma_bounds=(sigma_lower, sigma_upper),
+        beta_bounds = (beta_lower, beta_upper), 
+        method='1s'
+    )
+
+    return results
+
+
 def results_optimal_instruments(results: pyblp.ProblemResults):
     """
     Computes optimal instruments, updates the problem with these instruments, 
@@ -85,7 +131,7 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
         beta=results.beta,
         sigma=results.sigma,
         pi=results.pi,
-        optimization=pyblp.Optimization('bfgs', {'gtol': 1e-5}),
+        optimization=pyblp.Optimization('bfgs', {'gtol': 1e-12}),
         method='1s',
         beta_bounds=(beta_lower, beta_upper)
     )
