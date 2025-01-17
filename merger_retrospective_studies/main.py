@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import json
 from itertools import chain
+from scipy.linalg import svd
 
 # from dotenv import load_dotenv
 
@@ -462,13 +463,52 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
                         'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
 
+def check_matrix_collinearity(matrix: pd.DataFrame, tolerance=1e-10):
+    """
+    Checks for collinearity in a matrix using SVD.
+
+    Args:
+        matrix: The input matrix (NumPy array).
+        tolerance: Threshold for determining near-zero singular values.
+
+    Returns:
+        True if collinearity is detected, False otherwise.
+    """
+    _, s, _ = svd(matrix)
+    return np.any(s < tolerance)
+
+
+def find_first_non_collinear_matrix(**dfs):
+    """
+    Finds the first DataFrame in the list that does not exhibit collinearity.
+
+    Args:
+        df_list: A list of pandas DataFrames.
+
+    Returns:
+        The first DataFrame in the list that does not have collinear columns, 
+        or None if all DataFrames exhibit collinearity.
+    """
+
+
+    for key, value in dfs.items():
+        # matrix = df.values  # Convert DataFrame to NumPy array
+        if not check_matrix_collinearity(value):
+            return value, key
+    return None
+
+
 def compile_data(product_data: pd.DataFrame,
                           blp_inst: pd.DataFrame, 
                           local_inst: pd.DataFrame, 
                           quad_inst: pd.DataFrame, 
                           agent_data: pd.DataFrame):
+    
+    inst = find_first_non_collinear_matrix(local_inst=local_inst,
+                                           quad_inst=quad_inst, 
+                                           blp_inst=blp_inst)
 
-    consolidated_product_data=pd.concat([product_data, local_inst], axis=1)
+    consolidated_product_data=pd.concat([product_data, inst], axis=1)
     dict_rename = rename_instruments(consolidated_product_data)
     consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
 
@@ -511,7 +551,7 @@ def run():
     blp_instruments = pd.DataFrame(blp_instruments)
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data)
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='local')
     local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
 
     quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
