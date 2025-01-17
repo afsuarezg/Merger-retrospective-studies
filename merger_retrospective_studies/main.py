@@ -15,7 +15,7 @@ from .nielsen_data_cleaning.empresas import find_company_pre_merger, find_compan
 from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
 from .nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
 from .estimaciones.plain_logit import plain_logit
-from .estimaciones.rcl_without_demographics import rcl_without_demographics
+from .estimaciones.rcl_without_demographics import rcl_without_demographics, rename_instruments
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation import predict_prices
@@ -462,6 +462,24 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
                         'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
 
+def compile_data(product_data: pd.DataFrame,
+                          blp_inst: pd.DataFrame, 
+                          local_inst: pd.DataFrame, 
+                          quad_inst: pd.DataFrame, 
+                          agent_data: pd.DataFrame):
+
+    consolidated_product_data=pd.concat([product_data, local_inst], axis=1)
+    dict_rename = rename_instruments(consolidated_product_data)
+    consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
+
+    # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
+    consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+    # Sort del product_data
+    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True], ignore_index=True)
+
+    return consolidated_product_data
+
 
 def run():
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
@@ -473,6 +491,8 @@ def run():
                                      num_weeks=1, 
                                      fractioned_identified_earning=0.34)
     
+    optimization_algorithm = 'l-bfgs-b'
+
     product_data = select_product_data_columns(product_data=product_data)
 
     # Save product_data DataFrame to the specified directory
@@ -482,8 +502,8 @@ def run():
 
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
 
     ########## Creación de instrumentos ##########
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
@@ -584,40 +604,29 @@ def run():
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
-    # plain_logit(product_data = product_data, inst_data = local_instruments)
+    product_data = compile_data(product_data = product_data, 
+                            blp_inst = blp_instruments, 
+                            local_ints = local_instruments, 
+                            quad_inst = quadratic_instruments)
     
-    # rcl_without_demographics(product_data=product_data,
-    #                          blp_inst=blp_instruments,
-    #                          local_inst=local_instruments,
-    #                          quad_inst=quadratic_instruments)
-
     iter =  0
     while iter <= 20:
         print('------------------------------')
         print(iter)
         print('------------------------------')
         try:
-            results, consolidated_product_data = rcl_with_demographics(product_data=product_data,
-                            blp_inst=blp_instruments,
-                            local_inst=local_instruments,
-                            quad_inst=quadratic_instruments,
-                            agent_data=agent_data)
-            # if results.converged == True:
-            #     iter += 1
+            results= rcl_with_demographics(product_data=product_data, agent_data=agent_data)
 
             optimal_results = results_optimal_instruments(results=results)
 
-            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/iteration_{iter}.pickle')
+            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
             
-            predicted_prices = predict_prices(product_data = consolidated_product_data,
-                                                results = optimal_results, 
-                                                merger=[3,0])
+            predicted_prices = predict_prices(product_data = product_data, results = optimal_results, merger=[3,0])
 
-            # predicted_prices_path = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/iteration_{iter}.json'
             predicted_prices = predicted_prices.tolist()
-            price_pred_df = consolidated_product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+            price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
             price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/price_predictions_{iter}.json', index=False)
+            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
 
             # optimal_results = results_optimal_instruments(results)
         except Exception as e:

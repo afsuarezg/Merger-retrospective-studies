@@ -9,23 +9,7 @@ from .rcl_without_demographics import rename_instruments
 from .estimaciones_utils import generate_random_sparse_array, generate_random_array, generate_random_floats
 
 
-def rcl_with_demographics(product_data: pd.DataFrame,
-                          blp_inst: pd.DataFrame, 
-                          local_inst: pd.DataFrame, 
-                          quad_inst: pd.DataFrame, 
-                          agent_data: pd.DataFrame):
-
-    print('-'*10+'RCL with demographics'+ '-'*10)                      
-    
-    consolidated_product_data=pd.concat([product_data,blp_inst], axis=1)
-    dict_rename = rename_instruments(consolidated_product_data)
-    consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
-
-    # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
-    consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
-
-    # Sort del product_data
-    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True], ignore_index=True)
+def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
 
     # Formulación del problema sin interacción con información demográfica
     X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids) + C(market_ids)')
@@ -43,7 +27,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     # Definición del problema con consumidor
     problem = pyblp.Problem(
                     product_formulations,
-                    consolidated_product_data,
+                    product_data,
                     agent_formulation,
                     agent_data)
     
@@ -71,7 +55,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         method='1s'
     )
 
-    return results, consolidated_product_data
+    return results
 
 
 def results_optimal_instruments(results: pyblp.ProblemResults):
