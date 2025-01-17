@@ -494,7 +494,8 @@ def find_first_non_collinear_matrix(**dfs):
     for key, value in dfs.items():
         # matrix = df.values  # Convert DataFrame to NumPy array
         if not check_matrix_collinearity(value):
-            return value, key
+            print(key)
+            return value
     return None
 
 
