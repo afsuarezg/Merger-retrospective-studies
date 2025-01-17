@@ -607,7 +607,8 @@ def run():
     product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
-                            quad_inst = quadratic_instruments)
+                            quad_inst = quadratic_instruments, 
+                            agent_data= agent_data)
     
     iter =  0
     while iter <= 5:
