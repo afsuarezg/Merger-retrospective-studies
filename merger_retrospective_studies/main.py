@@ -147,8 +147,7 @@ def creating_product_data_rcl(main_dir: str,
                       products_path:str,
                       extra_attributes_path: str,
                       first_week: int=0,
-                      num_weeks: int=1,
-                      fractioned_identified_earning: float=0.5):
+                      num_weeks: int=1):
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -523,14 +522,14 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
+    threshold_identified_earnings = 0.6
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
-                                     first_week=16,
-                                     num_weeks=1, 
-                                     fractioned_identified_earning=0.34)
+                                     first_week=17,
+                                     num_weeks=1)
     
     optimization_algorithm = 'l-bfgs-b'
 
@@ -606,7 +605,7 @@ def run():
     print(quadratic_instruments.shape) 
 
     ##### Filtrar base a partir de ventas identificadas########
-    condition = product_data['fraction_identified_earnings']>=0.4
+    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
 
     product_data = product_data.loc[kept_data]
