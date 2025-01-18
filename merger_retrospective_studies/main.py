@@ -522,7 +522,7 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
-    threshold_identified_earnings = 0.6
+    threshold_identified_earnings = 0.5
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
