@@ -3,6 +3,7 @@ import json
 import os
 import numpy as np
 
+_fixed_positions = None
 
 def generate_random_sparse_array(shape, start_range, end_range, k):
     """
@@ -17,6 +18,7 @@ def generate_random_sparse_array(shape, start_range, end_range, k):
     Returns:
     list: Multidimensional sparse array.
     """
+    random.seed(42)
     if any(dim <= 0 for dim in shape):
         raise ValueError("All dimensions must be positive integers.")
     if start_range > end_range:
@@ -37,6 +39,42 @@ def generate_random_sparse_array(shape, start_range, end_range, k):
         return [reshape(flat[i * sub_size:(i + 1) * sub_size], shape[1:]) for i in range(size)]
 
     return reshape(flat_array, shape)
+
+
+def create_sparse_array(shape, k, seed=42, random_seed=None):
+    """
+    Creates a multidimensional array with k random elements in fixed positions and the rest set to zero.
+    The positions remain constant across calls, but the values change.
+
+    Parameters:
+    - shape: tuple, the shape of the array
+    - k: int, number of random elements to be placed
+    - seed: int, seed to determine fixed positions (used only once)
+    - random_seed: int, optional seed for generating new values every call
+
+    Returns:
+    - numpy array of given shape with k random values in fixed positions
+    """
+    global _fixed_positions
+
+    # Initialize fixed positions only once
+    if _fixed_positions is None:
+        np.random.seed(seed)
+        indices = np.random.choice(np.prod(shape), k, replace=False)
+        _fixed_positions = np.unravel_index(indices, shape)
+
+    # Initialize array with zeros
+    array = np.zeros(shape)
+
+    # Set seed for generating new random values (if provided)
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    # Assign new random values at the fixed positions
+    random_values = np.random.rand(k)
+    array[_fixed_positions] = random_values
+
+    return array
 
 
 def generate_random_array(shape, start_range, end_range):

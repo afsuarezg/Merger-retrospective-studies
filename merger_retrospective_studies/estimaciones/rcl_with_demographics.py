@@ -6,7 +6,7 @@ import time
 import matplotlib.pyplot as plt
 
 from .rcl_without_demographics import rename_instruments
-from .estimaciones_utils import generate_random_sparse_array, generate_random_array, generate_random_floats
+from .estimaciones_utils import generate_random_sparse_array, generate_random_array, generate_random_floats, create_sparse_array
 
 
 def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
@@ -72,15 +72,16 @@ def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
 
     # Definición del problema con consumidor
-    problem = pyblp.Problem(
-                    product_formulations,
-                    product_data,
-                    agent_formulation,
-                    agent_data)
+    problem = pyblp.Problem(product_formulations,
+                            product_data,
+                            agent_formulation,
+                            agent_data)
+    
     
     # Sigma initial values
-    initial_sigma = np.diag(generate_random_floats(4, 0,4))
-    initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
+    initial_sigma = np.diag(generate_random_floats(4, 0, 4))
+    # initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
+    initial_pi = create_sparse_array((4,4), k=2)
     
     # Sigma bounds
     sigma_lower = np.zeros((3,3))

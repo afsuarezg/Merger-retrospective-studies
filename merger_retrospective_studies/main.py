@@ -225,7 +225,7 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
 
-    # Identificar porción de ventas identificadas para cada tienda a través de ingresos 
+    # Determinar porción de ventas identificadas para cada tienda a través de ingresos 
     total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
     total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
     total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids','store_code_uc'],as_index=False).agg({'total_income': 'sum'}))
@@ -598,12 +598,6 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
-    # Restringiendo la muestra a los mercados que tienen cierto nivel de ventas identificadas
-    print(product_data.shape)
-    print(blp_instruments.shape)
-    print(local_instruments.shape)
-    print(quadratic_instruments.shape) 
-
     ##### Filtrar base a partir de ventas identificadas########
     condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
