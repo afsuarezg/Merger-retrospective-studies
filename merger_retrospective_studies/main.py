@@ -192,7 +192,7 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
     product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
-    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)  //TODO: Revisar cómo se está usando esta variable porque no estoy seguro de que esté creando un ID con información de FIPS
+    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1) # //TODO Revisar cómo se está usando esta variable porque no estoy seguro de que esté creando un ID con información de FIPS
     product_data['firm_ids'] = None
     product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
     product_data['total_income'] = product_data.apply(total_income, axis=1)
@@ -248,7 +248,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on=['market_ids','store_code_uc'])
     product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
-    # //TODO: Eliminar filas de retailers con ventas identificadas inferiores a un threshold previamente definido.
+    # //TODO Eliminar filas de retailers con ventas identificadas inferiores a un threshold previamente definido.
 
     # Suma total de unidades vendidas por tienda 
     total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids', 'store_code_uc'], as_index=False).agg({'units': 'sum'}))
@@ -258,7 +258,7 @@ def creating_product_data_rcl(main_dir: str,
     # Elimina ventas que no tienen identificada la marca
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
-    # Adición de información poblacional. //TODO: Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
+    # Adición de información poblacional. //TODO Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
     fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int')
@@ -714,7 +714,7 @@ def run():
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
 
-    ########## Creación de instrumentos ########## //TODO: Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
+    ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
     blp_instruments = pd.DataFrame(blp_instruments)
