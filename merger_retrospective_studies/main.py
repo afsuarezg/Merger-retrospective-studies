@@ -142,13 +142,13 @@ def creating_product_data_for_comparison(main_dir: str,
 
 
 def creating_product_data_rcl(main_dir: str,
-
                       movements_path:str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
                       first_week: int=0,
-                      num_weeks: int=1):
+                      num_weeks: int=1, 
+                      lower_threshold_identified_sales: float=0.8):
     """
     Creates and processes product data by merging various datasets and performing multiple transformations.
     Parameters:
@@ -248,6 +248,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on=['market_ids','store_code_uc'])
     product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
     product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
+    # //TODO: Eliminar filas de retailers con ventas identificadas inferiores a un threshold previamente definido.
 
     # Suma total de unidades vendidas por tienda 
     total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids', 'store_code_uc'], as_index=False).agg({'units': 'sum'}))
@@ -690,7 +691,7 @@ def compile_data(product_data: pd.DataFrame,
 def run():
     first_week=4
     num_weeks=4
-    threshold_identified_earnings = 0.7
+    threshold_identified_earnings = 0.5
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
@@ -713,7 +714,7 @@ def run():
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
 
-    ########## Creación de instrumentos ##########
+    ########## Creación de instrumentos ########## //TODO: Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
     blp_instruments = pd.DataFrame(blp_instruments)
@@ -766,7 +767,7 @@ def run():
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
     
-    ##### Filtrar base a partir de ventas identificadas########
+    ##### Filtrar base a partir de ventas identificadas########//TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
     condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
 
@@ -781,7 +782,7 @@ def run():
     local_instruments.reset_index(drop=True, inplace=True)
     quadratic_instruments.reset_index(drop=True, inplace=True)
 
-    ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## 
+    ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
     market_counts = product_data['market_ids'].value_counts()
     valid_markets = market_counts[market_counts >= 2].index
     product_data = product_data[product_data['market_ids'].isin(valid_markets)]
