@@ -522,14 +522,16 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
-    threshold_identified_earnings = 0.5
+    first_week=4
+    num_weeks=4
+    threshold_identified_earnings = 0.7
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
-                                     first_week=17,
-                                     num_weeks=1)
+                                     first_week=first_week,
+                                     num_weeks=num_weeks)
     
     optimization_algorithm = 'l-bfgs-b'
 
@@ -538,7 +540,7 @@ def run():
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
-    product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
+    product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
 
     # Crea directorio para guardar las predicciones
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
@@ -631,7 +633,7 @@ def run():
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
-    ######### Salvando datos ###########
+    ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
@@ -679,7 +681,7 @@ def run2():
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
-                                     first_week=15,
+                                     first_week=16,
                                      num_weeks=1, 
                                      fractioned_identfied_earning=0.3)
     
