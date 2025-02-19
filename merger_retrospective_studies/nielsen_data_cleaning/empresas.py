@@ -38,6 +38,14 @@ def list_unique_elements_per_group(df, group_col, value_col):
 
 
 def list_of_files():
+    """
+    Retrieves a sorted list of files in a specified directory.
+    This function lists all files in the given directory and sorts them 
+    based on their last modification time in ascending order.
+    Returns:
+        list: A list of filenames sorted by their last modification time.
+    """
+
     dir_name = '/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/analisis'
     # Get list of all files only in the given directory
     list_of_files = filter( lambda x: os.path.isfile(os.path.join(dir_name, x)),
@@ -59,6 +67,19 @@ def list_of_files():
 
 
 def find_company_pre_merger(row, company_brands_dict:dict):
+
+    """
+    Identifies the company associated with a brand before a merger.
+    This function takes a row of data and a dictionary mapping companies to their respective brands.
+    It checks if the brand described in the row is associated with any company in the dictionary.
+    If a match is found, it returns the company name; otherwise, it returns 'unidentified'.
+    Parameters:
+    row (dict): A dictionary representing a row of data, which must contain a 'brand_descr' key.
+    company_brands_dict (dict): A dictionary where keys are company names and values are lists of brand names associated with each company.
+    Returns:
+    str: The name of the company associated with the brand, or 'unidentified' if no match is found.
+    """
+
     for company in company_brands_dict.keys():
         if row['brand_descr'] in company_brands_dict[company]:
             return company
@@ -67,6 +88,16 @@ def find_company_pre_merger(row, company_brands_dict:dict):
 
 
 def find_company_post_merger(row, company_brands_dict:dict):
+    """
+    Identifies the company associated with a brand after a merger.
+    Args:
+        row (dict): A dictionary representing a row of data, which must contain the key 'brand_descr'.
+        company_brands_dict (dict): A dictionary where keys are company names and values are lists of brand descriptions associated with each company.
+    Returns:
+        str: The name of the company associated with the brand in the given row. 
+             Returns 'unidentified' if the brand is not found in any company's list.
+    """
+
     for company in company_brands_dict.keys():
         if row['brand_descr'] in company_brands_dict[company]:
             return company

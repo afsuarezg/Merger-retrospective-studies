@@ -142,12 +142,26 @@ def creating_product_data_for_comparison(main_dir: str,
 
 
 def creating_product_data_rcl(main_dir: str,
+
                       movements_path:str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
                       first_week: int=0,
                       num_weeks: int=1):
+    """
+    Creates and processes product data by merging various datasets and performing multiple transformations.
+    Parameters:
+    main_dir (str): The main directory path where the data files are located.
+    movements_path (str): Path to the movements data file.
+    stores_path (str): Path to the stores data file.
+    products_path (str): Path to the products data file.
+    extra_attributes_path (str): Path to the extra attributes data file.
+    first_week (int, optional): The first week to filter the data. Defaults to 0.
+    num_weeks (int, optional): The number of weeks to filter the data. Defaults to 1.
+    Returns:
+    pd.DataFrame: A DataFrame containing the processed product data.
+    """
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
 
@@ -178,7 +192,7 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
     product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
-    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)
+    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)  //TODO: Revisar cómo se está usando esta variable porque no estoy seguro de que esté creando un ID con información de FIPS
     product_data['firm_ids'] = None
     product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
     product_data['total_income'] = product_data.apply(total_income, axis=1)
@@ -243,7 +257,7 @@ def creating_product_data_rcl(main_dir: str,
     # Elimina ventas que no tienen identificada la marca
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
-    # Adición de información poblacional.
+    # Adición de información poblacional. //TODO: Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
     fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int')
@@ -253,11 +267,11 @@ def creating_product_data_rcl(main_dir: str,
     product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
     product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
 
-    # Calculo de participaciones de mercado incluyendo la participación del bien externo. 
+    # Calculo de participaciones de mercado incluyendo la participación del bien externo. //TODO Revisar que las participaciones de mercado estimadas del modelo sean cercanas a las observadas en otros estudios. Aunque es difícil que ocurra porque no se tiene toda la demanda por ubicación geográfica.
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
-    # Asignación de las marcas por empresa 
+    # Asignación de las marcas por empresa -> Realiza el mapping entre las marcas disponibles en la base de datos y las empresas propietarias de las mismas.
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
     print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).intersection(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
@@ -271,8 +285,10 @@ def creating_product_data_rcl(main_dir: str,
     # Save product_data DataFrame to the specified directory
     output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
     os.makedirs(output_dir, exist_ok=True)
-    product_data.to_csv(os.path.join(output_dir, 'product_data_previo.csv'), index=False)
+    product_data.to_csv(os.path.join(output_dir, f'product_data_previo.csv'), index=False)
 
+
+    # Agrega características de los productos al archivo de product data
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')
     brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
 
@@ -286,17 +302,17 @@ def creating_product_data_rcl(main_dir: str,
 
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
 
-    # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
+    # Cambio del nombre de IDS de mercados y genera indicador numérico para estos 
     product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
     print('6 product_data: ', product_data.shape)
     # Creacion de dataframe organizando por nivel de ingresos identificados 
-    markets_characterization =product_data[['zip',
-                          'market_ids_string',
-                          'market_ids',
-                          'total_income_market',
-                          'total_income_market_known_brands',
-                          'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
+    # markets_characterization =product_data[['zip',
+    #                       'market_ids_string',
+    #                       'market_ids',
+    #                       'total_income_market',
+    #                       'total_income_market_known_brands',
+    #                       'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
     
     # Creación de identificador numérico para los productos
     # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
@@ -310,6 +326,18 @@ def creating_product_data_rcl(main_dir: str,
 
 
 def creating_instruments_data(product_data: pd.DataFrame):
+    """
+    Creates various instruments for econometric analysis using the pyblp package.
+    Parameters:
+    product_data (pd.DataFrame): A DataFrame containing product data with relevant variables.
+    Returns:
+    tuple: A tuple containing the following elements:
+        - formulation (pyblp.Formulation): The formulation object used for creating instruments.
+        - blp_instruments (pd.DataFrame): A DataFrame containing BLP instruments.
+        - local_instruments (pd.DataFrame): A DataFrame containing local differentiation instruments.
+        - quadratic_instruments (pd.DataFrame): A DataFrame containing quadratic differentiation instruments.
+    """
+
     # Creación de instrumentos
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
@@ -332,7 +360,19 @@ def creating_instruments_data(product_data: pd.DataFrame):
 def creating_agent_data(product_data: pd.DataFrame, 
                         record_layout_path: str, 
                         agent_data_path: str):
-    
+    """
+    Creates agent data by processing product data and agent data files.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with columns 'market_ids', 'market_ids_string', and 'GESTFIPS'.
+    record_layout_path (str): Path to the record layout file.
+    agent_data_path (str): Path to the agent data file.
+    Returns:
+    pd.DataFrame: DataFrame containing the merged and processed agent data with columns:
+                    'FIPS', 'GESTFIPS', 'weights', 'nodes0', 'nodes1', 'nodes2', 'nodes3', 'nodes4',
+                    'hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'.
+    """
+
+
     output = process_file(record_layout_path)
     agent_data_pop = pd.read_fwf(agent_data_path, widths= [int(elem) for elem in output.values()] )
 
@@ -368,7 +408,6 @@ def creating_agent_data(product_data: pd.DataFrame,
                                       how='inner', 
                                       left_on='GESTFIPS',
                                       right_on='GESTFIPS')
-
     return agent_data
 
 
@@ -377,7 +416,17 @@ def filtering_data_by_identified_sales(product_data: pd.DataFrame,
                                        local_instruments: pd.DataFrame,
                                        quadratic_instruments: pd.DataFrame, 
                                        threshold_identified_earnings: float=0.4):
-    
+    """
+    Filters the product data and associated instruments based on a threshold for identified earnings.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with a column 'fraction_identified_earnings'.
+    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
+    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
+    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
+    threshold_identified_earnings (float, optional): The threshold for filtering based on 'fraction_identified_earnings'. Default is 0.4.
+    Returns:
+    tuple: A tuple containing the filtered product_data, blp_instruments, local_instruments, and quadratic_instruments DataFrames.
+    """
     condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
 
@@ -396,13 +445,29 @@ def filtering_data_by_identified_sales(product_data: pd.DataFrame,
 
 
 def filtering_data_by_number_brands(product_data: pd.DataFrame,
+
                                     blp_instruments: pd.DataFrame, 
                                     local_instruments: pd.DataFrame,
                                     quadratic_instruments: pd.DataFrame, 
                                     num_brands_by_market: int=2):
     """
-    
-    
+    Filters the product data and corresponding instruments based on the number of brands in each market.
+    Parameters:
+    -----------
+    product_data : pd.DataFrame
+        DataFrame containing product data with a 'market_ids' column indicating the market each product belongs to.
+    blp_instruments : pd.DataFrame
+        DataFrame containing BLP instruments corresponding to the product data.
+    local_instruments : pd.DataFrame
+        DataFrame containing local instruments corresponding to the product data.
+    quadratic_instruments : pd.DataFrame
+        DataFrame containing quadratic instruments corresponding to the product data.
+    num_brands_by_market : int, optional
+        Minimum number of brands required in a market for it to be considered valid (default is 2).
+    Returns:
+    --------
+    tuple
+        A tuple containing the filtered product data, BLP instruments, local instruments, and quadratic instruments as DataFrames.
     """
     market_counts = product_data['market_ids'].value_counts()
     valid_markets = market_counts[market_counts >= num_brands_by_market].index
@@ -421,7 +486,21 @@ def filtering_data_by_number_brands(product_data: pd.DataFrame,
 
 
 def matching_agent_and_product_data(product_data: pd.DataFrame, 
+
                                     agent_data: pd.DataFrame):
+    """
+    Matches agent and product data based on common market IDs.
+    This function filters the agent and product data to include only the entries
+    that have matching market IDs. It ensures that both dataframes contain only
+    the market IDs that are present in both datasets.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with a 'market_ids' column.
+    agent_data (pd.DataFrame): DataFrame containing agent data with a 'market_ids' column.
+    Returns:
+    tuple: A tuple containing two DataFrames:
+        - agent_data (pd.DataFrame): Filtered agent data with matching market IDs.
+        - product_data (pd.DataFrame): Filtered product data with matching market IDs.
+    """
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
@@ -429,6 +508,20 @@ def matching_agent_and_product_data(product_data: pd.DataFrame,
 
 
 def save_processed_data(product_data, blp_instruments, local_instruments, quadratic_instruments, agent_data):
+    """
+    Saves processed data to CSV files in a specified directory.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data, including a 'week_end' column.
+    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
+    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
+    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
+    agent_data (pd.DataFrame): DataFrame containing agent data.
+    The function creates a directory based on the 'week_end' value in the product_data DataFrame.
+    If there is only one unique 'week_end' value, it uses that value to create the directory.
+    The function then saves each of the provided DataFrames as CSV files in the created directory.
+    The filenames include the DIRECTORY_NAME and the current date.
+    """
+
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
@@ -438,17 +531,81 @@ def save_processed_data(product_data, blp_instruments, local_instruments, quadra
 
 
 def save_product_data(product_data: pd.DataFrame, output_dir: str):
+    """
+    Save product data to a CSV file in the specified output directory.
+    Parameters:
+    product_data (pd.DataFrame): The product data to be saved.
+    output_dir (str): The directory where the CSV file will be saved.
+    Returns:
+    None
+    """
+
     os.makedirs(output_dir, exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
 
 
 def create_directories(product_data: pd.DataFrame):
+    """
+    Creates directories based on the week_end column in the provided product data.
+    This function checks the 'week_end' column in the provided DataFrame. If there is only one unique value in the 
+    'week_end' column, it uses that value to create two directories:
+    - One for storing predicted data.
+    - One for storing problem results in pickle format.
+    Args:
+        product_data (pd.DataFrame): A DataFrame containing product data with a 'week_end' column.
+    Raises:
+        KeyError: If the 'week_end' column is not present in the DataFrame.
+        OSError: If there is an error creating the directories.
+    """
+
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
 
 
 def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Select specific columns from the product data DataFrame.
+    Parameters:
+    product_data (pd.DataFrame): The input DataFrame containing product data.
+    Returns:
+    pd.DataFrame: A DataFrame containing only the selected columns:
+        - 'market_ids'
+        - 'market_ids_string'
+        - 'store_code_uc'
+        - 'zip'
+        - 'FIPS'
+        - 'GESTFIPS'
+        - 'fips_county_code'
+        - 'week_end'
+        - 'week_end_ID'
+        - 'firm'
+        - 'firm_ids'
+        - 'firm_post_merger'
+        - 'firm_ids_post_merger'
+        - 'brand_code_uc'
+        - 'brand_descr'
+        - 'product_ids'
+        - 'units'
+        - 'total_individual_units'
+        - 'total_units_retailer'
+        - 'shares'
+        - 'poblacion_census_2020'
+        - 'total_income'
+        - 'total_income_market_known_brands'
+        - 'total_income_market'
+        - 'fraction_identified_earnings'
+        - 'prices'
+        - 'from Nielsen'
+        - 'from characteristics'
+        - 'name'
+        - 'tar'
+        - 'nicotine'
+        - 'co'
+        - 'nicotine_mg_per_g'
+        - 'nicotine_mg_per_g_dry_weight_basis'
+        - 'nicotine_mg_per_cig'
+    """
 
     return product_data[['market_ids', 'market_ids_string',
                         'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
@@ -488,8 +645,6 @@ def find_first_non_collinear_matrix(**dfs):
         The first DataFrame in the list that does not have collinear columns, 
         or None if all DataFrames exhibit collinearity.
     """
-
-
     for key, value in dfs.items():
         # matrix = df.values  # Convert DataFrame to NumPy array
         if not check_matrix_collinearity(value):
@@ -499,11 +654,22 @@ def find_first_non_collinear_matrix(**dfs):
 
 
 def compile_data(product_data: pd.DataFrame,
-                          blp_inst: pd.DataFrame, 
-                          local_inst: pd.DataFrame, 
-                          quad_inst: pd.DataFrame, 
-                          agent_data: pd.DataFrame):
-    
+                blp_inst: pd.DataFrame, 
+                local_inst: pd.DataFrame, 
+                quad_inst: pd.DataFrame, 
+                agent_data: pd.DataFrame):
+    """
+    Compiles and consolidates product and instrument data, renames columns, and filters based on agent data.
+    Args:
+        product_data (pd.DataFrame): DataFrame containing product data.
+        blp_inst (pd.DataFrame): DataFrame containing BLP instruments.
+        local_inst (pd.DataFrame): DataFrame containing local instruments.
+        quad_inst (pd.DataFrame): DataFrame containing quadratic instruments.
+        agent_data (pd.DataFrame): DataFrame containing agent data.
+    Returns:
+        pd.DataFrame: Consolidated and filtered product data with renamed columns.
+    """
+
     inst = find_first_non_collinear_matrix(local_inst=local_inst,
                                            quad_inst=quad_inst, 
                                            blp_inst=blp_inst)

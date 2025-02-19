@@ -16,32 +16,90 @@ WEEKS = [20140125, 20140201]
 
 
 def match_patterns(elements, patterns):
+    """
+    Filters a list of elements by matching them against a list of regular expression patterns.
+    Args:
+        elements (list of str): The list of elements to be filtered.
+        patterns (list of str): The list of regular expression patterns to match against the elements.
+    Returns:
+        list of str: A list of elements that match any of the given patterns.
+    """
+
     return [el for el in elements if any(re.search(pattern, el) for pattern in patterns)]
 
 
 def filter_module_code(row):
+    """
+    Filters a row based on the 'product_module_code' column.
+    Args:
+        row (pd.Series): A pandas Series representing a row of data.
+    Returns:
+        bool: True if the 'product_module_code' of the row matches the global PRODUCT_MODULE, False otherwise.
+    """
+
     return row['product_module_code'] == PRODUCT_MODULE
 
 
 def filter_module_code(row):
+    """
+    Filters a row based on the product module code.
+    Args:
+        row (dict): A dictionary representing a row of data, which must contain a key 'product_module_code'.
+    Returns:
+        bool: True if the 'product_module_code' in the row matches the global variable PRODUCT_MODULE, False otherwise.
+    """
+
     return row['product_module_code'] == PRODUCT_MODULE
 
 
 def filter_market_ids(row):
+    """
+    Filters rows based on market IDs.
+    This function checks if the 'market_ids' value in the given row is present
+    in the predefined list of market IDs (MARKET_IDS_FILTER).
+    Args:
+        row (pandas.Series): A row of data containing a 'market_ids' field.
+    Returns:
+        bool: True if the 'market_ids' value is in MARKET_IDS_FILTER, False otherwise.
+    """
+
     return row['market_ids'] in MARKET_IDS_FILTER
 
 
 def filter_row_weeks(row):
+    """
+    Filters rows based on the 'week_end' column.
+    Args:
+        row (pd.Series): A row of data containing a 'week_end' column.
+    Returns:
+        bool: True if the 'week_end' value is in the predefined list WEEKS, False otherwise.
+    """
+
     return row['week_end'] in WEEKS
 
 
 def unit_price(row):
     """
-    """    
+    Calculate the unit price from a given row of data.
+    Args:
+        row (dict): A dictionary containing 'price' and 'prmult' keys.
+    Returns:
+        float: The unit price calculated as price divided by prmult.
+    """
+    
     return row['price']/row['prmult']
 
 
 def total_dollar_sales(row):
+    """
+    Calculate the total dollar sales for a given row.
+    This function multiplies the 'prices' and 'units' values from the input row to compute the total dollar sales.
+    Parameters:
+    row (pd.Series): A pandas Series object containing 'prices' and 'units' columns.
+    Returns:
+    float: The total dollar sales calculated as the product of 'prices' and 'units'.
+    """
+
     return row['prices']*row['units']
 
 
@@ -60,6 +118,17 @@ def market_ids_identifier(row)-> str:
 
 
 def shares(row):
+    """
+    Calculate the market share of a product.
+    This function takes a row from a DataFrame and calculates the market share
+    by dividing the total dollar sales by the market size.
+    Parameters:
+    row (pd.Series): A pandas Series object representing a row of data. It must
+                     contain 'total dollar sales' and 'market size' columns.
+    Returns:
+    float: The market share calculated as the ratio of total dollar sales to market size.
+    """
+
     return row['total dollar sales'] / row['market size']
 
 
@@ -150,6 +219,17 @@ def count_values(variable):
 
 
 def unique(list1):
+    """
+    Returns a list of unique elements from the given list.
+    This function traverses the input list and appends elements to a new list
+    only if they are not already present in the new list, ensuring that the
+    resulting list contains only unique elements.
+    Parameters:
+    list1 (list): The list from which to extract unique elements.
+    Returns:
+    list: A list containing only the unique elements from the input list.
+    """
+
     # initialize a null list
     unique_list = []
  
@@ -162,22 +242,70 @@ def unique(list1):
 
 
 def total_income(row):
+    """
+    Calculate the total income for a given row of data.
+    This function computes the total income by dividing the price by the 
+    price multiplier (prmult) and then multiplying by the number of units.
+    Parameters:
+    row (dict): A dictionary containing the keys 'price', 'prmult', and 'units'.
+    Returns:
+    float: The total income calculated from the given row.
+    """
+    
     return (row['price']/row['prmult'])*row['units']
 
 
 def total_units(row):
+    """
+    Calculate the total units by multiplying the 'multi' and 'units' columns of a given row.
+    Parameters:
+    row (pandas.Series): A row of data containing 'multi' and 'units' columns.
+    Returns:
+    int or float: The product of 'multi' and 'units' from the given row.
+    """
+
     return row['multi']*row['units']
 
 
 def unitary_price(row):
+    """
+    Calculate the unitary price from a given row of data.
+    Args:
+        row (pd.Series): A pandas Series object containing 'price' and 'prmult' columns.
+    Returns:
+        float: The unitary price calculated as price divided by prmult.
+    """
+
     return row['price']/row['prmult']
 
 
 def price(row):
+    """
+    Calculate the price per unit.
+    This function takes a row of data and calculates the price per unit by 
+    dividing the total income by the number of units.
+    Parameters:
+    row (dict): A dictionary containing 'total_income' and 'units' keys.
+    Returns:
+    float: The calculated price per unit.
+    """
+
     return row['total_income']/row['units']
 
 
 def fraccion_ventas_identificadas(row):
+    """
+    Calculate the fraction of identified sales in the market.
+    This function takes a row of data and computes the fraction of total income
+    in the market that is attributed to known brands.
+    Parameters:
+    row (pd.Series): A pandas Series object containing the following keys:
+        - 'total_income_market_known_brands': Total income from known brands in the market.
+        - 'total_income_market': Total income in the market.
+    Returns:
+    float: The fraction of total income in the market that is from known brands.
+    """
+    
     return row['total_income_market_known_brands']/row['total_income_market']
 
 
@@ -197,6 +325,16 @@ def count_rows_meeting_condition(df, column_name, condition):
 
 
 def find_first_above_threshold(arr, threshold):
+    """
+    Find the index of the first element in the array that is above the given threshold.
+    Parameters:
+    arr (list of int/float): The array to search through.
+    threshold (int/float): The threshold value to compare against.
+    Returns:
+    int: The index of the first element that is above the threshold. 
+         Returns -1 if no element is above the threshold.
+    """
+
     for i, num in enumerate(arr):
         if num > threshold:
             return i
@@ -204,11 +342,31 @@ def find_first_above_threshold(arr, threshold):
 
 
 def find_first_above_threshold(arr, threshold):
+    """
+    Find the first position in a sorted array where the value is above a given threshold.
+    Args:
+        arr (list): A sorted list of values.
+        threshold (int or float): The threshold value to compare against.
+    Returns:
+        int: The index of the first element in the array that is greater than the threshold.
+             Returns -1 if no such element is found.
+    """
+
     position = bisect.bisect_right(arr, threshold)
     return position if position < len(arr) else -1
 
 
 def sum_from_first_above_threshold(arr, threshold, values_to_sum):
+    """
+    Sums the elements of `values_to_sum` starting from the position of the first element in `arr` that is above the given `threshold`.
+    Parameters:
+    arr (list of int/float): The list in which to find the first element above the threshold.
+    threshold (int/float): The threshold value to compare against elements in `arr`.
+    values_to_sum (list of int/float): The list of values to sum from the identified position.
+    Returns:
+    int/float: The sum of the elements in `values_to_sum` starting from the position of the first element in `arr` that is above the threshold. Returns 0 if no element in `arr` is above the threshold.
+    """
+
     # Find the position of the first number in `arr` that is above the threshold
     position = bisect.bisect_right(arr, threshold)
     
@@ -221,6 +379,18 @@ def sum_from_first_above_threshold(arr, threshold, values_to_sum):
 
 
 def group_unique_strings(df, groupby_column, target_column):
+    """
+    Groups a DataFrame by a specified column and creates a list of unique strings 
+    from another specified column for each group.
+    Parameters:
+    df (pandas.DataFrame): The DataFrame to be grouped.
+    groupby_column (str): The column name to group by.
+    target_column (str): The column name from which to extract unique strings.
+    Returns:
+    pandas.DataFrame: A DataFrame with the groupby_column and a new column 
+                      containing lists of unique strings from the target_column.
+    """
+
     # Group the dataframe by the specified column
     grouped = df.groupby(by=groupby_column)[target_column].apply(lambda x: list(x.unique())).reset_index()
     
@@ -231,6 +401,16 @@ def group_unique_strings(df, groupby_column, target_column):
 
 
 def sort_by_list_length(df, list_column, ascending=True):
+    """
+    Sort a DataFrame by the length of lists in a specified column.
+    Parameters:
+    df (pandas.DataFrame): The DataFrame to be sorted.
+    list_column (str): The name of the column containing lists.
+    ascending (bool, optional): If True, sort in ascending order, otherwise in descending order. Default is True.
+    Returns:
+    pandas.DataFrame: The sorted DataFrame with the original order of rows preserved.
+    """
+
     # Create a new column that contains the length of the lists
     df['list_length'] = df[list_column].apply(len)
     
@@ -241,6 +421,15 @@ def sort_by_list_length(df, list_column, ascending=True):
 
 
 def group_common_elements(df, groupby_column, target_column):
+    """
+    Groups a DataFrame by a specified column and finds the common elements in another specified column.
+    Parameters:
+    df (pandas.DataFrame): The DataFrame to be grouped.
+    groupby_column (str): The column name to group by.
+    target_column (str): The column name in which to find common elements.
+    Returns:
+    pandas.DataFrame: A DataFrame with the grouped column and a new column containing the common elements.
+    """    
     def common_elements(lists):
         # Find the common elements in all lists
         return list(set.intersection(*map(set, lists)))
@@ -255,18 +444,50 @@ def group_common_elements(df, groupby_column, target_column):
 
 
 def prepend_zeros(row) :
+    """
+    Prepend zeros to the 'fips_county_code' to ensure it is 3 digits long and concatenate it with 'fips_state_code'.
+    Args:
+        row (dict): A dictionary containing 'fips_state_code' and 'fips_county_code'.
+    Returns:
+        str: A string that concatenates 'fips_state_code' and 'fips_county_code' with leading zeros if necessary.
+    """    
     return str(row['fips_state_code'])+str(row['fips_county_code']).zfill(3)
 
 
 def obtain_zip(row):
+    """
+    Extracts a portion of the 'Geographic Area Name' field from a given row.
+    Args:
+        row (dict): A dictionary representing a row of data, which contains a key 'Geographic Area Name'.
+    Returns:
+        str: A substring of the 'Geographic Area Name' field, specifically the characters from the third-to-last to the second-to-last position.
+    """
+
     return row['Geographic Area Name'][-5:-2]
 
 
 def zip(row):
+    """
+    Extracts a specific part of the 'zip' field from a given row.
+    Args:
+        row (dict): A dictionary containing a 'zip' key with a string value.
+    Returns:
+        str: A substring of the 'zip' value, specifically the third and fourth characters from the end.
+    """
+
     return row['zip'][-5:-3]
 
 
 def percentage_match(list1, list2):
+    """
+    Calculate the percentage of elements in list1 that are also present in list2.
+    Args:
+        list1 (list): The first list of elements.
+        list2 (list): The second list of elements.
+    Returns:
+        float: The percentage of elements in list1 that are also in list2.
+    """
+
     # Find the intersection (common elements) of the two lists
     matches = set(list1) & set(list2)
     
@@ -274,6 +495,20 @@ def percentage_match(list1, list2):
 
 
 def shares_with_outside_good(row):
+    """
+    Calculate the market share of a product including an outside good.
+    This function computes the market share of a product by dividing the number of units sold by 
+    the product of the fraction of identified earnings, the population from the 2020 census, 
+    a constant factor (0.78), and the number of quarters in a year (4).
+    Parameters:
+    row (pd.Series): A pandas Series object containing the following columns:
+        - 'units': The number of units sold.
+        - 'fraction_identified_earnings': The fraction of identified earnings.
+        - 'CENSUS_2020_POP': The population from the 2020 census.
+    Returns:
+    float: The market share of the product including an outside good.
+    """
+
     return row['units']/(row['fraction_identified_earnings']*row['CENSUS_2020_POP']*0.78*4)
 
 
