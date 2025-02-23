@@ -689,7 +689,7 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
-    first_week=4
+    first_week=5
     num_weeks=8
     threshold_identified_earnings = 0.5
     optimization_algorithm = 'l-bfgs-b'
