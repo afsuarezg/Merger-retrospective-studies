@@ -282,13 +282,6 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1, company_brands_dict=brands_by_company_post_merger)
     product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
-
-    # Save product_data DataFrame to the specified directory
-    output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
-    os.makedirs(output_dir, exist_ok=True)
-    product_data.to_csv(os.path.join(output_dir, f'product_data_previo.csv'), index=False)
-
-
     # Agrega características de los productos al archivo de product data
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')
     brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
@@ -323,6 +316,13 @@ def creating_product_data_rcl(main_dir: str,
     print('7 product_data: ', product_data.shape)
     # Elimina productos con características no identificadas
     
+    # Save product_data DataFrame to the specified directory
+    # output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
+    # os.makedirs(output_dir, exist_ok=True)
+    # product_data.to_csv(os.path.join(output_dir, f'product_data_previo.csv'), index=False)
+
+
+
     return product_data
 
 
@@ -692,6 +692,7 @@ def run():
     first_week=4
     num_weeks=4
     threshold_identified_earnings = 0.5
+    optimization_algorithm = 'l-bfgs-b'
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
@@ -700,7 +701,7 @@ def run():
                                      first_week=first_week,
                                      num_weeks=num_weeks)
     
-    optimization_algorithm = 'l-bfgs-b'
+    product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
 
     product_data = select_product_data_columns(product_data=product_data)
 
@@ -768,33 +769,33 @@ def run():
                                       right_on='GESTFIPS')
     
     ##### Filtrar base a partir de ventas identificadas########//TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
-    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
-    kept_data = product_data.loc[condition].index
+    # condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
+    # kept_data = product_data.loc[condition].index
 
-    product_data = product_data.loc[kept_data]
+    # product_data = product_data.loc[kept_data]
 
-    local_instruments = local_instruments.loc[kept_data]
-    quadratic_instruments = quadratic_instruments.loc[kept_data]
-    blp_instruments = blp_instruments.loc[kept_data]
+    # local_instruments = local_instruments.loc[kept_data]
+    # quadratic_instruments = quadratic_instruments.loc[kept_data]
+    # blp_instruments = blp_instruments.loc[kept_data]
 
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
+    # product_data.reset_index(drop=True, inplace=True)
+    # blp_instruments.reset_index(drop=True, inplace=True)
+    # local_instruments.reset_index(drop=True, inplace=True)
+    # quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
-    market_counts = product_data['market_ids'].value_counts()
-    valid_markets = market_counts[market_counts >= 2].index
-    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+    # market_counts = product_data['market_ids'].value_counts()
+    # valid_markets = market_counts[market_counts >= 2].index
+    # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
-    local_instruments = local_instruments.loc[product_data.index]
-    quadratic_instruments = quadratic_instruments.loc[product_data.index]
-    blp_instruments = blp_instruments.loc[product_data.index]
+    # local_instruments = local_instruments.loc[product_data.index]
+    # quadratic_instruments = quadratic_instruments.loc[product_data.index]
+    # blp_instruments = blp_instruments.loc[product_data.index]
 
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
+    # product_data.reset_index(drop=True, inplace=True)
+    # blp_instruments.reset_index(drop=True, inplace=True)
+    # local_instruments.reset_index(drop=True, inplace=True)
+    # quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
