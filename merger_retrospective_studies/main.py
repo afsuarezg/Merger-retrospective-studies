@@ -703,6 +703,10 @@ def run():
     
     product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
 
+    market_counts = product_data['market_ids'].value_counts()
+    valid_markets = market_counts[market_counts >= 2].index
+    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+
     product_data = select_product_data_columns(product_data=product_data)
 
     # Save product_data DataFrame to the specified directory
