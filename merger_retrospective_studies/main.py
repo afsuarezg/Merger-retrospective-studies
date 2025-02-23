@@ -701,11 +701,11 @@ def run():
                                      first_week=first_week,
                                      num_weeks=num_weeks)
     
-    product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
+    # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
 
-    market_counts = product_data['market_ids'].value_counts()
-    valid_markets = market_counts[market_counts >= 2].index
-    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+    # market_counts = product_data['market_ids'].value_counts()
+    # valid_markets = market_counts[market_counts >= 2].index
+    # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
     product_data = select_product_data_columns(product_data=product_data)
 
@@ -773,33 +773,33 @@ def run():
                                       right_on='GESTFIPS')
     
     ##### Filtrar base a partir de ventas identificadas########//TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
-    # condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
-    # kept_data = product_data.loc[condition].index
+    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
+    kept_data = product_data.loc[condition].index
 
-    # product_data = product_data.loc[kept_data]
+    product_data = product_data.loc[kept_data]
 
-    # local_instruments = local_instruments.loc[kept_data]
-    # quadratic_instruments = quadratic_instruments.loc[kept_data]
-    # blp_instruments = blp_instruments.loc[kept_data]
+    local_instruments = local_instruments.loc[kept_data]
+    quadratic_instruments = quadratic_instruments.loc[kept_data]
+    blp_instruments = blp_instruments.loc[kept_data]
 
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
-    # market_counts = product_data['market_ids'].value_counts()
-    # valid_markets = market_counts[market_counts >= 2].index
-    # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+    market_counts = product_data['market_ids'].value_counts()
+    valid_markets = market_counts[market_counts >= 2].index
+    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
-    # local_instruments = local_instruments.loc[product_data.index]
-    # quadratic_instruments = quadratic_instruments.loc[product_data.index]
-    # blp_instruments = blp_instruments.loc[product_data.index]
+    local_instruments = local_instruments.loc[product_data.index]
+    quadratic_instruments = quadratic_instruments.loc[product_data.index]
+    blp_instruments = blp_instruments.loc[product_data.index]
 
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
@@ -819,7 +819,7 @@ def run():
                             agent_data= agent_data)
     
     iter =  0
-    while iter <= 50:
+    while iter <= 10:
         print('------------------------------')
         print(iter)
         print('------------------------------')
