@@ -819,7 +819,7 @@ def run():
                             agent_data= agent_data)
     
     iter =  0
-    while iter <= 10:
+    while iter <= 50:
         print('------------------------------')
         print(iter)
         print('------------------------------')
