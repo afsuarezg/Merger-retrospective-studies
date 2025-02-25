@@ -817,19 +817,19 @@ def run():
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
                             agent_data= agent_data)
-    
+    print('empezando optimización')
     iter =  0
-    while iter <= 50:
+    while iter <= 5:
         print('------------------------------')
         print(iter)
         print('------------------------------')
         try:
             results= rcl_with_demographics(product_data=product_data, agent_data=agent_data)
-            optimal_results = results_optimal_instruments(results=results)
-            optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
+            # optimal_results = results_optimal_instruments(results=results)
+            # optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
 
-            if optimal_results.converged == True:
-                predicted_prices = predict_prices(product_data = product_data, results = optimal_results, merger=[3,0])
+            if results.converged == True:
+                predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
                 predicted_prices = predicted_prices.tolist()
                 price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
                 price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
