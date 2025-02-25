@@ -831,17 +831,10 @@ def run():
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
             if results.converged == True:
-                print('z')
                 predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
-                print('a')
-                print(predicted_prices)
                 predicted_prices = predicted_prices.tolist()
-                print('b')
-                print(predicted_prices)
                 price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
-                print('c')
                 price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-                print('d')
                 price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
                 print('predictions saved')
 
