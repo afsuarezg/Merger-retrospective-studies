@@ -829,6 +829,7 @@ def run():
             # optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
             if results.converged == True:
+                print('z')
                 predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
                 print('a')
                 predicted_prices = predicted_prices.tolist()
