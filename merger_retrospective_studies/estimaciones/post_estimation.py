@@ -218,7 +218,7 @@ def predict_prices(product_data: pd.DataFrame, results, merger: List[int]) -> pd
     return changed_prices
 
 
-def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, merger: List[int]) -> pd.Series:
+def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, merger: List[int]= None) -> pd.Series:
     """
     Predict prices after a merger between firms.
 
@@ -243,7 +243,7 @@ def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, me
         raise TypeError("All elements of merger must be integers.")
     
     # Update firm IDs to reflect the merger
-    product_data['merger_ids'] = product_data['firm_ids'].replace({merger[1]: merger[0]})
+    # product_data['merger_ids'] = product_data['firm_ids'].replace({merger[1]: merger[0]})
     
     # Compute costs and initial markups
     try:

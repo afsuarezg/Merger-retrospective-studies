@@ -715,7 +715,7 @@ def run():
     product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
 
     # Crea directorio para guardar las predicciones
-    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) >= 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
 
@@ -834,6 +834,7 @@ def run():
                 price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
                 price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
                 price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
+                print('predictions saved')
 
             # optimal_results = results_optimal_instruments(results)
         except Exception as e:
