@@ -819,7 +819,7 @@ def run():
                             agent_data= agent_data)
     print('empezando optimización')
     iter =  0
-    while iter <= 5:
+    while iter <= 2:
         print('------------------------------')
         print(iter)
         print('------------------------------')
