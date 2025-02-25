@@ -719,6 +719,7 @@ def run():
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
 
+
     ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
@@ -826,14 +827,16 @@ def run():
         try:
             results= rcl_with_demographics(product_data=product_data, agent_data=agent_data)
             # optimal_results = results_optimal_instruments(results=results)
-            # optimal_results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
+            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
             if results.converged == True:
                 print('z')
                 predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
                 print('a')
+                print(predicted_prices)
                 predicted_prices = predicted_prices.tolist()
                 print('b')
+                print(predicted_prices)
                 price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
                 print('c')
                 price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
