@@ -280,7 +280,7 @@ def creating_product_data_rcl(main_dir: str,
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
     product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
     product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1, company_brands_dict=brands_by_company_post_merger)
-    product_data['firms_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
+    product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
 
     # Agrega características de los productos al archivo de product data
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')

@@ -256,7 +256,7 @@ def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, me
     try:
         # changed_prices = results.compute_prices(firm_ids=product_data['merger_ids'], costs=costs, iteration=pyblp.Iteration('return'))
         # changed_prices = results.compute_prices(firm_ids=product_data['merger_ids'], costs=costs)
-        changed_prices = results.compute_prices(firm_ids=product_data['firms_ids_post_merger'], costs=costs)
+        changed_prices = results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
     except AttributeError as e:
         raise AttributeError("The results object must have a compute_prices method.") from e
     
