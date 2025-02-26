@@ -262,9 +262,10 @@ def movements_file(movements_path: str, filter_row_weeks: Callable, first_week: 
     movements_file = pd.read_csv(filepath_or_buffer=movements_path, sep  = '\t', header = 0, index_col = None)
     print(movements_file.shape)
     movements_file = movements_file[['store_code_uc', 'upc', 'week_end', 'units', 'prmult', 'price']]
-    weeks = list(sorted(list(set(movements_file['week_end'])))[first_week:first_week+num_weeks])
+    weeks = list(sorted(set(movements_file['week_end']))[first_week:first_week+num_weeks])
     # Apply the filtering function
-    movements_file = movements_file[movements_file.apply(lambda row: filter_row_weeks(row, weeks), axis=1)]
+    movements_file =movements_file[movements_file['week_end'].isin(weeks)]
+    # movements_file = movements_file[movements_file.apply(lambda row: filter_row_weeks(row, weeks), axis=1)]
 
     # weeks_filter_partial = partial(filter_row_weeks, weeks)
     # movements_file = movements_file[movements_file.apply(weeks_filter_partial, axis=1)]

@@ -146,6 +146,14 @@ def count_values(variable):
     return value_counts
 
 def preprend_zero(row):
+    """
+    Prepends a zero to the 'zip' field in the given row if its length is less than or equal to 2.
+    Args:
+        row (dict): A dictionary representing a row of data, which contains a 'zip' key.
+    Returns:
+        str: The 'zip' value with a zero prepended if its length is less than or equal to 2, otherwise the original 'zip' value.
+    """
+
     if len(row['zip'])<=2:
         return '0'+ row['zip']
     return row['zip']
