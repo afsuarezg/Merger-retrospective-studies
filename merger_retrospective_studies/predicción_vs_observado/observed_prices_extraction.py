@@ -2,7 +2,7 @@
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
 
 def list_retailers_with_predictions(path: str):
-
+    
     return 
 
 
