@@ -145,6 +145,7 @@ def count_values(variable):
     # Return the dictionary
     return value_counts
 
+
 def preprend_zero(row):
     """
     Prepends a zero to the 'zip' field in the given row if its length is less than or equal to 2.
@@ -233,7 +234,6 @@ def unique_elements_ordered(list1, list2):
     # Elements unique to list2
     unique_in_list2 = [x for x in list2 if x not in list1]
     return unique_in_list1, unique_in_list2 
-
 
 
 def main():
