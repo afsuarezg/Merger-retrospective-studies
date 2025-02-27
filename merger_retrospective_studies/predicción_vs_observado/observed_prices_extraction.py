@@ -69,8 +69,8 @@ def main():
     dict_retailers_predictions = dict_retailers_brands(price_predictions)
 
     #crear la base de datos con toda la información
-    first_week:int = None
-    num_weeks:int = None
+    first_week:int = 42
+    num_weeks:int = 1
     product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
@@ -92,6 +92,8 @@ def main():
 
 
     #merge de la base de datos con predicciones con la base de datos de los precios observados 
-    price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_wide, how='left', on=['','']) #TODO: rellenar esta función para hacer el merge
+    # price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_wide, how='left', on=['','']) #TODO: rellenar esta función para hacer el merge
 
     #Salvar información
+    observed_prices_data_wide.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__wide_0.json', index=False)
+    observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_0.json', index=False)
