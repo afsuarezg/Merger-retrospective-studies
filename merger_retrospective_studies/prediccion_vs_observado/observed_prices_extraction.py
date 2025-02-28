@@ -62,7 +62,7 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =0
+    iter =1
     #importar la base de las predicciones
     price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
 
@@ -72,7 +72,7 @@ def main():
 
     #crear la base de datos con toda la información
     first_week:int = 42
-    num_weeks:int = 1
+    num_weeks:int = 5
     product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
@@ -95,8 +95,8 @@ def main():
 
 
     #merge de la base de datos con predicciones con la base de datos de los precios observados 
-    price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_long[['store_code_uc', 'brand_code_uc', 'prices']], how='left', on=['store_code_uc', 'brand_code_uc']) #TODO: rellenar esta función para hacer el merge
+    # price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_long[['store_code_uc', 'brand_code_uc', 'prices']], how='left', on=['store_code_uc', 'brand_code_uc']) #TODO: rellenar esta función para hacer el merge
 
     #Salvar información
     # observed_prices_data_wide.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__wide_{iter}.json', index=False)
-    # observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_{iter}.json', index=False)
+    observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_{iter}.json', index=False)
