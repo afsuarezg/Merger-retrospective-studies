@@ -39,7 +39,7 @@ def filter_observed_by_predicted_data(group, key, reference_dict) -> pd.DataFram
         pd.DataFrame: A DataFrame indicating whether the reference data is a subset of the group data.
     """
 
-    return set(reference_dict[key]).issubset(set(group[key]))
+    return set(reference_dict[key]).issubset(set(group['brand_code_uc']))
 
 
 def long_to_wide(df, id_col, time_col, value_col):
@@ -87,9 +87,7 @@ def main():
     print(product_observed_data.shape)
 
     #filtrar la base de datos a partir de brands por retailer
-    observed_prices_data_long = product_observed_data.groupby('store_code_uc').filter(lambda group: filter_observed_by_predicted_data(group, 
-                                                                                                                                 group.name, 
-                                                                                                                                 dict_retailers_predictions))
+    observed_prices_data_long = product_observed_data.groupby('store_code_uc').filter(lambda group: filter_observed_by_predicted_data(group, group.name, dict_retailers_predictions))
     print(observed_prices_data_long.shape)
     print(observed_prices_data_long.columns)
     observed_prices_data_wide = long_to_wide(observed_prices_data_long, id_col='store_code_uc', time_col='week_end', value_col='prices') #TODO: confirmar las variables para pasar la base de datos de long a wide. 
