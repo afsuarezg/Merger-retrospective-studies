@@ -90,13 +90,13 @@ def main():
     observed_prices_data_long = product_observed_data.groupby('store_code_uc').filter(lambda group: filter_observed_by_predicted_data(group, group.name, dict_retailers_predictions))
     print(observed_prices_data_long.shape)
     print(observed_prices_data_long.columns)
-    observed_prices_data_wide = long_to_wide(observed_prices_data_long, id_col='store_code_uc', time_col='week_end', value_col='prices') #TODO: confirmar las variables para pasar la base de datos de long a wide. 
+    # observed_prices_data_wide = long_to_wide(observed_prices_data_long, id_col='store_code_uc', time_col='week_end', value_col='prices') #TODO: confirmar las variables para pasar la base de datos de long a wide. 
     #borrar algunas columnas de observed_prices_data que no son necesarias para la comparación
 
 
     #merge de la base de datos con predicciones con la base de datos de los precios observados 
-    # price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_wide, how='left', on=['','']) #TODO: rellenar esta función para hacer el merge
+    price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_long[['store_code_uc', 'brand_code_uc', 'prices']], how='left', on=['store_code_uc', 'brand_code_uc']) #TODO: rellenar esta función para hacer el merge
 
     #Salvar información
-    observed_prices_data_wide.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__wide_{iter}.json', index=False)
-    observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_{iter}.json', index=False)
+    # observed_prices_data_wide.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__wide_{iter}.json', index=False)
+    # observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_{iter}.json', index=False)
