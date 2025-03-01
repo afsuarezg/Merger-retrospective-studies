@@ -364,8 +364,8 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
-    first_week=1
-    num_weeks=10
+    first_week=5
+    num_weeks=6
     threshold_identified_earnings = 0.4
     optimization_algorithm = 'l-bfgs-b'
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
