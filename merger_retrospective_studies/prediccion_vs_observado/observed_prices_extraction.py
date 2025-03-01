@@ -73,8 +73,8 @@ def main():
     print(dict_retailers_predictions)
 
     #crear la base de datos con toda la información
-    first_week:int = 45
-    num_weeks:int = 5
+    first_week:int = 44
+    num_weeks:int = 6
     product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
