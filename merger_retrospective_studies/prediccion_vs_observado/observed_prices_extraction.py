@@ -62,7 +62,7 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =1
+    iter =3
     #importar la base de las predicciones
     # price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
     # price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140111/l-bfgs-b/price_predictions_0.json')
