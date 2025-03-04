@@ -218,6 +218,27 @@ def predict_prices(product_data: pd.DataFrame, results, merger: List[int]) -> pd
     return changed_prices
 
 
+def original_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults) -> pd.Series:
+    
+    # Compute costs and initial markups
+    try:
+        costs = results.compute_costs()
+    except AttributeError as e:
+        raise AttributeError("The results object must have compute_costs and compute_markups methods.") from e
+    
+    # Compute changed prices after the merger
+    try:
+        changed_prices = results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
+    except AttributeError as e:
+        raise AttributeError("The results object must have a compute_prices method.") from e
+    
+    return changed_prices    
+
+
+
+
+
+
 def predict_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults, merger: List[int]= None) -> pd.Series:
     """
     Predict prices after a merger between firms.

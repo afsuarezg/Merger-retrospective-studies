@@ -20,7 +20,7 @@ from .estimaciones.plain_logit import plain_logit
 from .estimaciones.rcl_without_demographics import rcl_without_demographics, rename_instruments
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
-from .estimaciones.post_estimation_merger_simulation import predict_prices
+from .estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
 
 
@@ -364,13 +364,16 @@ def compile_data(product_data: pd.DataFrame,
 
 
 def run():
-    first_week=12
-    num_weeks=10
+    date = datetime.datetime.today().strftime("%Y-%m-%d")
+    year=2014
+    first_week=4
+    num_weeks=5
     threshold_identified_earnings = 0.4
     optimization_algorithm = 'l-bfgs-b'
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
-                                     movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
-                                     stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
+                                    #  movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
+                                     movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv',
+                                     stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv',
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=first_week,
@@ -385,15 +388,15 @@ def run():
     product_data = select_product_data_columns(product_data=product_data)
 
     # Save product_data DataFrame to the specified directory
-    output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
+    output_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/{date}'
     os.makedirs(output_dir, exist_ok=True)
    
 
     # Crea directorio para guardar las predicciones
     weeks = sorted(set(product_data['week_end']))
     week_dir = weeks[0] if len(weeks) >= 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
 
 
     ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
@@ -483,12 +486,12 @@ def run():
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
     ######### Salvando instrumentos e información de los consumidores ###########
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
     product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
-    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
     product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
@@ -504,14 +507,21 @@ def run():
         try:
             results= rcl_with_demographics(product_data=product_data, agent_data=agent_data)
             # optimal_results = results_optimal_instruments(results=results)
-            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
+            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
             if results.converged == True:
+                initial_prices = original_prices(product_data=product_data, results=results)
+
+
+                #predicting the prices and appending the information to a dataframe
                 predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
                 predicted_prices = predicted_prices.tolist()
                 price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
                 price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-                price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
+
+
+                #saving the file
+                price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
                 print('predictions saved')
 
             # optimal_results = results_optimal_instruments(results)

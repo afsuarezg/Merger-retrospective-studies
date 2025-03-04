@@ -62,7 +62,7 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =3
+    iter =4
     #importar la base de las predicciones
     # price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
     # price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140111/l-bfgs-b/price_predictions_0.json')
@@ -73,15 +73,17 @@ def main():
     print(dict_retailers_predictions)
 
     #crear la base de datos con toda la información
-    first_week:int = 44
-    num_weeks:int = 6
+    first_week:int = 20
+    num_weeks:int = 5
+    year = 2015
     product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
-                                     movements_path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
-                                     stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv' ,
+                                     movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
+                                     stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
-                                     extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
+                                     extra_attributes_path=f'Nielsen_data/{year}/Annual_Files/products_extra_{year}.tsv', 
                                      first_week=first_week,
                                      num_weeks=num_weeks)
+    
     print(product_observed_data.shape)
     product_observed_data.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/product_data_completo_{iter}.json', index=False)
     #filtrar la base de datos solo por retailers para hacer el proceso más ágil 
