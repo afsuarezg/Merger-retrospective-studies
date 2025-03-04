@@ -81,7 +81,7 @@ def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
     # Sigma initial values
     initial_sigma = np.diag(generate_random_floats(4, 0, 4))
     # initial_pi = generate_random_sparse_array((4,4), -5,5, 6)
-    initial_pi = create_sparse_array((4,4), k=2, seed=50)
+    initial_pi = create_sparse_array((4,4), k=3, seed=50)
     
     # Sigma bounds
     sigma_lower = np.zeros((3,3))
