@@ -62,7 +62,7 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =5
+    iter =6
     #importar la base de las predicciones
     # price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
     # price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140111/l-bfgs-b/price_predictions_0.json')
@@ -76,9 +76,9 @@ def main():
     print(dict_retailers_predictions)
 
     #crear la base de datos con toda la información
-    first_week:int = 20
-    num_weeks:int = 5
-    year = 2015
+    first_week:int = 45
+    num_weeks:int = 6
+    year = 2014
     product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
                                      stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
