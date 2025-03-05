@@ -493,6 +493,12 @@ def run():
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
+    print(f"Product data saved to: {os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv')}")
+    print(f"BLP instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+    print(f"Local instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+    print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+    print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+
     product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 

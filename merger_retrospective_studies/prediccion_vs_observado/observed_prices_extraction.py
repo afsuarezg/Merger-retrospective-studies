@@ -62,11 +62,14 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =4
+    iter =5
     #importar la base de las predicciones
     # price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
     # price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140111/l-bfgs-b/price_predictions_0.json')
-    price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140208/l-bfgs-b/price_predictions_0.json')
+    # path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140208/l-bfgs-b/price_predictions_0.json' 
+    path ='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140201/2025-03-04/l-bfgs-b/price_predictions_0.json'
+    price_predictions=pd.read_json(path)
+    print(f"Path of the price_predictions file: {path}")
 
     #obtener los códigos de los retailers para los que se generaron las comparaciones 
     dict_retailers_predictions = dict_retailers_brands(price_predictions)
