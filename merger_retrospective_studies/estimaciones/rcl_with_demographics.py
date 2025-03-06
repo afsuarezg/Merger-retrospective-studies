@@ -61,8 +61,8 @@ def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
 def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
 
     # Problem formulations without demographics
-    X1_formulation = pyblp.Formulation('0 + prices ')
-    X2_formulation = pyblp.Formulation('0 + nicotine + tar + co + nicotine_mg_per_g')
+    X1_formulation = pyblp.Formulation('0 + prices ', absorb='C(product_ids)')
+    X2_formulation = pyblp.Formulation('1 + nicotine + tar + co + nicotine_mg_per_g')
     product_formulations = (X1_formulation, X2_formulation)
 
     # Optimization algorithm
