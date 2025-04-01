@@ -103,7 +103,7 @@ def generate_random_array(shape, start_range, end_range):
     return create_array(shape)
 
 
-def generate_random_floats(x, start_range, end_range):
+def generate_random_floats(x, start_range: float, end_range: float, seed: int=None):
     """
     Generates a list of random floats.
 
@@ -119,7 +119,9 @@ def generate_random_floats(x, start_range, end_range):
         raise ValueError("The number of random floats must be a positive integer.")
     if start_range > end_range:
         raise ValueError("Start of the range must be less than or equal to the end of the range.")
-    
+    if seed:
+        random.seed(seed)
+        
     return [random.uniform(start_range, end_range) for _ in range(x)]
 
 
