@@ -487,7 +487,8 @@ def run():
 
     ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
-    product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
+    # product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
