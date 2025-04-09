@@ -36,7 +36,7 @@ def preprend_zero(row):
     return row['zip']
 
 
-def create_instrument_dict(product_data):
+def create_instrument_dict(product_data:pd.DataFrame):
     """
     Creates a dictionary with keys as column names containing 'quad' and values as 'demand_instruments' followed by a count.
 

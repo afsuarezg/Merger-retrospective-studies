@@ -325,7 +325,7 @@ def find_first_non_collinear_matrix(**dfs):
         # matrix = df.values  # Convert DataFrame to NumPy array
         if not check_matrix_collinearity(value):
             print(key)
-            return value
+            return key, value
     return None
 
 
@@ -346,11 +346,13 @@ def compile_data(product_data: pd.DataFrame,
         pd.DataFrame: Consolidated and filtered product data with renamed columns.
     """
 
-    inst = find_first_non_collinear_matrix(local_inst=local_inst,
+    inst_name, inst_values = find_first_non_collinear_matrix(local_inst=local_inst,
                                            quad_inst=quad_inst, 
                                            blp_inst=blp_inst)
+    
+    print(f'Los instrumentos usados para la actual regresión son {inst_name}')
 
-    consolidated_product_data=pd.concat([product_data, inst], axis=1)
+    consolidated_product_data=pd.concat([product_data, inst_values], axis=1)
     dict_rename = rename_instruments(consolidated_product_data)
     consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
 
@@ -363,12 +365,14 @@ def compile_data(product_data: pd.DataFrame,
     return consolidated_product_data
 
 
+
+
 def run():
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     year=2014
-    first_week=4
+    first_week=20
     num_weeks=5
-    threshold_identified_earnings = 0.4
+    threshold_identified_earnings = 0.35
     optimization_algorithm = 'l-bfgs-b'
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                     #  movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
@@ -494,17 +498,22 @@ def run():
     quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
 
-    print(f"Product data saved to: {os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv')}")
+
+    # Print all the locations where the DataFrames were saved
+    print(f"Product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
     print(f"BLP instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
     print(f"Local instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
     print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
     print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+    print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
 
     product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
                             agent_data= agent_data)
+    
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
     print('empezando optimización')
     iter =  0
     while iter <= 100:
