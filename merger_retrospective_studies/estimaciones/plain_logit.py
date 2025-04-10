@@ -63,23 +63,23 @@ def plain_logit(product_data: pd.DataFrame,
     product_data = product_data.dropna(subset=['prices'])
 
     
-    try:
-        print('# Plain logit without intercept')
-        logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
-        problem = pyblp.Problem(logit_formulation, product_data)
-        logit_results = problem.solve(method='1s')
-        print(logit_results)
-    except Exception as e:
-        print(f"Error in plain logit without intercept: {e}")
+    # try:
+    #     print('# Plain logit without intercept')
+    #     logit_formulation = pyblp.Formulation('prices', absorb='C(product_ids)')
+    #     problem = pyblp.Problem(logit_formulation, product_data)
+    #     logit_results = problem.solve(method='1s')
+    #     print(logit_results)
+    # except Exception as e:
+    #     print(f"Error in plain logit without intercept: {e}")
 
-    try:
-        print('# Plain logit with intercept')
-        logit_formulation = pyblp.Formulation('1+ prices')
-        problem = pyblp.Problem(logit_formulation, product_data)
-        logit_results = problem.solve(method='1s')
-        print(logit_results)
-    except Exception as e:
-        print(f"Error in plain logit with intercept: {e}")
+    # try:
+    #     print('# Plain logit with intercept')
+    #     logit_formulation = pyblp.Formulation('1+ prices')
+    #     problem = pyblp.Problem(logit_formulation, product_data)
+    #     logit_results = problem.solve(method='1s')
+    #     print(logit_results)
+    # except Exception as e:
+    #     print(f"Error in plain logit with intercept: {e}")
 
     try:
         print('# Logit problem with products characteristics || No fixed effects')

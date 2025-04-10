@@ -403,22 +403,6 @@ def run():
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
 
 
-    ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
-    formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
-    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
-    blp_instruments = pd.DataFrame(blp_instruments)
-    blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
-
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='local')
-    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
-
-    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
-    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
-
-    print(type(blp_instruments))
-    print(type(local_instruments))
-    print(type(quadratic_instruments))
-
     ####### Agregando información sociodemográfica #########
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
@@ -459,35 +443,54 @@ def run():
     ##### Filtrar base a partir de ventas identificadas########//TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
     condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
-
     product_data = product_data.loc[kept_data]
-
-    local_instruments = local_instruments.loc[kept_data]
-    quadratic_instruments = quadratic_instruments.loc[kept_data]
-    blp_instruments = blp_instruments.loc[kept_data]
-
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
     market_counts = product_data['market_ids'].value_counts()
     valid_markets = market_counts[market_counts >= 2].index
     product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
-    local_instruments = local_instruments.loc[product_data.index]
-    quadratic_instruments = quadratic_instruments.loc[product_data.index]
-    blp_instruments = blp_instruments.loc[product_data.index]
-
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
-
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+
+
+    ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
+    formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
+    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
+    blp_instruments = pd.DataFrame(blp_instruments)
+    blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
+
+    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='local')
+    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
+
+    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
+    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
+
+    print(type(blp_instruments))
+    print(type(local_instruments))
+    print(type(quadratic_instruments))
+
+    # local_instruments = local_instruments.loc[kept_data]
+    # quadratic_instruments = quadratic_instruments.loc[kept_data]
+    # blp_instruments = blp_instruments.loc[kept_data]
+
+    # product_data.reset_index(drop=True, inplace=True)
+    # blp_instruments.reset_index(drop=True, inplace=True)
+    # local_instruments.reset_index(drop=True, inplace=True)
+    # quadratic_instruments.reset_index(drop=True, inplace=True)
+
+
+    # local_instruments = local_instruments.loc[product_data.index]
+    # quadratic_instruments = quadratic_instruments.loc[product_data.index]
+    # blp_instruments = blp_instruments.loc[product_data.index]
+
+    # product_data.reset_index(drop=True, inplace=True)
+    # blp_instruments.reset_index(drop=True, inplace=True)
+    # local_instruments.reset_index(drop=True, inplace=True)
+    # quadratic_instruments.reset_index(drop=True, inplace=True)
+
 
     ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
