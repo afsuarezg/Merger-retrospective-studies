@@ -494,19 +494,20 @@ def run():
     ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
     # product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    datetime_=datetime.datetime.today()
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
     # Print all the locations where the DataFrames were saved
-    print(f"Product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
-    print(f"BLP instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
-    print(f"Local instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
-    print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
-    print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
-    print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv")
+    print(f"Product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime_}.csv")
+    print(f"BLP instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
+    print(f"Local instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
+    print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
+    print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv")
+    print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv")
 
     product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
@@ -514,7 +515,7 @@ def run():
                             quad_inst = quadratic_instruments, 
                             agent_data= agent_data)
     
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
     print('empezando optimización')
     iter =  0
     while iter <= 100:
