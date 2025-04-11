@@ -369,6 +369,7 @@ def compile_data(product_data: pd.DataFrame,
 
 def run():
     date = datetime.datetime.today().strftime("%Y-%m-%d")
+    datetime_=datetime.datetime.today()
     year=2014
     first_week=20
     num_weeks=5
@@ -399,6 +400,7 @@ def run():
     # Crea directorio para guardar las predicciones
     weeks = sorted(set(product_data['week_end']))
     week_dir = weeks[0] if len(weeks) >= 1 else None
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
 
@@ -455,6 +457,7 @@ def run():
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
 
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_preins_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
     ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados. 
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
@@ -494,7 +497,7 @@ def run():
     ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
     # product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
-    datetime_=datetime.datetime.today()
+    
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
     blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
     local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
@@ -509,13 +512,13 @@ def run():
     print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv")
     print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv")
 
-    product_data = compile_data(product_data = product_data, 
+    product_data_ = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
                             agent_data= agent_data)
     
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    product_data_.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
     print('empezando optimización')
     iter =  0
     while iter <= 100:
@@ -523,7 +526,7 @@ def run():
         print(iter)
         print('------------------------------')
         try:
-            results= rcl_with_demographics(product_data=product_data, agent_data=agent_data)
+            results= rcl_with_demographics(product_data=product_data_, agent_data=agent_data)
             # optimal_results = results_optimal_instruments(results=results)
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')

@@ -72,10 +72,10 @@ def rcl_with_demographics(product_data: pd.DataFrame, agent_data: pd.DataFrame):
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
 
     # Definición del problema con consumidor
-    problem = pyblp.Problem(product_formulations,
-                            product_data,
-                            agent_formulation,
-                            agent_data)
+    problem = pyblp.Problem(product_formulations=product_formulations,
+                            product_data=product_data,
+                            agent_formulation=agent_formulation,
+                            agent_data=agent_data)
     
     
     # Sigma initial values
