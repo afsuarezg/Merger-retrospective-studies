@@ -489,10 +489,6 @@ def run():
     # quadratic_instruments = quadratic_instruments.loc[product_data.index]
     # blp_instruments = blp_instruments.loc[product_data.index]
 
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
 
     ######### Salvando instrumentos e información de los consumidores ###########
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
@@ -511,6 +507,12 @@ def run():
     print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
     print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv")
     print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv")
+
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
+    agent_data.reset_index(drop=True, inplace=True)
 
     product_data_ = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
