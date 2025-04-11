@@ -519,7 +519,7 @@ def run():
                             agent_data= agent_data)
     
     product_data_.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-    print('empezando optimización')
+    print(f'empezando optimización {datetime_}')
     iter =  0
     while iter <= 100:
         print('------------------------------')
