@@ -514,22 +514,36 @@ def run():
     quadratic_instruments.reset_index(drop=True, inplace=True)
     agent_data.reset_index(drop=True, inplace=True)
 
-    product_data_ = compile_data(product_data = product_data, 
+    product_data = compile_data(product_data = product_data, 
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
                             agent_data= agent_data)
     
-    product_data_.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
     print(f'empezando optimización {datetime_}')
     iter =  0
+
+    #logit formulation 
+    linear_formulation=pyblp.Formulation('1+ prices', absorb='C(product_ids)')
+    non_linear_formulation=pyblp.Formulation('1+ prices + tar')
+    agent_formulation=pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
+
+    plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
+
     while iter <= 100:
         print('------------------------------')
         print(iter)
         print('------------------------------')
         try:
-            results= rcl_with_demographics(product_data=product_data_, agent_data=agent_data)
-            # optimal_results = results_optimal_instruments(results=results)
+            results= rcl_with_demographics(product_data=product_data, 
+                                           agent_data=agent_data,
+                                           linear_formulation=linear_formulation,
+                                           non_linear_formulation=non_linear_formulation,
+                                           agent_formulation=agent_formulation,
+                                           logit_results=plain_logit_results)
+     
+
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
             if results.converged == True:

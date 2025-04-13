@@ -52,7 +52,7 @@ def create_instrument_dict(product_data:pd.DataFrame):
     return inst_dict
 
 
-def plain_logit(product_data: pd.DataFrame, 
+def plain_logit_deprecated(product_data: pd.DataFrame, 
                 inst_data: pd.DataFrame):
     product_data = pd.concat([product_data, inst_data], axis=1)
     inst_dict =  create_instrument_dict(product_data)
@@ -96,6 +96,18 @@ def plain_logit(product_data: pd.DataFrame,
     # fe_problem = pyblp.Problem(logit_formulation, product_data)
     # fe_results = fe_problem.solve(method='1s')
     # print(fe_results)
+
+
+def plain_logit(product_data=pd.DataFrame, formulation: pyblp.Formulation):
+    problem= pyblp.Problem(product_formulations=formulation, 
+                           product_data=product_data)
+    
+    logit_results=problem.solve()
+
+    return logit_results
+
+    
+
 
 
 
