@@ -98,7 +98,7 @@ def plain_logit_deprecated(product_data: pd.DataFrame,
     # print(fe_results)
 
 
-def plain_logit(product_data=pd.DataFrame, formulation: pyblp.Formulation):
+def plain_logit(product_data: pd.DataFrame, formulation: pyblp.Formulation):
     problem= pyblp.Problem(product_formulations=formulation, 
                            product_data=product_data)
     

@@ -41,7 +41,7 @@ def generate_random_sparse_array(shape, start_range, end_range, k):
     return reshape(flat_array, shape)
 
 
-def create_sparse_array(shape, k, seed=42, random_seed=None):
+def create_sparse_array(shape, num_random:int, seed=42, random_seed=None):
     """
     Creates a multidimensional array with k random elements in fixed positions and the rest set to zero.
     The positions remain constant across calls, but the values change.
@@ -60,7 +60,7 @@ def create_sparse_array(shape, k, seed=42, random_seed=None):
     # Initialize fixed positions only once
     if _fixed_positions is None:
         np.random.seed(seed)
-        indices = np.random.choice(np.prod(shape), k, replace=False)
+        indices = np.random.choice(np.prod(shape), num_random, replace=False)
         _fixed_positions = np.unravel_index(indices, shape)
 
     # Initialize array with zeros
@@ -71,7 +71,7 @@ def create_sparse_array(shape, k, seed=42, random_seed=None):
         np.random.seed(random_seed)
 
     # Assign new random values at the fixed positions
-    random_values = np.random.rand(k)
+    random_values = np.random.rand(num_random)
     array[_fixed_positions] = random_values
 
     return array
@@ -103,7 +103,7 @@ def generate_random_array(shape, start_range, end_range):
     return create_array(shape)
 
 
-def generate_random_floats(x, start_range: float, end_range: float, seed: int=None):
+def generate_random_floats(num_floats: int, start_range: float, end_range: float, seed: int=None):
     """
     Generates a list of random floats.
 
@@ -115,14 +115,14 @@ def generate_random_floats(x, start_range: float, end_range: float, seed: int=No
     Returns:
     list: List of random floats.
     """
-    if x <= 0:
+    if num_floats <= 0:
         raise ValueError("The number of random floats must be a positive integer.")
     if start_range > end_range:
         raise ValueError("Start of the range must be less than or equal to the end of the range.")
     if seed:
         random.seed(seed)
         
-    return [random.uniform(start_range, end_range) for _ in range(x)]
+    return [random.uniform(start_range, end_range) for _ in range(num_floats)]
 
 
 def count_non_zero_one_strings(input_string):
