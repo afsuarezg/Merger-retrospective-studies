@@ -408,7 +408,7 @@ def run():
     ####### Agregando información sociodemográfica #########
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()])
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
@@ -417,7 +417,7 @@ def run():
 
     # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
     
-    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 400)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
     demographic_sample.replace(-1, np.nan, inplace=True)
 
     knn_imputer = KNNImputer(n_neighbors=2)
@@ -542,7 +542,7 @@ def run():
                                            non_linear_formulation=non_linear_formulation,
                                            agent_formulation=agent_formulation,
                                            logit_results=plain_logit_results)
-     
+        
 
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
             print(f'------------results {iter}------------------')
