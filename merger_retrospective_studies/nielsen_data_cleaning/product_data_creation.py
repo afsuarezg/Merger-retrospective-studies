@@ -147,6 +147,7 @@ def creating_product_data_rcl(main_dir: str,
     extra_attributes_path (str): Path to the extra attributes data file.
     first_week (int, optional): The first week to filter the data. Defaults to 0.
     num_weeks (int, optional): The number of weeks to filter the data. Defaults to 1.
+    lower_threshold_identified_sales (float, optional): The lower threshold for identified sales. Defaults to 0.8.
     Returns:
     pd.DataFrame: A DataFrame containing the processed product data.
     """
@@ -161,10 +162,16 @@ def creating_product_data_rcl(main_dir: str,
     
     print('movements_data:', movements_data.shape)
     print(sorted(set(movements_data['week_end'])))
+    
+    # Información de las tiendas
     stores_data = stores_file(stores_path=stores_path)
     print('stores_data: ', stores_data.shape)
+    
+    # Información de los productos
     products_data = products_file(products_path=products_path)
     print('product_data: ', products_data.shape)
+    
+    # Información extra o adicional de los productos
     extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
                                                   moves_data=movements_data)
     print('extra_ats: ', extra_attributes_data.shape )
@@ -190,7 +197,7 @@ def creating_product_data_rcl(main_dir: str,
     # Cambia el nombre de una variable
     product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
 
-    # Agrega ventas a nivel de tienda y marca 
+    # Agrega ventas a nivel de mercado y marca 
     product_data = product_data.groupby(['market_ids', 'brand_descr', 'store_code_uc'], as_index=False).agg({
                 'zip':'first' ,
                 'week_end':'first' ,
