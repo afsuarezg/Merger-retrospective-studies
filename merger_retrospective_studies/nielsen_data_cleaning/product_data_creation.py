@@ -280,55 +280,40 @@ def creating_product_data_rcl(main_dir: str,
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
-    # Asignación de las marcas por empresa -> Realiza el mapping entre las marcas disponibles en la base de datos y las empresas propietarias de las mismas.
+    #-------------------------------------------------------------------
+    # Asignación de las marcas por empresa -> Realiza el mapping entre las marcas y las empresas con anterioridad y posterioridad a la integración. 
+
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
-    print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).intersection(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
+    # print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).intersection(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
 
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
-    product_data['firm_ids']=(pd.factorize(product_data['firm']))[0]
-    product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1, company_brands_dict=brands_by_company_post_merger)
-    product_data['firm_ids_post_merger']=(pd.factorize(product_data['firm_post_merger']))[0]
+    product_data['firm_ids']=pd.factorize(product_data['firm'])[0]
+    product_data['firm_post_merger']=product_data.apply(find_company_post_merger, axis=1,company_brands_dict=brands_by_company_post_merger)
+    product_data['firm_ids_post_merger']=pd.factorize(product_data['firm_post_merger'])[0]
 
+    #-------------------------------------------------------------------
     # Agrega características de los productos al archivo de product data
     brands_to_characteristics = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Firmas_marcas/brands_to_characteristics2.json')
     brands_to_characteristics['from Nielsen']=brands_to_characteristics['from Nielsen'].str.lower()
 
-    print('4 product_data: ', product_data.shape)
     product_data = product_data.merge(brands_to_characteristics, how='inner', left_on='brand_descr', right_on='from Nielsen')
-    print('4.1 product_data: ', product_data.shape)
     product_data = product_data.merge(characteristics, how='inner', left_on='from characteristics', right_on='name')
-    print('4.2 product_data: ', product_data.shape)
+
+    # Elimina productos para los que no se pudieron identificar las características.
     product_data = product_data[product_data['name'].notna()]
-    print('5 product_data: ', product_data.shape)
-
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
-
+    #-------------------------------------------------------------------
     # Cambio del nombre de IDS de mercados y genera indicador numérico para estos 
-    # product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+
     product_data['market_ids']=product_data['market_ids'].factorize()[0]
-    print('6 product_data: ', product_data.shape)
-    # Creacion de dataframe organizando por nivel de ingresos identificados 
-    # markets_characterization =product_data[['zip',
-    #                       'market_ids_string',
-    #                       'market_ids',
-    #                       'total_income_market',
-    #                       'total_income_market_known_brands',
-    #                       'fraction_identified_earnings']].sort_values(by=['fraction_identified_earnings'], axis=0, ascending=False)
-    
+    # Creacion de dataframe organizando por nivel de ingresos identificados    
     # Creación de identificador numérico para los productos
-    # product_data = product_data[(product_data['total_income_market_known_brands'] > 700) & (product_data['fraction_identified_earnings'] >0.4 )].reset_index()
-    # product_data = product_data[(product_data['fraction_identified_earnings'] >= fractioned_identified_earning)].reset_index()
-    # del product_data['index']
+
     product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
-    print('7 product_data: ', product_data.shape)
-    # Elimina productos con características no identificadas
-    
-    # Save product_data DataFrame to the specified directory
-    # output_dir = '/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas'
-    # os.makedirs(output_dir, exist_ok=True)
-    # product_data.to_csv(os.path.join(output_dir, f'product_data_previo.csv'), index=False)
+
     return product_data
+
 
 
 def creating_instruments_data(product_data: pd.DataFrame):

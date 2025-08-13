@@ -71,7 +71,7 @@ def find_company_pre_merger(row, company_brands_dict:dict):
     """
     Identifies the company associated with a brand before a merger.
     This function takes a row of data and a dictionary mapping companies to their respective brands.
-    It checks if the brand described in the row is associated with any company in the dictionary.
+    It checks if the brand is associated with any company in the dictionary.
     If a match is found, it returns the company name; otherwise, it returns 'unidentified'.
     Parameters:
     row (dict): A dictionary representing a row of data, which must contain a 'brand_descr' key.
