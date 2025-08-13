@@ -288,7 +288,7 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
                         'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
                         'week_end', 'week_end_ID',
                         'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
-                        'units', 'total_individual_units', 'total_units_retailer',
+                        'units', 'total_individual_units', 'total_units_market',
                         'shares', 'poblacion_census_2020',
                         'total_income', 'total_income_market_known_brands', 'total_income_market', 'fraction_identified_earnings',
                         'prices',
@@ -384,7 +384,7 @@ def run():
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=first_week,
                                      num_weeks=num_weeks,
-                                     lower_threshold_identified_sales=threshold_identified_earnings)
+                                     lower_threshold_identified_sales=threshold_identified_earnings=0.35)
     
     # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
 

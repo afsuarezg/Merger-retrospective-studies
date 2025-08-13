@@ -153,7 +153,7 @@ def creating_product_data_rcl(main_dir: str,
     """
     # os.chdir(f'/oak/stanford/groups/polinsky/Nielsen_data/Mergers/{DIRECTORY_NAME}/nielsen_extracts/RMS/{YEAR}/Movement_Files/{DEPARTMENT_CODE}_{YEAR}/')
     os.chdir(path= main_dir)
-
+    #-------------------------------------------------------------------
     # Descarga los datos
     movements_data = movements_file(movements_path=movements_path, 
                                     filter_row_weeks=filter_row_weeks, 
@@ -228,36 +228,55 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
 
-    # Determinar porción de ventas identificadas para cada tienda a través de ingresos 
-    total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids','store_code_uc'], as_index=False).agg({'total_income': 'sum'}))
-    total_sales_per_marketid = total_sales_per_marketid.rename(columns={'total_income':'total_income_market'})
-    total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids','store_code_uc'],as_index=False).agg({'total_income': 'sum'}))
-    total_sales_identified_per_marketid = total_sales_identified_per_marketid.rename(columns={'total_income':'total_income_market_known_brands'})
-    product_data = product_data.merge(total_sales_per_marketid, how ='left', on=['market_ids','store_code_uc'])
-    product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on=['market_ids','store_code_uc'])
-    product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
-    product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
-    # //TODO Eliminar filas de retailers con ventas identificadas inferiores a un threshold previamente definido.
+    #-------------------------------------------------------------------
+    # Determinar porción de ventas identificadas para cada tienda (recordar que los mercados se definieron como la combinación entre tienda y semana) a través de ingresos 
+    #total de ventas por mercado, identificadas y sin identificar.
+    total_sales_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids'], as_index=False).agg({'total_income': 'sum'}))
+    total_sales_per_marketid.rename(columns={'total_income':'total_income_market'}, inplace=True)
+    
+    #total de ventas por mercado, solo de marcas identificadas.
+    total_sales_identified_per_marketid = pd.DataFrame(product_data[product_data['brand_descr']!='Not_identified'].groupby(by=['market_ids'],as_index=False).agg({'total_income': 'sum'}))
+    total_sales_identified_per_marketid.rename(columns={'total_income':'total_income_market_known_brands'}, inplace=True)
 
-    # Suma total de unidades vendidas por tienda 
-    total_sold_units_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids', 'store_code_uc'], as_index=False).agg({'units': 'sum'}))
-    total_sold_units_per_marketid.rename(columns={'units':'total_units_retailer'}, inplace=True)
-    product_data = product_data.merge(total_sold_units_per_marketid, how ='left', on=['market_ids','store_code_uc'])
+    #Agrega columnas de total_income_market y total_income_market_known_brands
+    product_data = product_data.merge(total_sales_per_marketid, how ='left', on='market_ids')
+    product_data = product_data.merge(total_sales_identified_per_marketid, how='left', on='market_ids')
+    
+    #fillna para evitar errores de NaN
+    product_data.fillna({'total_income_market_known_brands': 0.0}, inplace=True)
+    
+    #Calcula y agrega columna de fraccion de ventas identificadas
+    product_data['fraction_identified_earnings'] = product_data.apply(fraccion_ventas_identificadas, axis=1)
+
+    #Elimina mercados con fraccion de ventas identificadas inferiores a un threshold previamente definido.
+    product_data = product_data[product_data['fraction_identified_earnings'] >= lower_threshold_identified_sales]
+    #-------------------------------------------------------------------
+   
+    # Después de identificar los mercados para los que las ventas identificadas por valor son superiores al threshold definido, se suman las unidades vendidas para dichos mercados. 
+    # Suma total de unidades identificadas y vendidas por tienda 
+    total_units_sold_per_marketid = pd.DataFrame(product_data.groupby(by=['market_ids'], as_index=False).agg({'units': 'sum'}))
+    total_units_sold_per_marketid.rename(columns={'units':'total_units_market'}, inplace=True)
+    product_data = product_data.merge(total_units_sold_per_marketid, how ='left', on=['market_ids'])
 
     # Elimina ventas que no tienen identificada la marca
-    product_data = product_data[product_data['brand_code_uc'].notna()]
-
-    # Adición de información poblacional. //TODO Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
+    product_data = product_data[product_data['brand_code_uc'].notna()] 
+    #-------------------------------------------------------------------    
+    
+    # Adición de información poblacional 
+    #TODO Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
-    fips_pop['FIPS'] = fips_pop['FIPStxt'].astype('int')
-    fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
-    product_data['fip'] = product_data.apply(prepend_zeros, axis=1).astype('int')
-    fips_pop = fips_pop.rename(columns={'FIPS': 'fip'})
-    product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fip']], how='left', on='fip')
-    product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    # fips_pop=fips_pop[['FIPStxt', 'State', f'CENSUS_{YEAR}_POP']]
+    fips_pop['fips'] = fips_pop['FIPStxt'].astype('int')
+    # fips_pop['FIPStxt']=fips_pop['FIPStxt'].astype(str)
+    product_data['fips'] = product_data.apply(prepend_zeros, axis=1).astype('int')
+    product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fips']], how='left', on='fips')
+    product_data.rename(columns={'fips':'FIPS', 'fips_state_code':'GESTFIPS'}, inplace=True)
 
-    # Calculo de participaciones de mercado incluyendo la participación del bien externo. //TODO Revisar que las participaciones de mercado estimadas del modelo sean cercanas a las observadas en otros estudios. Aunque es difícil que ocurra porque no se tiene toda la demanda por ubicación geográfica.
+    #-------------------------------------------------------------------
+
+    # Calculo de participaciones de mercado incluyendo la participación del bien externo. 
+    # TODO Revisar que las participaciones de mercado estimadas del modelo sean cercanas a las observadas en otros estudios. Aunque es difícil que ocurra porque no se tiene toda la demanda por ubicación geográfica.
     product_data['shares']=product_data.apply(shares_with_outside_good, axis=1)    
     product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
 
