@@ -22,6 +22,7 @@ from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
+from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -376,8 +377,9 @@ def run():
     num_weeks=5
     threshold_identified_earnings = 0.35
     optimization_algorithm = 'l-bfgs-b'
+
+    #-----------------------------------------------------------------
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
-                                    #  movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/2014/Movement_Files/4510_2014/7460_2014.tsv' ,
                                      movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv',
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv',
                                      products_path='Nielsen_data/Master_Files/Latest/products.tsv',
@@ -386,62 +388,67 @@ def run():
                                      num_weeks=num_weeks,
                                      lower_threshold_identified_sales=threshold_identified_earnings=0.35)
     
+    #-----------------------------------------------------------------
     # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
-
     # market_counts = product_data['market_ids'].value_counts()
     # valid_markets = market_counts[market_counts >= 2].index
     # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
+    #-----------------------------------------------------------------
     product_data = select_product_data_columns(product_data=product_data)
-
-    # Save product_data DataFrame to the specified directory
-    output_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/{date}'
-    os.makedirs(output_dir, exist_ok=True)
    
+    #-------------------------------------------------------------
+    # Crea directorios para guardar los datos procesados, las predicciones y los resultados de la optimización.
+    week_dir = create_output_directories(product_data=product_data, date=date,optimization_algorithm=optimization_algorithm)
 
-    # Crea directorio para guardar las predicciones
-    weeks = sorted(set(product_data['week_end']))
-    week_dir = weeks[0] if len(weeks) >= 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
+    #-----------------------------------------------------------------
+    # Agregando información sociodemográfica 
+    pop_agent_data = create_agent_data_from_cps(record_layout_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt',
+                                                agent_data_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat')
 
+    # socdem_file_structure = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
+    # agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in socdem_file_structure.values()])
+    # agent_data_pop.columns  = socdem_file_structure.keys()
+    
+    # # Elimina observaciones de los consumidores para los que el valor de condado es igual a 0.
+    # agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
 
-    ####### Agregando información sociodemográfica #########
-    # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    output = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in output.values()])
-    column_names = output.keys()
-    agent_data_pop.columns = column_names
-    agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-    agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
-    agent_data_pop.reset_index(inplace=True, drop=True)
+    # # Genera la variable FIPS a partir de las variables GESTFIPS y GTCO.
+    # agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
+
+    # # Resetea el índice del agent_data_pop.
+    # agent_data_pop.reset_index(inplace=True, drop=True)
 
     # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
     
-    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 400)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
-    demographic_sample.replace(-1, np.nan, inplace=True)
 
-    knn_imputer = KNNImputer(n_neighbors=2)
-    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]), columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
 
-    grouped = demographic_sample.groupby('GESTFIPS').size()
+    #-----------------------------------------------------------------
+    sample_agent_data = create_agent_data_sample(agent_data_pop=pop_agent_data, product_data=product_data)
+    # agent_data_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'].unique(), 400)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    # agent_data_sample.replace(-1, np.nan, inplace=True)
 
-    demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
-    demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
-    demographic_sample = add_random_nodes(demographic_sample)
+    # knn_imputer = KNNImputer(n_neighbors=3)
+    # agent_data_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(agent_data_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]), columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
 
-    demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
-                                            'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-                                            'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-                                            'ptdtrace_imputed', 'peeduca_imputed']]
+    # grouped = agent_data_sample.groupby('GESTFIPS').size()
+
+    # agent_data_sample['weights'] = agent_data_sample['GESTFIPS'].map(1 / grouped)
+    # agent_data_sample = pd.concat([agent_data_sample[['FIPS', 'GESTFIPS','weights']],agent_data_sample_knn_imputed], axis=1)
+    # agent_data_sample = add_random_nodes(agent_data_sample)
+
+    # agent_data_sample = agent_data_sample[['FIPS', 'GESTFIPS', 'weights',
+    #                                         'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
+    #                                         'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
+    #                                         'ptdtrace_imputed', 'peeduca_imputed']]
     
-    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
-                                      demographic_sample, 
-                                      how='inner', 
-                                      left_on='GESTFIPS',
-                                      right_on='GESTFIPS')
+    # agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
+    #                                   agent_data_sample, 
+    #                                   how='inner', 
+    #                                   left_on='GESTFIPS',
+    #                                   right_on='GESTFIPS')
     
+    #-----------------------------------------------------------------
     ##### Filtrar base a partir de ventas identificadas########//TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
     condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
     kept_data = product_data.loc[condition].index
