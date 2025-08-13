@@ -283,7 +283,8 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
         - 'nicotine_mg_per_cig'
     """
 
-    return product_data[['market_ids', 'market_ids_string',
+    return product_data[['market_ids', 
+                        #  'market_ids_string',
                         'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
                         'week_end', 'week_end_ID',
                         'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
@@ -422,9 +423,7 @@ def run():
     demographic_sample.replace(-1, np.nan, inplace=True)
 
     knn_imputer = KNNImputer(n_neighbors=2)
-    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
-                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
-                                        'ptdtrace_imputed', 'peeduca_imputed'])
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]), columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
 
     grouped = demographic_sample.groupby('GESTFIPS').size()
 

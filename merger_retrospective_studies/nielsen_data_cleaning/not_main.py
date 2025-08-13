@@ -57,7 +57,7 @@ def run():
                 'week_end':'first' ,
                 'week_end_ID':'first',
             #     'upc':'first', # se pierde al agregar a través de marcas
-                'market_ids_fips':'first',
+                # 'market_ids_fips':'first',
                 'fips_state_code':'first', 
                 'fips_state_descr':'first', 
                 'fips_county_code':'first', 
@@ -143,7 +143,8 @@ def run():
     product_data = product_data[product_data['name'].notna()]
     
     # Organizando el dataframe
-    product_data = product_data[['market_ids', 'market_ids_fips',
+    product_data = product_data[['market_ids', 
+                                #  'market_ids_fips',
                              #variables relativas a la ubicacion
                              'store_code_uc', 'zip', 'fip', 'fips_state_code',  'fips_county_code', #'fips_county_descr',  'fips_state_descr',
                              #variables relativas al tiempo
@@ -166,12 +167,12 @@ def run():
                              'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
     # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
-    product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
-    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+    # product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+    product_data['market_ids']=product_data['market_ids'].factorize()[0]
     
     # Creacion de dataframe organizando por nivel de ingresos identificados 
     markets_characterization =product_data[['zip',
-                          'market_ids_string',
+                        #   'market_ids_fips',
                           'market_ids',
                           'total_income_market',
                           'total_income_market_known_brands',
@@ -206,7 +207,7 @@ def run():
     # Agregando información sociodemográfica
     # encoding_guessed = read_file_with_guessed_encoding('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
     output = process_file('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/otros/January_2014_Record_Layout.txt')
-    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()] )
+    agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Nielsen_data/Mergers/Reynolds_Lorillard/apr14pub.dat', widths= [int(elem) for elem in output.values()])
     column_names = output.keys()
     agent_data_pop.columns = column_names
     agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
@@ -219,9 +220,7 @@ def run():
     demographic_sample.replace(-1, np.nan, inplace=True)
 
     knn_imputer = KNNImputer(n_neighbors=2)
-    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
-                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
-                                        'ptdtrace_imputed', 'peeduca_imputed'])
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
 
     grouped = demographic_sample.groupby('GESTFIPS').size()
 

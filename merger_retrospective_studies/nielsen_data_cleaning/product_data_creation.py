@@ -62,7 +62,7 @@ def creating_product_data_for_comparison(main_dir: str,
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
     product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
-    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)
+    # product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1)
     product_data['firm_ids'] = None
     product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
     product_data['total_income'] = product_data.apply(total_income, axis=1)
@@ -78,7 +78,7 @@ def creating_product_data_for_comparison(main_dir: str,
                 'week_end':'first' ,
                 'week_end_ID':'first',
             #     'upc':'first', # se pierde al agregar a través de marcas
-                'market_ids_fips':'first',
+                # 'market_ids_fips':'first',
                 'fips_state_code':'first', 
                 'fips_state_descr':'first', 
                 'fips_county_code':'first', 
@@ -113,7 +113,7 @@ def creating_product_data_for_comparison(main_dir: str,
     product_data = product_data[product_data['brand_code_uc'].notna()]
 
     # Cambio del nombre de IDS de mercados y genera indicador para numérico para estos 
-    product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+    # product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
     product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
 
     # Save product_data DataFrame to the specified location     
@@ -187,7 +187,7 @@ def creating_product_data_rcl(main_dir: str,
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
     product_data['market_ids'] = product_data.apply(retail_market_ids_identifier, axis=1)
-    product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1) # //TODO Revisar cómo se está usando esta variable porque no estoy seguro de que esté creando un ID con información de FIPS
+    # product_data['market_ids_fips'] = product_data.apply(retail_market_ids_fips, axis=1) # //TODO Revisar cómo se está usando esta variable porque no estoy seguro de que esté creando un ID con información de FIPS
     product_data['firm_ids'] = None
     product_data['brand_descr'] = product_data['brand_descr'].fillna('Not_identified')
     product_data['total_income'] = product_data.apply(total_income, axis=1)
@@ -198,11 +198,11 @@ def creating_product_data_rcl(main_dir: str,
     product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
 
     # Agrega ventas a nivel de mercado y marca 
-    product_data = product_data.groupby(['market_ids', 'brand_descr', 'store_code_uc'], as_index=False).agg({
+    product_data = product_data.groupby(['market_ids', 'brand_descr'], as_index=False).agg({
                 'zip':'first' ,
                 'week_end':'first' ,
                 'week_end_ID':'first',
-                'market_ids_fips':'first',
+                #'market_ids_fips':'first',
                 'fips_state_code':'first', 
                 'fips_state_descr':'first', 
                 'fips_county_code':'first', 
@@ -286,8 +286,8 @@ def creating_product_data_rcl(main_dir: str,
     product_data = product_data.dropna(subset=['tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig'])
 
     # Cambio del nombre de IDS de mercados y genera indicador numérico para estos 
-    product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
-    product_data['market_ids']=product_data['market_ids_string'].factorize()[0]
+    # product_data.rename(columns={'market_ids_fips':'market_ids_string'}, inplace=True)
+    product_data['market_ids']=product_data['market_ids'].factorize()[0]
     print('6 product_data: ', product_data.shape)
     # Creacion de dataframe organizando por nivel de ingresos identificados 
     # markets_characterization =product_data[['zip',
