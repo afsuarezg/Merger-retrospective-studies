@@ -2,7 +2,9 @@ import numpy as np
 import os 
 import pandas as pd 
 import pyblp
+from scipy.linalg import svd
 from sklearn.impute import KNNImputer
+
 
 from .consumidores_sociodemograficas import process_file
 from .consumidores_sociodemograficas import get_random_samples_by_code, add_random_nodes
@@ -258,8 +260,6 @@ def save_processed_data(product_data: pd.DataFrame,
         print(f"{name.replace('_', ' ').title()} saved to: {file_paths[name]}")
 
 
-
-
 def create_formulations() -> tuple:
     """
     Creates the standard formulations used for demand estimation.
@@ -275,4 +275,249 @@ def create_formulations() -> tuple:
     agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
     
     return linear_formulation, non_linear_formulation, agent_formulation
+
+
+def check_matrix_collinearity(matrix: pd.DataFrame, tolerance=1e-10):
+    """
+    Checks for collinearity in a matrix using SVD.
+
+    Args:
+        matrix: The input matrix (NumPy array).
+        tolerance: Threshold for determining near-zero singular values.
+
+    Returns:
+        True if collinearity is detected, False otherwise.
+    """
+    _, s, _ = svd(matrix)
+    return np.any(s < tolerance)
+
+
+def find_first_non_collinear_matrix(**dfs):
+    """
+    Finds the first DataFrame in the list that does not exhibit collinearity.
+
+    Args:
+        df_list: A list of pandas DataFrames.
+
+    Returns:
+        The first DataFrame in the list that does not have collinear columns, 
+        or None if all DataFrames exhibit collinearity.
+    """
+    for key, value in dfs.items():
+        # matrix = df.values  # Convert DataFrame to NumPy array
+        if not check_matrix_collinearity(value):
+            print(key)
+            return key, value
+    return None
+
+
+def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Select specific columns from the product data DataFrame.
+    Parameters:
+    product_data (pd.DataFrame): The input DataFrame containing product data.
+    Returns:
+    pd.DataFrame: A DataFrame containing only the selected columns:
+        - 'market_ids'
+        - 'market_ids_string'
+        - 'store_code_uc'
+        - 'zip'
+        - 'FIPS'
+        - 'GESTFIPS'
+        - 'fips_county_code'
+        - 'week_end'
+        - 'week_end_ID'
+        - 'firm'
+        - 'firm_ids'
+        - 'firm_post_merger'
+        - 'firm_ids_post_merger'
+        - 'brand_code_uc'
+        - 'brand_descr'
+        - 'product_ids'
+        - 'units'
+        - 'total_individual_units'
+        - 'total_units_retailer'
+        - 'shares'
+        - 'poblacion_census_2020'
+        - 'total_income'
+        - 'total_income_market_known_brands'
+        - 'total_income_market'
+        - 'fraction_identified_earnings'
+        - 'prices'
+        - 'from Nielsen'
+        - 'from characteristics'
+        - 'name'
+        - 'tar'
+        - 'nicotine'
+        - 'co'
+        - 'nicotine_mg_per_g'
+        - 'nicotine_mg_per_g_dry_weight_basis'
+        - 'nicotine_mg_per_cig'
+    """
+
+    return product_data[['market_ids', 
+                        #  'market_ids_string',
+                        'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
+                        'week_end', 'week_end_ID',
+                        'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
+                        'units', 'total_individual_units', 'total_units_market',
+                        'shares', 'poblacion_census_2020',
+                        'total_income', 'total_income_market_known_brands', 'total_income_market', 'fraction_identified_earnings',
+                        'prices',
+                        'from Nielsen', 'from characteristics', 'name',
+                        'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
+
+
+
+def filtering_data_by_identified_sales(product_data: pd.DataFrame,
+                                       blp_instruments: pd.DataFrame, 
+                                       local_instruments: pd.DataFrame,
+                                       quadratic_instruments: pd.DataFrame, 
+                                       threshold_identified_earnings: float=0.4):
+    """
+    Filters the product data and associated instruments based on a threshold for identified earnings.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with a column 'fraction_identified_earnings'.
+    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
+    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
+    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
+    threshold_identified_earnings (float, optional): The threshold for filtering based on 'fraction_identified_earnings'. Default is 0.4.
+    Returns:
+    tuple: A tuple containing the filtered product_data, blp_instruments, local_instruments, and quadratic_instruments DataFrames.
+    """
+    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
+    kept_data = product_data.loc[condition].index
+
+    product_data = product_data.loc[kept_data]
+
+    local_instruments = local_instruments.loc[kept_data]
+    quadratic_instruments = quadratic_instruments.loc[kept_data]
+    blp_instruments = blp_instruments.loc[kept_data]
+
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
+
+    return product_data, blp_instruments, local_instruments, quadratic_instruments
+
+
+def filtering_data_by_number_brands(product_data: pd.DataFrame,
+
+                                    blp_instruments: pd.DataFrame, 
+                                    local_instruments: pd.DataFrame,
+                                    quadratic_instruments: pd.DataFrame, 
+                                    num_brands_by_market: int=2):
+    """
+    Filters the product data and corresponding instruments based on the number of brands in each market.
+    Parameters:
+    -----------
+    product_data : pd.DataFrame
+        DataFrame containing product data with a 'market_ids' column indicating the market each product belongs to.
+    blp_instruments : pd.DataFrame
+        DataFrame containing BLP instruments corresponding to the product data.
+    local_instruments : pd.DataFrame
+        DataFrame containing local instruments corresponding to the product data.
+    quadratic_instruments : pd.DataFrame
+        DataFrame containing quadratic instruments corresponding to the product data.
+    num_brands_by_market : int, optional
+        Minimum number of brands required in a market for it to be considered valid (default is 2).
+    Returns:
+    --------
+    tuple
+        A tuple containing the filtered product data, BLP instruments, local instruments, and quadratic instruments as DataFrames.
+    """
+    market_counts = product_data['market_ids'].value_counts()
+    valid_markets = market_counts[market_counts >= num_brands_by_market].index
+    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
+
+    local_instruments = local_instruments.loc[product_data.index]
+    quadratic_instruments = quadratic_instruments.loc[product_data.index]
+    blp_instruments = blp_instruments.loc[product_data.index]
+
+    product_data.reset_index(drop=True, inplace=True)
+    blp_instruments.reset_index(drop=True, inplace=True)
+    local_instruments.reset_index(drop=True, inplace=True)
+    quadratic_instruments.reset_index(drop=True, inplace=True)
+
+    return product_data, blp_instruments, local_instruments, quadratic_instruments
+
+
+def matching_agent_and_product_data(product_data: pd.DataFrame, 
+                                    agent_data: pd.DataFrame):
+    """
+    Matches agent and product data based on common market IDs.
+    This function filters the agent and product data to include only the entries
+    that have matching market IDs. It ensures that both dataframes contain only
+    the market IDs that are present in both datasets.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with a 'market_ids' column.
+    agent_data (pd.DataFrame): DataFrame containing agent data with a 'market_ids' column.
+    Returns:
+    tuple: A tuple containing two DataFrames:
+        - agent_data (pd.DataFrame): Filtered agent data with matching market IDs.
+        - product_data (pd.DataFrame): Filtered product data with matching market IDs.
+    """
+    agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
+    product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+    return agent_data, product_data
+
+
+def save_processed_data_old(product_data, blp_instruments, local_instruments, quadratic_instruments, agent_data):
+    """
+    Saves processed data to CSV files in a specified directory.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data, including a 'week_end' column.
+    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
+    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
+    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
+    agent_data (pd.DataFrame): DataFrame containing agent data.
+    The function creates a directory based on the 'week_end' value in the product_data DataFrame.
+    If there is only one unique 'week_end' value, it uses that value to create the directory.
+    The function then saves each of the provided DataFrames as CSV files in the created directory.
+    The filenames include the DIRECTORY_NAME and the current date.
+    """
+
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
+    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
+
+
+def save_product_data(product_data: pd.DataFrame, output_dir: str):
+    """
+    Save product data to a CSV file in the specified output directory.
+    Parameters:
+    product_data (pd.DataFrame): The product data to be saved.
+    output_dir (str): The directory where the CSV file will be saved.
+    Returns:
+    None
+    """
+
+    os.makedirs(output_dir, exist_ok=True)
+    product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
+
+
+def create_directories(product_data: pd.DataFrame):
+    """
+    Creates directories based on the week_end column in the provided product data.
+    This function checks the 'week_end' column in the provided DataFrame. If there is only one unique value in the 
+    'week_end' column, it uses that value to create two directories:
+    - One for storing predicted data.
+    - One for storing problem results in pickle format.
+    Args:
+        product_data (pd.DataFrame): A DataFrame containing product data with a 'week_end' column.
+    Raises:
+        KeyError: If the 'week_end' column is not present in the DataFrame.
+        OSError: If there is an error creating the directories.
+    """
+
+    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
+
+
 

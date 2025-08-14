@@ -601,5 +601,61 @@ def main():
 
 
 
+def creating_agent_data(product_data: pd.DataFrame, 
+                        record_layout_path: str, 
+                        agent_data_path: str):
+    """
+    Creates agent data by processing product data and agent data files.
+    Parameters:
+    product_data (pd.DataFrame): DataFrame containing product data with columns 'market_ids', 'market_ids_string', and 'GESTFIPS'.
+    record_layout_path (str): Path to the record layout file.
+    agent_data_path (str): Path to the agent data file.
+    Returns:
+    pd.DataFrame: DataFrame containing the merged and processed agent data with columns:
+                    'FIPS', 'GESTFIPS', 'weights', 'nodes0', 'nodes1', 'nodes2', 'nodes3', 'nodes4',
+                    'hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'.
+    """
+
+
+    output = process_file(record_layout_path)
+    agent_data_pop = pd.read_fwf(agent_data_path, widths= [int(elem) for elem in output.values()] )
+
+    column_names = output.keys()
+    agent_data_pop.columns = column_names
+    agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
+    agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
+    agent_data_pop.reset_index(inplace=True, drop=True)
+
+    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
+    
+    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
+    demographic_sample.replace(-1, np.nan, inplace=True)
+
+    knn_imputer = KNNImputer(n_neighbors=2)
+    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
+                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
+                                        'ptdtrace_imputed', 'peeduca_imputed'])
+
+    grouped = demographic_sample.groupby('GESTFIPS').size()
+
+    demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
+    demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
+    demographic_sample = add_random_nodes(demographic_sample)
+
+    demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
+                                            'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
+                                            'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
+                                            'ptdtrace_imputed', 'peeduca_imputed']]
+    
+    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
+                                      demographic_sample, 
+                                      how='inner', 
+                                      left_on='GESTFIPS',
+                                      right_on='GESTFIPS')
+    return agent_data
+
+
+
+
 if __name__ == '__main__':
     main()

@@ -346,3 +346,40 @@ def creating_instruments_data(product_data: pd.DataFrame):
     print(type(quadratic_instruments))
 
     return formulation, blp_instruments, local_instruments, quadratic_instruments
+
+
+def compile_data(product_data: pd.DataFrame,
+                blp_inst: pd.DataFrame, 
+                local_inst: pd.DataFrame, 
+                quad_inst: pd.DataFrame, 
+                agent_data: pd.DataFrame):
+    """
+    Compiles and consolidates product and instrument data, renames columns, and filters based on agent data.
+    Args:
+        product_data (pd.DataFrame): DataFrame containing product data.
+        blp_inst (pd.DataFrame): DataFrame containing BLP instruments.
+        local_inst (pd.DataFrame): DataFrame containing local instruments.
+        quad_inst (pd.DataFrame): DataFrame containing quadratic instruments.
+        agent_data (pd.DataFrame): DataFrame containing agent data.
+    Returns:
+        pd.DataFrame: Consolidated and filtered product data with renamed columns.
+    """
+
+    inst_name, inst_values = find_first_non_collinear_matrix(local_inst=local_inst,
+                                           quad_inst=quad_inst, 
+                                           blp_inst=blp_inst)
+    
+    print(f'Los instrumentos usados para la actual regresión son {inst_name}')
+
+    consolidated_product_data=pd.concat([product_data, inst_values], axis=1)
+    dict_rename = rename_instruments(consolidated_product_data)
+    consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
+
+    # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
+    consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+
+    # Sort del product_data
+    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True], ignore_index=True)
+
+    return consolidated_product_data
+

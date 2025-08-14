@@ -2,27 +2,27 @@ import os
 import pandas as pd
 import datetime
 import pyblp
-import numpy as np
+
 import sys
 import json
 from itertools import chain
-from scipy.linalg import svd
+
 
 # from dotenv import load_dotenv
 
 from .nielsen_data_cleaning.descarga_merge import movements_file, stores_file, products_file, extra_attributes_file, retail_market_ids_fips, retail_market_ids_identifier, filter_row_weeks
 from .nielsen_data_cleaning.caracteristicas_productos import match_brands_to_characteristics, list_of_files, characteristics
 from .nielsen_data_cleaning.empresas import find_company_pre_merger, find_company_post_merger, brands_by_company_pre_merger, brands_by_company_post_merger
-from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes
+from .nielsen_data_cleaning.consumidores_sociodemograficas import read_file_with_guessed_encoding, process_file, get_random_samples_by_code, KNNImputer, add_random_nodes, creating_agent_data
 from .nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price, fraccion_ventas_identificadas, prepend_zeros, shares_with_outside_good
-from .nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison, creating_product_data_rcl
+from .nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison, creating_product_data_rcl, compile_data, creating_instruments_data
 from .estimaciones.plain_logit import plain_logit
 from .estimaciones.rcl_without_demographics import rcl_without_demographics, rename_instruments
 from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
-from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations
+from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations, check_matrix_collinearity, find_first_non_collinear_matrix, select_product_data_columns, filtering_data_by_identified_sales, filtering_data_by_number_brands, matching_agent_and_product_data, create_directories, save_product_data
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -34,347 +34,13 @@ YEAR = 2014
 
 #TODO: organizar las funciones de Nielsen_data_cleaning dependiendo de la base que está procesando. Las que se usen en diferentes bases deberían ir en un archivo más general. 
 
-def creating_agent_data(product_data: pd.DataFrame, 
-                        record_layout_path: str, 
-                        agent_data_path: str):
-    """
-    Creates agent data by processing product data and agent data files.
-    Parameters:
-    product_data (pd.DataFrame): DataFrame containing product data with columns 'market_ids', 'market_ids_string', and 'GESTFIPS'.
-    record_layout_path (str): Path to the record layout file.
-    agent_data_path (str): Path to the agent data file.
-    Returns:
-    pd.DataFrame: DataFrame containing the merged and processed agent data with columns:
-                    'FIPS', 'GESTFIPS', 'weights', 'nodes0', 'nodes1', 'nodes2', 'nodes3', 'nodes4',
-                    'hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'.
-    """
 
-
-    output = process_file(record_layout_path)
-    agent_data_pop = pd.read_fwf(agent_data_path, widths= [int(elem) for elem in output.values()] )
-
-    column_names = output.keys()
-    agent_data_pop.columns = column_names
-    agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-    agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
-    agent_data_pop.reset_index(inplace=True, drop=True)
-
-    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
-    
-    demographic_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'], 200)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
-    demographic_sample.replace(-1, np.nan, inplace=True)
-
-    knn_imputer = KNNImputer(n_neighbors=2)
-    demographic_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(demographic_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]),
-                                columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 
-                                        'ptdtrace_imputed', 'peeduca_imputed'])
-
-    grouped = demographic_sample.groupby('GESTFIPS').size()
-
-    demographic_sample['weights'] = demographic_sample['GESTFIPS'].map(1 / grouped)
-    demographic_sample = pd.concat([demographic_sample[['FIPS', 'GESTFIPS','weights']],demographic_sample_knn_imputed], axis=1)
-    demographic_sample = add_random_nodes(demographic_sample)
-
-    demographic_sample = demographic_sample[['FIPS', 'GESTFIPS', 'weights',
-                                            'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-                                            'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-                                            'ptdtrace_imputed', 'peeduca_imputed']]
-    
-    agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
-                                      demographic_sample, 
-                                      how='inner', 
-                                      left_on='GESTFIPS',
-                                      right_on='GESTFIPS')
-    return agent_data
-
-
-def filtering_data_by_identified_sales(product_data: pd.DataFrame,
-                                       blp_instruments: pd.DataFrame, 
-                                       local_instruments: pd.DataFrame,
-                                       quadratic_instruments: pd.DataFrame, 
-                                       threshold_identified_earnings: float=0.4):
-    """
-    Filters the product data and associated instruments based on a threshold for identified earnings.
-    Parameters:
-    product_data (pd.DataFrame): DataFrame containing product data with a column 'fraction_identified_earnings'.
-    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
-    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
-    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
-    threshold_identified_earnings (float, optional): The threshold for filtering based on 'fraction_identified_earnings'. Default is 0.4.
-    Returns:
-    tuple: A tuple containing the filtered product_data, blp_instruments, local_instruments, and quadratic_instruments DataFrames.
-    """
-    condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
-    kept_data = product_data.loc[condition].index
-
-    product_data = product_data.loc[kept_data]
-
-    local_instruments = local_instruments.loc[kept_data]
-    quadratic_instruments = quadratic_instruments.loc[kept_data]
-    blp_instruments = blp_instruments.loc[kept_data]
-
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
-
-    return product_data, blp_instruments, local_instruments, quadratic_instruments
-
-
-def filtering_data_by_number_brands(product_data: pd.DataFrame,
-
-                                    blp_instruments: pd.DataFrame, 
-                                    local_instruments: pd.DataFrame,
-                                    quadratic_instruments: pd.DataFrame, 
-                                    num_brands_by_market: int=2):
-    """
-    Filters the product data and corresponding instruments based on the number of brands in each market.
-    Parameters:
-    -----------
-    product_data : pd.DataFrame
-        DataFrame containing product data with a 'market_ids' column indicating the market each product belongs to.
-    blp_instruments : pd.DataFrame
-        DataFrame containing BLP instruments corresponding to the product data.
-    local_instruments : pd.DataFrame
-        DataFrame containing local instruments corresponding to the product data.
-    quadratic_instruments : pd.DataFrame
-        DataFrame containing quadratic instruments corresponding to the product data.
-    num_brands_by_market : int, optional
-        Minimum number of brands required in a market for it to be considered valid (default is 2).
-    Returns:
-    --------
-    tuple
-        A tuple containing the filtered product data, BLP instruments, local instruments, and quadratic instruments as DataFrames.
-    """
-    market_counts = product_data['market_ids'].value_counts()
-    valid_markets = market_counts[market_counts >= num_brands_by_market].index
-    product_data = product_data[product_data['market_ids'].isin(valid_markets)]
-
-    local_instruments = local_instruments.loc[product_data.index]
-    quadratic_instruments = quadratic_instruments.loc[product_data.index]
-    blp_instruments = blp_instruments.loc[product_data.index]
-
-    product_data.reset_index(drop=True, inplace=True)
-    blp_instruments.reset_index(drop=True, inplace=True)
-    local_instruments.reset_index(drop=True, inplace=True)
-    quadratic_instruments.reset_index(drop=True, inplace=True)
-
-    return product_data, blp_instruments, local_instruments, quadratic_instruments
-
-
-def matching_agent_and_product_data(product_data: pd.DataFrame, 
-
-                                    agent_data: pd.DataFrame):
-    """
-    Matches agent and product data based on common market IDs.
-    This function filters the agent and product data to include only the entries
-    that have matching market IDs. It ensures that both dataframes contain only
-    the market IDs that are present in both datasets.
-    Parameters:
-    product_data (pd.DataFrame): DataFrame containing product data with a 'market_ids' column.
-    agent_data (pd.DataFrame): DataFrame containing agent data with a 'market_ids' column.
-    Returns:
-    tuple: A tuple containing two DataFrames:
-        - agent_data (pd.DataFrame): Filtered agent data with matching market IDs.
-        - product_data (pd.DataFrame): Filtered product data with matching market IDs.
-    """
-    agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
-    product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
-
-    return agent_data, product_data
-
-
-def save_processed_data(product_data, blp_instruments, local_instruments, quadratic_instruments, agent_data):
-    """
-    Saves processed data to CSV files in a specified directory.
-    Parameters:
-    product_data (pd.DataFrame): DataFrame containing product data, including a 'week_end' column.
-    blp_instruments (pd.DataFrame): DataFrame containing BLP instruments data.
-    local_instruments (pd.DataFrame): DataFrame containing local instruments data.
-    quadratic_instruments (pd.DataFrame): DataFrame containing quadratic instruments data.
-    agent_data (pd.DataFrame): DataFrame containing agent data.
-    The function creates a directory based on the 'week_end' value in the product_data DataFrame.
-    If there is only one unique 'week_end' value, it uses that value to create the directory.
-    The function then saves each of the provided DataFrames as CSV files in the created directory.
-    The filenames include the DIRECTORY_NAME and the current date.
-    """
-
-    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}', exist_ok=True)
-    blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/blp_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/local_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/quadratic_instruments_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-    agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/agent_data_{DIRECTORY_NAME}_{datetime.datetime.today()}.csv', index=False)
-
-
-def save_product_data(product_data: pd.DataFrame, output_dir: str):
-    """
-    Save product data to a CSV file in the specified output directory.
-    Parameters:
-    product_data (pd.DataFrame): The product data to be saved.
-    output_dir (str): The directory where the CSV file will be saved.
-    Returns:
-    None
-    """
-
-    os.makedirs(output_dir, exist_ok=True)
-    product_data.to_csv(os.path.join(output_dir, 'product_data.csv'), index=False)
-
-
-def create_directories(product_data: pd.DataFrame):
-    """
-    Creates directories based on the week_end column in the provided product data.
-    This function checks the 'week_end' column in the provided DataFrame. If there is only one unique value in the 
-    'week_end' column, it uses that value to create two directories:
-    - One for storing predicted data.
-    - One for storing problem results in pickle format.
-    Args:
-        product_data (pd.DataFrame): A DataFrame containing product data with a 'week_end' column.
-    Raises:
-        KeyError: If the 'week_end' column is not present in the DataFrame.
-        OSError: If there is an error creating the directories.
-    """
-
-    week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
-
-
-def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Select specific columns from the product data DataFrame.
-    Parameters:
-    product_data (pd.DataFrame): The input DataFrame containing product data.
-    Returns:
-    pd.DataFrame: A DataFrame containing only the selected columns:
-        - 'market_ids'
-        - 'market_ids_string'
-        - 'store_code_uc'
-        - 'zip'
-        - 'FIPS'
-        - 'GESTFIPS'
-        - 'fips_county_code'
-        - 'week_end'
-        - 'week_end_ID'
-        - 'firm'
-        - 'firm_ids'
-        - 'firm_post_merger'
-        - 'firm_ids_post_merger'
-        - 'brand_code_uc'
-        - 'brand_descr'
-        - 'product_ids'
-        - 'units'
-        - 'total_individual_units'
-        - 'total_units_retailer'
-        - 'shares'
-        - 'poblacion_census_2020'
-        - 'total_income'
-        - 'total_income_market_known_brands'
-        - 'total_income_market'
-        - 'fraction_identified_earnings'
-        - 'prices'
-        - 'from Nielsen'
-        - 'from characteristics'
-        - 'name'
-        - 'tar'
-        - 'nicotine'
-        - 'co'
-        - 'nicotine_mg_per_g'
-        - 'nicotine_mg_per_g_dry_weight_basis'
-        - 'nicotine_mg_per_cig'
-    """
-
-    return product_data[['market_ids', 
-                        #  'market_ids_string',
-                        'store_code_uc', 'zip', 'FIPS', 'GESTFIPS', 'fips_county_code',
-                        'week_end', 'week_end_ID',
-                        'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
-                        'units', 'total_individual_units', 'total_units_market',
-                        'shares', 'poblacion_census_2020',
-                        'total_income', 'total_income_market_known_brands', 'total_income_market', 'fraction_identified_earnings',
-                        'prices',
-                        'from Nielsen', 'from characteristics', 'name',
-                        'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
-
-
-def check_matrix_collinearity(matrix: pd.DataFrame, tolerance=1e-10):
-    """
-    Checks for collinearity in a matrix using SVD.
-
-    Args:
-        matrix: The input matrix (NumPy array).
-        tolerance: Threshold for determining near-zero singular values.
-
-    Returns:
-        True if collinearity is detected, False otherwise.
-    """
-    _, s, _ = svd(matrix)
-    return np.any(s < tolerance)
-
-
-def find_first_non_collinear_matrix(**dfs):
-    """
-    Finds the first DataFrame in the list that does not exhibit collinearity.
-
-    Args:
-        df_list: A list of pandas DataFrames.
-
-    Returns:
-        The first DataFrame in the list that does not have collinear columns, 
-        or None if all DataFrames exhibit collinearity.
-    """
-    for key, value in dfs.items():
-        # matrix = df.values  # Convert DataFrame to NumPy array
-        if not check_matrix_collinearity(value):
-            print(key)
-            return key, value
-    return None
-
-
-def compile_data(product_data: pd.DataFrame,
-                blp_inst: pd.DataFrame, 
-                local_inst: pd.DataFrame, 
-                quad_inst: pd.DataFrame, 
-                agent_data: pd.DataFrame):
-    """
-    Compiles and consolidates product and instrument data, renames columns, and filters based on agent data.
-    Args:
-        product_data (pd.DataFrame): DataFrame containing product data.
-        blp_inst (pd.DataFrame): DataFrame containing BLP instruments.
-        local_inst (pd.DataFrame): DataFrame containing local instruments.
-        quad_inst (pd.DataFrame): DataFrame containing quadratic instruments.
-        agent_data (pd.DataFrame): DataFrame containing agent data.
-    Returns:
-        pd.DataFrame: Consolidated and filtered product data with renamed columns.
-    """
-
-    inst_name, inst_values = find_first_non_collinear_matrix(local_inst=local_inst,
-                                           quad_inst=quad_inst, 
-                                           blp_inst=blp_inst)
-    
-    print(f'Los instrumentos usados para la actual regresión son {inst_name}')
-
-    consolidated_product_data=pd.concat([product_data, inst_values], axis=1)
-    dict_rename = rename_instruments(consolidated_product_data)
-    consolidated_product_data=consolidated_product_data.rename(columns=dict_rename)
-
-    # Restringe la información del consolidated_product_data a aquella que tienen información del consumidor en el agent_data
-    consolidated_product_data = consolidated_product_data[consolidated_product_data['market_ids'].isin(agent_data['market_ids'].unique())]
-
-    # Sort del product_data
-    consolidated_product_data = consolidated_product_data.sort_values(by=['market_ids', 'product_ids'], ascending=[True, True], ignore_index=True)
-
-    return consolidated_product_data
-
-
-
-
-def run():
+def main():
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     datetime_=datetime.datetime.today()
     year=2014
     first_week=20
-    num_weeks=5
+    num_weeks=2
     threshold_identified_earnings = 0.35
     optimization_algorithm = 'l-bfgs-b'
 
@@ -690,4 +356,4 @@ def run2():
 
 
 if __name__=='__main__': 
-    run()
+    main()
