@@ -176,7 +176,7 @@ def filter_matching_markets(agent_data, product_data):
     return agent_data, product_data
 
 
-def create_instruments(product_data: pd.DataFrame, formulation: str='0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig') -> tuple:
+def create_instruments(product_data: pd.DataFrame, formula: str='0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig') -> tuple:
     """Create BLP, local and quadratic instruments from product data.
     
     Args:
@@ -187,7 +187,7 @@ def create_instruments(product_data: pd.DataFrame, formulation: str='0 + tar + n
         tuple: (blp_instruments, local_instruments, quadratic_instruments) DataFrames containing generated instruments
     """
     # Update formulation with product characteristics
-    formulation = pyblp.Formulation(formulation)
+    formulation = pyblp.Formulation(formula)
     # Create BLP instruments
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
     blp_instruments = pd.DataFrame(blp_instruments)
