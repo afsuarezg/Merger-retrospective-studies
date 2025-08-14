@@ -257,3 +257,22 @@ def save_processed_data(product_data: pd.DataFrame,
         df.to_csv(file_paths[name], index=False)
         print(f"{name.replace('_', ' ').title()} saved to: {file_paths[name]}")
 
+
+
+
+def create_formulations() -> tuple:
+    """
+    Creates the standard formulations used for demand estimation.
+    
+    Returns:
+        tuple: A tuple containing (linear_formulation, non_linear_formulation, agent_formulation)
+            - linear_formulation: pyblp.Formulation for linear parameters
+            - non_linear_formulation: pyblp.Formulation for non-linear parameters  
+            - agent_formulation: pyblp.Formulation for agent demographics
+    """
+    linear_formulation = pyblp.Formulation('1+ prices', absorb='C(product_ids)')
+    non_linear_formulation = pyblp.Formulation('1+ prices + tar')
+    agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
+    
+    return linear_formulation, non_linear_formulation, agent_formulation
+

@@ -22,7 +22,7 @@ from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
-from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data
+from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -553,6 +553,8 @@ def run():
     iter =  0
 
     #logit formulation 
+    linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
+
     linear_formulation=pyblp.Formulation('1+ prices', absorb='C(product_ids)')
     non_linear_formulation=pyblp.Formulation('1+ prices + tar')
     agent_formulation=pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
