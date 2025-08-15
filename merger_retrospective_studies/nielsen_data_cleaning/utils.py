@@ -187,7 +187,7 @@ def create_instruments(product_data: pd.DataFrame, formula: str='0 + tar + nicot
         tuple: (blp_instruments, local_instruments, quadratic_instruments) DataFrames containing generated instruments
     """
     # Update formulation with product characteristics
-    formulation = pyblp.Formulation(formula)
+    # formulation = pyblp.Formulation(formula)
     # Create BLP instruments
     blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
     blp_instruments = pd.DataFrame(blp_instruments)
