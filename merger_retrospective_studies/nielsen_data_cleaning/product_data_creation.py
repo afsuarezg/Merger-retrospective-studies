@@ -136,7 +136,7 @@ def creating_product_data_rcl(main_dir: str,
                       extra_attributes_path: str,
                       first_week: int=0,
                       num_weeks: int=1, 
-                      lower_threshold_identified_sales: float=0.8):
+                      lower_threshold_identified_sales: float=0.35):
     """
     Creates and processes product data by merging various datasets and performing multiple transformations.
     Parameters:
@@ -202,6 +202,7 @@ def creating_product_data_rcl(main_dir: str,
                 'zip':'first' ,
                 'week_end':'first' ,
                 'week_end_ID':'first',
+                'store_code_uc':'first',
                 #'market_ids_fips':'first',
                 'fips_state_code':'first', 
                 'fips_state_descr':'first', 
