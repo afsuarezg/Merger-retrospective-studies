@@ -72,64 +72,17 @@ def main():
     # Agregando información sociodemográfica 
     pop_agent_data = create_agent_data_from_cps(record_layout_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt',
                                                 agent_data_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat')
-
-    # socdem_file_structure = process_file('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt')
-    # agent_data_pop = pd.read_fwf('/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat', widths= [int(elem) for elem in socdem_file_structure.values()])
-    # agent_data_pop.columns  = socdem_file_structure.keys()
-    
-    # # Elimina observaciones de los consumidores para los que el valor de condado es igual a 0.
-    # agent_data_pop=agent_data_pop[agent_data_pop['GTCO']!=0]
-
-    # # Genera la variable FIPS a partir de las variables GESTFIPS y GTCO.
-    # agent_data_pop['FIPS'] = agent_data_pop['GESTFIPS']*1000 + agent_data_pop['GTCO']
-
-    # # Resetea el índice del agent_data_pop.
-    # agent_data_pop.reset_index(inplace=True, drop=True)
-
-    # product_data=product_data.rename(columns={'fip':'FIPS', 'fips_state_code':'GESTFIPS'})
-    
-
-
     #-----------------------------------------------------------------
     sample_agent_data = create_agent_data_sample(agent_data_pop=pop_agent_data, product_data=product_data)
-    # agent_data_sample = get_random_samples_by_code(agent_data_pop, product_data['GESTFIPS'].unique(), 400)[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
-    # agent_data_sample.replace(-1, np.nan, inplace=True)
 
-    # knn_imputer = KNNImputer(n_neighbors=3)
-    # agent_data_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(agent_data_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]), columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
-
-    # grouped = agent_data_sample.groupby('GESTFIPS').size()
-
-    # agent_data_sample['weights'] = agent_data_sample['GESTFIPS'].map(1 / grouped)
-    # agent_data_sample = pd.concat([agent_data_sample[['FIPS', 'GESTFIPS','weights']],agent_data_sample_knn_imputed], axis=1)
-    # agent_data_sample = add_random_nodes(agent_data_sample)
-
-    # agent_data_sample = agent_data_sample[['FIPS', 'GESTFIPS', 'weights',
-    #                                         'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-    #                                         'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-    #                                         'ptdtrace_imputed', 'peeduca_imputed']]
-    
-    # agent_data = pd.merge(product_data[['market_ids', 'market_ids_string', 'GESTFIPS']].drop_duplicates(),
-    #                                   agent_data_sample, 
-    #                                   how='inner', 
-    #                                   left_on='GESTFIPS',
-    #                                   right_on='GESTFIPS')
-    
     #-----------------------------------------------------------------
     ##### Filtrar base a partir de ventas identificadas########
     #TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
     product_data = filter_by_identified_earnings(product_data, threshold_identified_earnings)
-    # condition = product_data['fraction_identified_earnings']>=threshold_identified_earnings
-    # kept_data = product_data.loc[condition].index
-    # product_data = product_data.loc[kept_data]
 
     ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //
     #TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
     product_data = filter_by_market_size(product_data, min_brands=2)
-
-    # market_counts = product_data['market_ids'].value_counts()
-    # valid_markets = market_counts[market_counts >= 2].index
-    # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
 
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
@@ -137,43 +90,12 @@ def main():
     ## agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     ## product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
-
-    # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_preins_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-
     #-----------------------------------------------------------------
     ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados.
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
-    # formulation= '0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig'
     blp_instruments, local_instruments, quadratic_instruments = create_instruments(product_data, formulation)
-
-    # formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
-    # blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
-    # blp_instruments = pd.DataFrame(blp_instruments)
-    # blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
-
-    # local_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='local')
-    # local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
-
-    # quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
-    # quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
-
-    # local_instruments = local_instruments.loc[kept_data]
-    # quadratic_instruments = quadratic_instruments.loc[kept_data]
-    # blp_instruments = blp_instruments.loc[kept_data]
-
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
-
-
-    # local_instruments = local_instruments.loc[product_data.index]
-    # quadratic_instruments = quadratic_instruments.loc[product_data.index]
-    # blp_instruments = blp_instruments.loc[product_data.index]
-
     #-----------------------------------------------------------------
     ######### Salvando instrumentos e información de los consumidores ###########
-
     save_processed_data(product_data=product_data, 
                        blp_instruments=blp_instruments, 
                        local_instruments=local_instruments, 
@@ -183,29 +105,6 @@ def main():
                        date=date, 
                        directory_name=DIRECTORY_NAME, 
                        datetime_str=datetime_)
-
-    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
-    # # product_data.to_csv(os.path.join(output_dir, f'product_data_{first_week}_{num_weeks}.csv'), index=False)
-    
-    # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-    # blp_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-    # local_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-    # quadratic_instruments.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-    # agent_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
-
-    # Print all the locations where the DataFrames were saved
-    # print(f"Product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_{DIRECTORY_NAME}_{datetime_}.csv")
-    # print(f"BLP instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/blp_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
-    # print(f"Local instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/local_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
-    # print(f"Quadratic instruments saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/quadratic_instruments_{DIRECTORY_NAME}_{datetime_}.csv")
-    # print(f"Agent data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/agent_data_{DIRECTORY_NAME}_{datetime_}.csv")
-    # print(f"Compiled product data saved to: /oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv")
-
-    # product_data.reset_index(drop=True, inplace=True)
-    # blp_instruments.reset_index(drop=True, inplace=True)
-    # local_instruments.reset_index(drop=True, inplace=True)
-    # quadratic_instruments.reset_index(drop=True, inplace=True)
-    # agent_data.reset_index(drop=True, inplace=True)
 
     #-----------------------------------------------------------------
     product_data = compile_data(product_data = product_data, 
