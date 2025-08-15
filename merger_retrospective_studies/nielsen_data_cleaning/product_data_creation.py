@@ -197,6 +197,7 @@ def creating_product_data_rcl(main_dir: str,
     # Cambia el nombre de una variable
     product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
 
+    print('product_data columns: ', product_data.columns)
     # Agrega ventas a nivel de mercado y marca 
     product_data = product_data.groupby(['market_ids', 'brand_descr'], as_index=False).agg({
                 'zip':'first' ,
