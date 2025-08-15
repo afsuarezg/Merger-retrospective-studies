@@ -133,7 +133,7 @@ def main():
 
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
-    sample_agent_data, product_data = filter_matching_markets(sample_agent_data, product_data)
+    filtered_sample_agent_data, filtered_product_data = filter_matching_markets(sample_agent_data, product_data)
     # agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     # product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
@@ -177,7 +177,7 @@ def main():
                        blp_instruments=blp_instruments, 
                        local_instruments=local_instruments, 
                        quadratic_instruments=quadratic_instruments, 
-                       agent_data=sample_agent_data, 
+                       agent_data=filtered_sample_agent_data, 
                        week_dir=week_dir, 
                        date=date, 
                        directory_name=DIRECTORY_NAME, 
@@ -211,7 +211,7 @@ def main():
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
-                            agent_data= sample_agent_data)
+                            agent_data= filtered_sample_agent_data)
     
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
@@ -234,7 +234,7 @@ def main():
         print('------------------------------')
         try:
             results= rcl_with_demographics(product_data=product_data, 
-                                           agent_data=sample_agent_data,
+                                           agent_data=filtered_sample_agent_data,
                                            linear_formulation=linear_formulation,
                                            non_linear_formulation=non_linear_formulation,
                                            agent_formulation=agent_formulation,
