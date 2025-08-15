@@ -222,8 +222,8 @@ def main():
     linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
 
     linear_formulation=pyblp.Formulation('1+ prices', absorb='C(product_ids)')
-    non_linear_formulation=pyblp.Formulation('1+ prices + tar')
-    agent_formulation=pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
+    non_linear_formulation=pyblp.Formulation('1+ prices + tar')#k2=3
+    agent_formulation=pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')#v=4
 
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
