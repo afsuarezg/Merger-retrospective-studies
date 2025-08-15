@@ -40,7 +40,7 @@ def main():
     datetime_=datetime.datetime.today()
     year=2014
     first_week=20
-    num_weeks=2
+    num_weeks=1
     threshold_identified_earnings = 0.35
     optimization_algorithm = 'l-bfgs-b'
 
@@ -53,6 +53,7 @@ def main():
                                      first_week=first_week,
                                      num_weeks=num_weeks,
                                      lower_threshold_identified_sales=threshold_identified_earnings)
+    
     print('product_data columns: ', product_data.columns)
     #-----------------------------------------------------------------
     # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
@@ -132,7 +133,7 @@ def main():
 
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
-    agent_data, product_data = filter_matching_markets(agent_data, product_data)
+    sample_agent_data, product_data = filter_matching_markets(sample_agent_data, product_data)
     # agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     # product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
@@ -176,7 +177,7 @@ def main():
                        blp_instruments=blp_instruments, 
                        local_instruments=local_instruments, 
                        quadratic_instruments=quadratic_instruments, 
-                       agent_data=agent_data, 
+                       agent_data=sample_agent_data, 
                        week_dir=week_dir, 
                        date=date, 
                        directory_name=DIRECTORY_NAME, 
@@ -210,7 +211,7 @@ def main():
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
-                            agent_data= agent_data)
+                            agent_data= sample_agent_data)
     
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
@@ -233,7 +234,7 @@ def main():
         print('------------------------------')
         try:
             results= rcl_with_demographics(product_data=product_data, 
-                                           agent_data=agent_data,
+                                           agent_data=sample_agent_data,
                                            linear_formulation=linear_formulation,
                                            non_linear_formulation=non_linear_formulation,
                                            agent_formulation=agent_formulation,
