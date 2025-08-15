@@ -134,8 +134,8 @@ def main():
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
     filtered_sample_agent_data, filtered_product_data = filter_matching_markets(sample_agent_data, product_data)
-    # agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
-    # product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+    ## agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
+    ## product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
 
     # product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/product_data_preins_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
