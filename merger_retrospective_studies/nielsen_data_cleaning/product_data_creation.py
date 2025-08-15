@@ -21,6 +21,8 @@ from ..estimaciones.rcl_with_demographics import rcl_with_demographics
 from ..estimaciones.estimaciones_utils import save_dict_json
 from ..estimaciones.post_estimation_merger_simulation import predict_prices
 from ..estimaciones.optimal_instruments import results_optimal_instruments
+from ..nielsen_data_cleaning.utils import find_first_non_collinear_matrix
+
 
 
 
