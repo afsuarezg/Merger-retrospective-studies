@@ -52,7 +52,7 @@ def main():
                                      extra_attributes_path='Nielsen_data/2014/Annual_Files/products_extra_2014.tsv', 
                                      first_week=first_week,
                                      num_weeks=num_weeks,
-                                     lower_threshold_identified_sales=threshold_identified_earnings=0.35)
+                                     lower_threshold_identified_sales=threshold_identified_earnings)
     
     #-----------------------------------------------------------------
     # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
