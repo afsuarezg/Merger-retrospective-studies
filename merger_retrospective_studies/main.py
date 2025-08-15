@@ -53,7 +53,7 @@ def main():
                                      first_week=first_week,
                                      num_weeks=num_weeks,
                                      lower_threshold_identified_sales=threshold_identified_earnings)
-    
+    print('product_data columns: ', product_data.columns)
     #-----------------------------------------------------------------
     # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
     # market_counts = product_data['market_ids'].value_counts()
