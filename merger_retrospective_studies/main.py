@@ -22,7 +22,7 @@ from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.estimaciones_utils import save_dict_json
 from .estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
-from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations, check_matrix_collinearity, find_first_non_collinear_matrix, select_product_data_columns, filtering_data_by_identified_sales, filtering_data_by_number_brands, matching_agent_and_product_data, create_directories, save_product_data
+from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations, check_matrix_collinearity, find_first_non_collinear_matrix, select_product_data_columns, filtering_data_by_identified_sales, filtering_data_by_number_brands, matching_agent_and_product_data, create_directories, save_product_data, run_optimization_iterations
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -35,7 +35,7 @@ YEAR = 2014
 #TODO: organizar las funciones de Nielsen_data_cleaning dependiendo de la base que está procesando. Las que se usen en diferentes bases deberían ir en un archivo más general. 
 
 
-def main():
+def main(num_iterations:int=2):
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     datetime_=datetime.datetime.today()
     year=2014
@@ -117,57 +117,25 @@ def main():
 
     #-----------------------------------------------------------------
     print(f'empezando optimización {datetime_}')
-    iter =  0
-
+ 
     #logit formulation 
     linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
 
-    linear_formulation=pyblp.Formulation('1+ prices', absorb='C(product_ids)')
-    non_linear_formulation=pyblp.Formulation('1+ prices + tar')#k2=3
-    agent_formulation=pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')#v=4
-
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
-    while iter <= 100:
-        print('------------------------------')
-        print(iter)
-        print('------------------------------')
-        try:
-            results= rcl_with_demographics(product_data=product_data, 
-                                           agent_data=filtered_sample_agent_data,
-                                           linear_formulation=linear_formulation,
-                                           non_linear_formulation=non_linear_formulation,
-                                           agent_formulation=agent_formulation,
-                                           logit_results=plain_logit_results)
-        
-
-            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
-            
-            print(f'------------results {iter}------------------')
-            if results.converged == True:
-                initial_prices = original_prices(product_data=product_data, results=results)
-
-
-                #predicting the prices and appending the information to a dataframe
-                predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
-                predicted_prices = predicted_prices.tolist()
-                price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
-                price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-
-
-                #saving the file
-                price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
-                print('predictions saved')
-
-            # optimal_results = results_optimal_instruments(results)
-        except Exception as e:
-            print(e)
-            
-
-        iter += 1
-        
-
-    print('fin')
+    # Run optimization iterations
+    run_optimization_iterations(
+        product_data=product_data,
+        filtered_sample_agent_data=filtered_sample_agent_data,
+        week_dir=week_dir,
+        date=date,
+        optimization_algorithm=optimization_algorithm,
+        num_iterations=num_iterations,
+        linear_formulation=linear_formulation,
+        non_linear_formulation=non_linear_formulation,
+        agent_formulation=agent_formulation,
+        plain_logit_results=plain_logit_results
+    )
 
 
 

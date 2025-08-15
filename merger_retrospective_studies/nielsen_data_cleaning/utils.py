@@ -260,9 +260,18 @@ def save_processed_data(product_data: pd.DataFrame,
         print(f"{name.replace('_', ' ').title()} saved to: {file_paths[name]}")
 
 
-def create_formulations() -> tuple:
+def create_formulations(linear_formula: str = '1+ prices',
+                       absorb_formula: str = 'C(product_ids)',
+                       nonlinear_formula: str = '1+ prices + tar',
+                       agent_formula: str = '0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed') -> tuple:
     """
     Creates the standard formulations used for demand estimation.
+    
+    Args:
+        linear_formula (str): Formula string for linear parameters. Default: '1+ prices'
+        absorb_formula (str): Formula string for absorption (fixed effects). Default: 'C(product_ids)'
+        nonlinear_formula (str): Formula string for non-linear parameters. Default: '1+ prices + tar'
+        agent_formula (str): Formula string for agent demographics. Default: '0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed'
     
     Returns:
         tuple: A tuple containing (linear_formulation, non_linear_formulation, agent_formulation)
@@ -270,9 +279,9 @@ def create_formulations() -> tuple:
             - non_linear_formulation: pyblp.Formulation for non-linear parameters  
             - agent_formulation: pyblp.Formulation for agent demographics
     """
-    linear_formulation = pyblp.Formulation('1+ prices', absorb='C(product_ids)')
-    non_linear_formulation = pyblp.Formulation('1+ prices + tar')
-    agent_formulation = pyblp.Formulation('0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed')
+    linear_formulation = pyblp.Formulation(linear_formula, absorb=absorb_formula)
+    non_linear_formulation = pyblp.Formulation(nonlinear_formula)
+    agent_formulation = pyblp.Formulation(agent_formula)
     
     return linear_formulation, non_linear_formulation, agent_formulation
 
@@ -518,6 +527,65 @@ def create_directories(product_data: pd.DataFrame):
     week_dir = list(set(product_data['week_end']))[0] if len(set(product_data['week_end'])) == 1 else None
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
+
+
+def run_optimization_iterations(product_data, filtered_sample_agent_data, week_dir, date, 
+                               optimization_algorithm, num_iterations, linear_formulation, 
+                               non_linear_formulation, agent_formulation, plain_logit_results):
+    """
+    Runs the optimization iterations for demand estimation and price prediction.
+    
+    Args:
+        product_data: DataFrame containing product data
+        filtered_sample_agent_data: DataFrame containing filtered agent data
+        week_dir: Directory name for the week
+        date: Date string for file naming
+        optimization_algorithm: Algorithm name for optimization
+        num_iterations: Number of iterations to run
+        linear_formulation: pyblp.Formulation for linear parameters
+        non_linear_formulation: pyblp.Formulation for non-linear parameters
+        agent_formulation: pyblp.Formulation for agent demographics
+        plain_logit_results: Results from plain logit estimation
+        
+    Returns:
+        None: Saves results to pickle files and price predictions to JSON files
+    """
+    from ..estimaciones.rcl_with_demographics import rcl_with_demographics
+    from ..estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
+    
+    iter = 0
+    while iter <= num_iterations:
+        print('------------------------------')
+        try:
+            results = rcl_with_demographics(product_data=product_data, 
+                                           agent_data=filtered_sample_agent_data,
+                                           linear_formulation=linear_formulation,
+                                           non_linear_formulation=non_linear_formulation,
+                                           agent_formulation=agent_formulation,
+                                           logit_results=plain_logit_results)
+        
+            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+
+            #computing the initial prices
+            initial_prices = original_prices(product_data=product_data, results=results)
+
+            #predicting the prices after the merger and appending the information to a dataframe
+            predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
+            predicted_prices = predicted_prices.tolist()
+            price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+            price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
+
+            #saving the file
+            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
+            print('predictions saved')
+
+        # optimal_results = results_optimal_instruments(results)
+        except Exception as e:
+            print(e)
+            
+        iter += 1
+        
+    print('fin')
 
 
 
