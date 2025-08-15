@@ -241,6 +241,7 @@ def main():
         
 
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+            
             print(f'------------results {iter}------------------')
             if results.converged == True:
                 initial_prices = original_prices(product_data=product_data, results=results)

@@ -43,18 +43,38 @@ def generate_random_sparse_array(shape, start_range, end_range, k):
 
 def create_sparse_array(shape, num_random:int, seed=42, random_seed=None):
     """
-    Creates a multidimensional array with k random elements in fixed positions and the rest set to zero.
-    The positions remain constant across calls, but the values change.
-
+    Creates a sparse array with random values at fixed positions.
+    
+    This function generates a sparse array where only a specified number of elements 
+    contain random values, while the rest are zeros. The positions of the non-zero
+    elements are fixed across multiple calls (determined by the seed parameter),
+    but the actual random values can vary if different random_seed values are provided.
+    
     Parameters:
-    - shape: tuple, the shape of the array
-    - k: int, number of random elements to be placed
-    - seed: int, seed to determine fixed positions (used only once)
-    - random_seed: int, optional seed for generating new values every call
-
+    shape (tuple): Shape of the output array, e.g., (4, 4) for a 4x4 matrix.
+    num_random (int): Number of elements to assign random values (rest will be zero).
+    seed (int, optional): Seed for determining fixed positions of non-zero elements. 
+                         Defaults to 42. Only affects position selection on first call.
+    random_seed (int, optional): Seed for generating the actual random values.
+                                If None, uses current numpy random state.
+    
     Returns:
-    - numpy array of given shape with k random values in fixed positions
+    numpy.ndarray: Sparse array with random values at fixed positions.
+    
+    Notes:
+    - The positions of non-zero elements are determined only once (on first call)
+      and remain consistent across subsequent calls with the same shape and num_random.
+    - The actual random values at these positions can be different on each call
+      if different random_seed values are provided.
+    - Global state (_fixed_positions) is used to maintain consistency of positions.
+    
+    Example:
+    >>> arr1 = create_sparse_array((3, 3), num_random=3, seed=42)
+    >>> arr2 = create_sparse_array((3, 3), num_random=3, random_seed=100)
+    # arr1 and arr2 will have non-zero values at the same positions,
+    # but potentially different random values
     """
+
     global _fixed_positions
 
     # Initialize fixed positions only once
