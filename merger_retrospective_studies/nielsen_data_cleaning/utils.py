@@ -176,7 +176,7 @@ def filter_matching_markets(agent_data, product_data):
     return agent_data, product_data
 
 
-def create_instruments(product_data: pd.DataFrame, formula: str='0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig') -> tuple:
+def create_instruments(product_data: pd.DataFrame, formulation: str='0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig') -> tuple:
     """Create BLP, local and quadratic instruments from product data.
     
     Args:
