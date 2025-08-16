@@ -3,6 +3,7 @@ from typing import List
 
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
 
+
 def list_retailers_with_predictions(data: pd.DataFrame)-> List:
     """
     Extracts a list of unique retailer store codes from the given DataFrame.

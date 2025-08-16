@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from typing import List
 
 
-
 def elasticities(results: pyblp.ProblemResults):
     """
     Compute and plot the elasticities from the given BLP problem results.
@@ -196,7 +195,6 @@ def predict_prices(product_data: pd.DataFrame, results, merger: List[int]) -> pd
     
     # Compute costs and initial markups
     costs = results.compute_costs()
-    markups = results.compute_markups(costs=costs)
     
     # Compute changed prices after the merger
     changed_prices = results.compute_prices(firm_ids=product_data['merger_ids'], costs=costs)

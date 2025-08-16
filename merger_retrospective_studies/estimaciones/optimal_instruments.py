@@ -6,7 +6,6 @@ import time
 import matplotlib.pyplot as plt
 
 
-
 def results_optimal_instruments(results: pyblp.ProblemResults):
     """
     Computes optimal instruments, updates the problem with these instruments, 
@@ -35,8 +34,6 @@ def results_optimal_instruments(results: pyblp.ProblemResults):
 
     # Return the updated results
     return updated_results
-
-
 
 
 if __name__ == '__main__':

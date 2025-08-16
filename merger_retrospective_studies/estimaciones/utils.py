@@ -2,6 +2,7 @@ import random
 import json
 import os
 import numpy as np
+import pandas as pd
 
 _fixed_positions = None
 
@@ -216,3 +217,50 @@ def save_dict_json(dictionary, folder_path, file_name):
     with open(file_path, 'w') as file:
         json.dump(dictionary, file, indent=4, default=convert_ndarray)
     print(f"Dictionary saved to {file_path}")
+
+
+def count_values(variable):
+    """
+    Creates a dictionary that returns keys equal to the value of the variable and values equal to the number of times the value appears in the variable.
+
+    :param variable: The variable to be counted.
+    :return: A dictionary with keys equal to the value of the variable and values equal to the number of times the value appears in the variable.
+    """
+
+    # Create an empty dictionary
+    value_counts = {}
+
+    # Iterate over the variable
+    for value in variable:
+        # Check if the value is already in the dictionary
+        if value in value_counts:
+        # Increment the count for the value
+            value_counts[value] += 1
+        else:
+        # Add the value to the dictionary with a count of 1
+            value_counts[value] = 1
+
+    # Return the dictionary
+    return value_counts
+
+
+def preprend_zero(row):
+    if len(row['zip'])<=2:
+        return '0'+ row['zip']
+    return row['zip']
+
+
+def create_instrument_dict(product_data:pd.DataFrame):
+    """
+    Creates a dictionary with keys as column names containing 'quad' and values as 'demand_instruments' followed by a count.
+
+    :param product_data: The DataFrame containing product data.
+    :return: A dictionary with instrument mappings.
+    """
+    inst_dict = {}
+    count = 0
+    for elem in product_data.columns:
+        if 'quad' in elem:
+            inst_dict[elem] = f'demand_instruments{count}'
+            count += 1
+    return inst_dict

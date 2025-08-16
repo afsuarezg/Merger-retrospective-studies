@@ -12,6 +12,7 @@ from ..nielsen_data_cleaning.descarga_merge import movements_file, stores_file, 
 from ..nielsen_data_cleaning.precios_ingresos_participaciones import total_income, total_units, unitary_price, price
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
 
+
 def load_price_predictions(data: pd.DataFrame, directory: str=os.getcwd()):
     pattern = 'price_predictions_'
     iteration = 1
@@ -49,10 +50,6 @@ def plot_histogram(data_descriptive, prediction_columns):
     plt.xlabel("Bins")
     plt.ylabel("Frequency")
     plt.show()
-
-
-
-
 
 
 
