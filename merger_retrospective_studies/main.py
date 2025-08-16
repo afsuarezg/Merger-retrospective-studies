@@ -118,11 +118,13 @@ def main(num_iterations:int=2):
     #-----------------------------------------------------------------
 
     #logit formulation 
+    print('Logit')
     linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
 
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
     # Run optimization iterations
+    print('Random coefficients model ')
     run_optimization_iterations(
         product_data=product_data,
         filtered_sample_agent_data=filtered_sample_agent_data,
