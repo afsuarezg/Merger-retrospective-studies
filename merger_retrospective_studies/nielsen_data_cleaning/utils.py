@@ -574,18 +574,12 @@ def run_optimization_iterations(product_data: pd.DataFrame,
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
 
-            #computing the initial prices
-            initial_prices = original_prices(product_data=product_data, results=results)
-
-            #predicting the prices after the merger and appending the information to a dataframe
-            predicted_prices = predict_prices(product_data = product_data, results = results, merger=[3,0])
-            predicted_prices = predicted_prices.tolist()
-            price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
-            price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
-
-            #saving the file
-            price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
-            print('predictions saved')
+            compute_and_save_price_predictions(product_data=product_data, 
+                                               results=results, 
+                                               week_dir=week_dir, 
+                                               date=date, 
+                                               optimization_algorithm=optimization_algorithm, 
+                                               iter=iter)
 
         # optimal_results = results_optimal_instruments(results)
         except Exception as e:
@@ -602,8 +596,7 @@ def compute_and_save_price_predictions(product_data: pd.DataFrame,
                                      week_dir: str, 
                                      date: str, 
                                      optimization_algorithm: str, 
-                                     iter: int,
-                                     merger: list = [3,0]) -> None:
+                                     iter: int) -> None:
     """
     Compute price predictions after merger and save to JSON file.
     
@@ -624,14 +617,8 @@ def compute_and_save_price_predictions(product_data: pd.DataFrame,
 
     predicted_prices = results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
 
-
-
-    initial_prices = predicted_prices(product_data=product_data, results=results)
-
-    #predicting the prices after the merger and appending the information to a dataframe
-    predicted_prices = predict_prices(product_data = product_data, results = results, merger=merger)
     predicted_prices = predicted_prices.tolist()
-    price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+    price_pred_df = product_data[['market_ids','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
     price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
 
     #saving the file
