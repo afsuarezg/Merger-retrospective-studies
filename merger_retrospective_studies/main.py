@@ -116,8 +116,7 @@ def main(num_iterations:int=2):
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
     #-----------------------------------------------------------------
-    print(f'empezando optimización {datetime_}')
- 
+
     #logit formulation 
     linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
 

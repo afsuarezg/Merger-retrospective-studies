@@ -8,6 +8,8 @@ from sklearn.impute import KNNImputer
 
 from .consumidores_sociodemograficas import process_file
 from .consumidores_sociodemograficas import get_random_samples_by_code, add_random_nodes
+from ..estimaciones.rcl_with_demographics import rcl_with_demographics
+from ..estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
 
 
 
@@ -529,9 +531,16 @@ def create_directories(product_data: pd.DataFrame):
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}', exist_ok=True)
 
 
-def run_optimization_iterations(product_data, filtered_sample_agent_data, week_dir, date, 
-                               optimization_algorithm, num_iterations, linear_formulation, 
-                               non_linear_formulation, agent_formulation, plain_logit_results):
+def run_optimization_iterations(product_data: pd.DataFrame, 
+                                filtered_sample_agent_data: pd.DataFrame, 
+                                week_dir: str, 
+                                date: str, 
+                                optimization_algorithm: str, 
+                                num_iterations: int, 
+                                linear_formulation: pyblp.Formulation, 
+                                non_linear_formulation: pyblp.Formulation, 
+                                agent_formulation: pyblp.Formulation, 
+                                plain_logit_results) -> None:
     """
     Runs the optimization iterations for demand estimation and price prediction.
     
@@ -550,8 +559,6 @@ def run_optimization_iterations(product_data, filtered_sample_agent_data, week_d
     Returns:
         None: Saves results to pickle files and price predictions to JSON files
     """
-    from ..estimaciones.rcl_with_demographics import rcl_with_demographics
-    from ..estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
     
     iter = 0
     while iter <= num_iterations:
@@ -565,6 +572,7 @@ def run_optimization_iterations(product_data, filtered_sample_agent_data, week_d
                                            logit_results=plain_logit_results)
         
             results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+
 
             #computing the initial prices
             initial_prices = original_prices(product_data=product_data, results=results)
@@ -588,4 +596,45 @@ def run_optimization_iterations(product_data, filtered_sample_agent_data, week_d
     print('fin')
 
 
+
+def compute_and_save_price_predictions(product_data: pd.DataFrame, 
+                                     results, 
+                                     week_dir: str, 
+                                     date: str, 
+                                     optimization_algorithm: str, 
+                                     iter: int,
+                                     merger: list = [3,0]) -> None:
+    """
+    Compute price predictions after merger and save to JSON file.
+    
+    Args:
+        product_data: DataFrame containing product data
+        results: Results from demand estimation
+        week_dir: Directory name for the week
+        date: Date string for file naming
+        optimization_algorithm: Algorithm name for optimization
+        iter: Iteration number for file naming
+        merger: List defining merger scenario, default [3,0]
+        
+    Returns:
+        None
+    """
+    #computing the initial prices
+    costs = results.compute_costs()
+
+    predicted_prices = results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
+
+
+
+    initial_prices = predicted_prices(product_data=product_data, results=results)
+
+    #predicting the prices after the merger and appending the information to a dataframe
+    predicted_prices = predict_prices(product_data = product_data, results = results, merger=merger)
+    predicted_prices = predicted_prices.tolist()
+    price_pred_df = product_data[['market_ids','market_ids_string','store_code_uc', 'week_end', 'product_ids', 'brand_code_uc', 'brand_descr']].copy()
+    price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
+
+    #saving the file
+    price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
+    print('predictions saved')
 
