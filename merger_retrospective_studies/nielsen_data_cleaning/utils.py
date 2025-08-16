@@ -9,7 +9,7 @@ from sklearn.impute import KNNImputer
 from .consumidores_sociodemograficas import process_file
 from .consumidores_sociodemograficas import get_random_samples_by_code, add_random_nodes
 from ..estimaciones.rcl_with_demographics import rcl_with_demographics
-from ..estimaciones.post_estimation_merger_simulation import predict_prices, original_prices
+from ..estimaciones.post_estimation_merger_simulation import predict_prices
 
 
 
