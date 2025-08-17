@@ -587,7 +587,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
             
         iter += 1
         
-    print('fin')
+        return results
 
 
 

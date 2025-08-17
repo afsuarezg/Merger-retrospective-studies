@@ -35,7 +35,7 @@ YEAR = 2014
 #TODO: organizar las funciones de Nielsen_data_cleaning dependiendo de la base que está procesando. Las que se usen en diferentes bases deberían ir en un archivo más general. 
 
 
-def main(num_iterations:int=2):
+def main(num_iterations:int=1):
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     datetime_=datetime.datetime.today()
     year=2014
@@ -141,4 +141,11 @@ def main(num_iterations:int=2):
 
 
 if __name__=='__main__': 
-    main()
+    import sys
+    
+    # Parse command line arguments
+    if len(sys.argv) > 1:
+        num_iterations = int(sys.argv[1])
+    else:
+        num_iterations = 1  # default value
+    main(num_iterations=num_iterations)
