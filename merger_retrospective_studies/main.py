@@ -125,7 +125,7 @@ def main(num_iterations:int=1):
 
     # Run optimization iterations
     print('Random coefficients model ')
-    run_optimization_iterations(
+    results=run_optimization_iterations(
         product_data=product_data,
         filtered_sample_agent_data=filtered_sample_agent_data,
         week_dir=week_dir,
@@ -138,6 +138,7 @@ def main(num_iterations:int=1):
         plain_logit_results=plain_logit_results
     )
 
+    return results
 
 
 if __name__=='__main__': 
