@@ -573,7 +573,9 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                            linear_formulation=linear_formulation,
                                            non_linear_formulation=non_linear_formulation,
                                            agent_formulation=agent_formulation,
-                                           logit_results=plain_logit_results)
+                                           logit_results=plain_logit_results,
+                                           week_dir=week_dir,
+                                           date=date)
         
             # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
