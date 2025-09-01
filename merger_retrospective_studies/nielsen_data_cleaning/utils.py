@@ -567,33 +567,33 @@ def run_optimization_iterations(product_data: pd.DataFrame,
     iter = 0
     while iter <= num_iterations:
         print('------------------------------')
-        try:
-            results = rcl_with_demographics(product_data=product_data, 
-                                           agent_data=filtered_sample_agent_data,
-                                           linear_formulation=linear_formulation,
-                                           non_linear_formulation=non_linear_formulation,
-                                           agent_formulation=agent_formulation,
-                                           logit_results=plain_logit_results,
-                                           week_dir=week_dir,
-                                           date=date)
-        
-            # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+        # try:
+        results = rcl_with_demographics(product_data=product_data, 
+                                        agent_data=filtered_sample_agent_data,
+                                        linear_formulation=linear_formulation,
+                                        non_linear_formulation=non_linear_formulation,
+                                        agent_formulation=agent_formulation,
+                                        logit_results=plain_logit_results,
+                                        week_dir=week_dir,
+                                        date=date)
+    
+        # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
 
-            predicted_prices=compute_and_save_price_predictions(product_data=product_data, 
-                                               results=results, 
-                                               week_dir=week_dir, 
-                                               date=date, 
-                                               optimization_algorithm=optimization_algorithm, 
-                                               iter=iter)
+        predicted_prices=compute_and_save_price_predictions(product_data=product_data, 
+                                            results=results, 
+                                            week_dir=week_dir, 
+                                            date=date, 
+                                            optimization_algorithm=optimization_algorithm, 
+                                            iter=iter)
 
         # optimal_results = results_optimal_instruments(results)
-        except Exception as e:
-            print(e)
+        # except Exception as e:
+        #     print(e)
             
         iter += 1
         
-        return results, predicted_prices
+        
 
 
 
