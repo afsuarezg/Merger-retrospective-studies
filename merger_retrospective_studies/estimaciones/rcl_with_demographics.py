@@ -23,7 +23,11 @@ def rcl_with_demographics(product_data: pd.DataFrame,
     product_formulations = (linear_formulation, non_linear_formulation)
 
     # Optimization algorithm
-    optimization = pyblp.Optimization(optimization_algorithm, {'gtol': gtol})
+    optimization = pyblp.Optimization(method=optimization_algorithm, 
+                                      method_options= {'maxiter': 1000000, 'gtol': gtol, 'ftol': 1e-12})
+
+    # Iteration algorithm 
+    iteration = pyblp.Iteration(method='squarem', method_options={'max_evaluations': 30000, 'atol': 1e-14})
 
     # Definición del problema con consumidor
     problem = pyblp.Problem(product_formulations=product_formulations,
@@ -46,6 +50,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         pi=initial_pi,
         beta=logit_results.beta,
         optimization=optimization,
+        iteration=iteration,
         sigma_bounds=(sigma_lower, sigma_upper),
         method='1s'
     )
