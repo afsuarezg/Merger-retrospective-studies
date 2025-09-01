@@ -15,7 +15,10 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                           non_linear_formulation: pyblp.Formulation, 
                           agent_formulation:pyblp.Formulation, 
                           logit_results:pyblp.results.problem_results.ProblemResults, 
+                          week_dir: str,
+                          date: str,                         
                           optimization_algorithm:str='l-bfgs-b',
+                          iter:int=1,
                           gtol:float=1e-12, 
                           num_random:int=3,
                           seed:int=50):
@@ -54,6 +57,8 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         sigma_bounds=(sigma_lower, sigma_upper),
         method='1s'
     )
+
+    results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
     return results
 

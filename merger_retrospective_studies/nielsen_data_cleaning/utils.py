@@ -571,10 +571,10 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                            agent_formulation=agent_formulation,
                                            logit_results=plain_logit_results)
         
-            results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+            # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
 
-            compute_and_save_price_predictions(product_data=product_data, 
+            predicted_prices=compute_and_save_price_predictions(product_data=product_data, 
                                                results=results, 
                                                week_dir=week_dir, 
                                                date=date, 
@@ -587,7 +587,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
             
         iter += 1
         
-        return results
+        return results, predicted_prices
 
 
 
@@ -624,4 +624,5 @@ def compute_and_save_price_predictions(product_data: pd.DataFrame,
     #saving the file
     price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
     print('predictions saved')
+    return predicted_prices
 
