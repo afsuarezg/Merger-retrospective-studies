@@ -58,7 +58,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         method='1s'
     )
 
-    results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
+    results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
 
     return results
 

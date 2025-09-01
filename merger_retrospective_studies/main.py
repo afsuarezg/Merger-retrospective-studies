@@ -109,7 +109,7 @@ def main(num_iterations:int=1, post_estimation: bool=True):
                             quad_inst = quadratic_instruments, 
                             agent_data= filtered_sample_agent_data)
     
-    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
+    product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{date}/{week_dir}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
     #-----------------------------------------------------------------
 

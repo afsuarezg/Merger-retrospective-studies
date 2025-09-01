@@ -35,10 +35,14 @@ def create_output_directories(product_data: pd.DataFrame, date: str, optimizatio
     else:
         week_dir = weeks[0]
 
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
-    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
-    
+    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
+    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
+    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
+
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{date}/{week_dir}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{date}/{week_dir}/{optimization_algorithm}', exist_ok=True)
+    os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}', exist_ok=True)
+
     return week_dir
 
 
@@ -622,7 +626,7 @@ def compute_and_save_price_predictions(product_data: pd.DataFrame,
     price_pred_df.loc[:, 'price_prediction'] = predicted_prices 
 
     #saving the file
-    price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
+    price_pred_df.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{date}/{week_dir}/{optimization_algorithm}/price_predictions_{iter}.json', index=False)
     print('predictions saved')
     return predicted_prices
 
