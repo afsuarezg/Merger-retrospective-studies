@@ -592,7 +592,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
 
 
 def compute_and_save_price_predictions(product_data: pd.DataFrame, 
-                                     results, 
+                                     results: pyblp.ProblemResults, 
                                      week_dir: str, 
                                      date: str, 
                                      optimization_algorithm: str, 
