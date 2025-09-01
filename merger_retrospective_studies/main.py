@@ -120,7 +120,7 @@ def main(num_iterations:int=1, post_estimation: bool=True):
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
     count=0
-    while count <= iter:
+    while count <= num_iterations:
         # Run optimization iterations
         print('Random coefficients model ')
         results=run_optimization_iterations(
