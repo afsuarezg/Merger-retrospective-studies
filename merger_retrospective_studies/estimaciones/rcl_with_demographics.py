@@ -24,10 +24,10 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     # Optimization algorithm
     optimization = pyblp.Optimization(method=optimization_algorithm, 
-                                      method_options= {'maxiter': 1000000, 'gtol': gtol, 'ftol': 1e-12})
+                                      method_options= {'maxiter': 10000, 'gtol': gtol, 'ftol': 1e-12})
 
     # Iteration algorithm 
-    iteration = pyblp.Iteration(method='squarem', method_options={'max_evaluations': 30000, 'atol': 1e-14})
+    iteration = pyblp.Iteration(method='squarem', method_options={'max_evaluations': 3000, 'atol': 1e-14})
 
     # Definición del problema con consumidor
     problem = pyblp.Problem(product_formulations=product_formulations,
