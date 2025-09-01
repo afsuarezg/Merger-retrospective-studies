@@ -203,13 +203,13 @@ def predict_prices(product_data: pd.DataFrame, results, merger: List[int]) -> pd
 
 
 
-def predicted_prices(product_data: pd.DataFrame, results: pyblp.ProblemResults) -> pd.Series:
+def predicted_prices(product_data: pd.DataFrame, problem_results: pyblp.ProblemResults) -> pd.Series:
     
     # Compute costs and initial markups
-    costs = results.compute_costs()
+    costs = problem_results.compute_costs()
     
     # Compute changed prices after the merger
-    predicted_prices = results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
+    predicted_prices = problem_results.compute_prices(firm_ids=product_data['firm_ids_post_merger'], costs=costs)
     
     return predicted_prices
 

@@ -1,11 +1,7 @@
-import os
-import pandas as pd
 import datetime
 import pyblp
 
 import sys
-import json
-from itertools import chain
 
 
 # from dotenv import load_dotenv
@@ -35,7 +31,7 @@ YEAR = 2014
 #TODO: organizar las funciones de Nielsen_data_cleaning dependiendo de la base que está procesando. Las que se usen en diferentes bases deberían ir en un archivo más general. 
 
 
-def main(num_iterations:int=1):
+def main(num_iterations:int=1, post_estimation: bool=True):
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     datetime_=datetime.datetime.today()
     year=2014
@@ -123,22 +119,35 @@ def main(num_iterations:int=1):
 
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
-    # Run optimization iterations
-    print('Random coefficients model ')
-    results=run_optimization_iterations(
-        product_data=product_data,
-        filtered_sample_agent_data=filtered_sample_agent_data,
-        week_dir=week_dir,
-        date=date,
-        optimization_algorithm=optimization_algorithm,
-        num_iterations=num_iterations,
-        linear_formulation=linear_formulation,
-        non_linear_formulation=non_linear_formulation,
-        agent_formulation=agent_formulation,
-        plain_logit_results=plain_logit_results
-    )
+    count=0
+    while count <= iter:
+        # Run optimization iterations
+        print('Random coefficients model ')
+        results=run_optimization_iterations(
+            product_data=product_data,
+            filtered_sample_agent_data=filtered_sample_agent_data,
+            week_dir=week_dir,
+            date=date,
+            optimization_algorithm=optimization_algorithm,
+            num_iterations=num_iterations,
+            linear_formulation=linear_formulation,
+            non_linear_formulation=non_linear_formulation,
+            agent_formulation=agent_formulation,
+            plain_logit_results=plain_logit_results
+        )
+        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')   
+        
+        if post_estimation:
+            predict_prices=predicted_prices(product_data=product_data,
+                                            problem_results=results)
+            
 
-    return results
+
+        count+=1
+
+
+
+    return results, predict_prices
 
 
 if __name__=='__main__': 
