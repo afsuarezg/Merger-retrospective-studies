@@ -215,8 +215,8 @@ def creating_product_data_rcl(main_dir: str,
                 'brand_code_uc': 'first',
                 'brand_descr':'first',
                 'units': 'sum',
-                'unitary_price':'mean',#,No vale la pena agregarlo porque no se puede calcular como el promedio simple de todas las observaciones
-                'price': 'mean',
+                # 'unitary_price':'mean',#,No vale la pena agregarlo porque no se puede calcular como el promedio simple de todas las observaciones
+                # 'price': 'mean',
                 'total_individual_units': 'sum',
                 'total_income': 'sum',
                 'style_code': 'mean' ,
@@ -227,7 +227,7 @@ def creating_product_data_rcl(main_dir: str,
                 'strength_descr': 'first', 
             })
 
-    product_data.rename(columns={'unitary_price':'unitary_price_x_reemplazar', 'price':'price_x_reemplazar'}, inplace=True)
+    # product_data.rename(columns={'unitary_price':'unitary_price_x_reemplazar', 'price':'price_x_reemplazar'}, inplace=True)
     
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)

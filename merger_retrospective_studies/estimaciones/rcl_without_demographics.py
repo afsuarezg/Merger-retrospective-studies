@@ -130,5 +130,7 @@ def rcl_without_demographics(product_data: pd.DataFrame,
     except Exception as e:
         print(e)
 
+
+
 if __name__ == '__main__':
     pass

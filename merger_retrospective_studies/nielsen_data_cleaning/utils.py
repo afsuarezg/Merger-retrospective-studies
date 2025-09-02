@@ -383,7 +383,6 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
                         'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
 
 
-
 def filtering_data_by_identified_sales(product_data: pd.DataFrame,
                                        blp_instruments: pd.DataFrame, 
                                        local_instruments: pd.DataFrame,
@@ -564,7 +563,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
         None: Saves results to pickle files and price predictions to JSON files
     """
     
-    iter = 0
+    iter = 1
     while iter <= num_iterations:
         print('------------------------------')
         # try:
@@ -575,7 +574,8 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                         agent_formulation=agent_formulation,
                                         logit_results=plain_logit_results,
                                         week_dir=week_dir,
-                                        date=date)
+                                        date=date,
+                                        iter=iter)
     
         # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
@@ -594,9 +594,6 @@ def run_optimization_iterations(product_data: pd.DataFrame,
         iter += 1
         
         
-
-
-
 def compute_and_save_price_predictions(product_data: pd.DataFrame, 
                                      results: pyblp.ProblemResults, 
                                      week_dir: str, 
