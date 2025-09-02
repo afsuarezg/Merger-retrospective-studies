@@ -68,17 +68,17 @@ def creating_comparison_product_data_rcl(main_dir: str,
     print('product_data: ', products_data.shape)
     
     # Información extra o adicional de los productos
-    extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
-                                                  moves_data=movements_data)
-    print('extra_ats: ', extra_attributes_data.shape )
+    # extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
+    #                                               moves_data=movements_data)
+    # print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
     print('1 product_data: ', product_data.shape)
     product_data = pd.merge(product_data, products_data, on='upc', how='left')
     print('2 product_data: ', product_data.shape)
-    product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
-    print('3 product_data: ', product_data.shape)
+    # product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
+    # print('3 product_data: ', product_data.shape)
 
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
