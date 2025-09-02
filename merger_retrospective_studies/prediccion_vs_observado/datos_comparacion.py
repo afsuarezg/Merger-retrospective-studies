@@ -212,7 +212,7 @@ def creating_comparison_product_data_rcl(main_dir: str,
     product_data = product_data[product_data['store_code_uc'].isin(stores_to_include)]
     # product_data=product_data[['market_ids','zip', 'week_end', 'store_code_uc', 'brand_descr','brand_code_uc', 'prices' ]]
     week=product_data['week_end'].iloc[0]
-    product_data.to_pickle(f'{main_dir}/product_data_stores_week_{week}.pkl')
+    product_data.to_pickle(fr'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Comparison_product_data/product_data_stores_week_{week}.pkl')
 
 
     return product_data
