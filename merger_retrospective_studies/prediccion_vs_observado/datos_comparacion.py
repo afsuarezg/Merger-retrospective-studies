@@ -29,9 +29,10 @@ def creating_comparison_product_data_rcl(main_dir: str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
+                      stores_to_include: list[int],
                       first_week: int=0,
-                      num_weeks: int=1, 
-                      lower_threshold_identified_sales: float=0.35):
+                      num_weeks: int=1,
+                      ):
     """
     Creates and processes product data by merging various datasets and performing multiple transformations.
     Parameters:
@@ -100,11 +101,11 @@ def creating_comparison_product_data_rcl(main_dir: str,
                 'week_end_ID':'first',
                 'store_code_uc':'first',
                 #'market_ids_fips':'first',
-                'fips_state_code':'first', 
-                'fips_state_descr':'first', 
-                'fips_county_code':'first', 
-                'fips_county_descr':'first',
-                'firm_ids':'first', #No está definido aún. 
+                # 'fips_state_code':'first', 
+                # 'fips_state_descr':'first', 
+                # 'fips_county_code':'first', 
+                # 'fips_county_descr':'first',
+                # 'firm_ids':'first', #No está definido aún. 
                 'brand_code_uc': 'first',
                 'brand_descr':'first',
                 'units': 'sum',
@@ -112,12 +113,12 @@ def creating_comparison_product_data_rcl(main_dir: str,
                 # 'price': 'mean',
                 'total_individual_units': 'sum',
                 'total_income': 'sum',
-                'style_code': 'mean' ,
-                'style_descr': 'first',
-                'type_code': 'mean' ,
-                'type_descr': 'first' ,
-                'strength_code': 'mean',
-                'strength_descr': 'first', 
+                # 'style_code': 'mean' ,
+                # 'style_descr': 'first',
+                # 'type_code': 'mean' ,
+                # 'type_descr': 'first' ,
+                # 'strength_code': 'mean',
+                # 'strength_descr': 'first', 
             })
 
     # product_data.rename(columns={'unitary_price':'unitary_price_x_reemplazar', 'price':'price_x_reemplazar'}, inplace=True)
@@ -207,5 +208,11 @@ def creating_comparison_product_data_rcl(main_dir: str,
     # # Creación de identificador numérico para los productos
 
     # product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
+    #-------------------------------------------------------------------
+    product_data = product_data[product_data['store_code_uc'].isin(stores_to_include)]
+    # product_data=product_data[['market_ids','zip', 'week_end', 'store_code_uc', 'brand_descr','brand_code_uc', 'prices' ]]
+    week=product_data['week_end'].iloc[0]
+    product_data.to_pickle(f'{main_dir}/product_data_stores_week_{week}.pkl')
+
 
     return product_data
