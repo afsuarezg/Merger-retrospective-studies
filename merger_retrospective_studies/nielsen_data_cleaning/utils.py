@@ -165,7 +165,7 @@ def filter_by_market_size(product_data, min_brands=2):
     return product_data[product_data['market_ids'].isin(valid_markets)]
 
 
-def filter_matching_markets(agent_data, product_data):
+def filtering_agent_data_match_markets(agent_data, product_data):
     """Filter agent and product data to keep only matching market IDs.
     
     Args:
@@ -179,7 +179,7 @@ def filter_matching_markets(agent_data, product_data):
     agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
     
-    return agent_data, product_data
+    return agent_data
 
 
 def create_instruments(product_data: pd.DataFrame, formulation: str='0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig') -> tuple:
@@ -237,7 +237,7 @@ def save_processed_data(product_data: pd.DataFrame,
         None
     """
     # Create base output directory path
-    base_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}'
+    base_dir = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{date}/{week_dir}'
     os.makedirs(base_dir, exist_ok=True)
 
     # Define file paths
@@ -325,6 +325,80 @@ def find_first_non_collinear_matrix(**dfs):
             return key, value
     return None
 
+
+def select_lowest_condition_dataframe(*dataframes: pd.DataFrame, 
+                                      return_condition_number: bool = False) -> Union[pd.DataFrame, Tuple[pd.DataFrame, float]]:
+    """
+    Calculate the condition number for multiple DataFrames and return the one with the lowest value.
+    
+    The condition number is calculated using the L2 norm of the matrix formed by the numeric columns
+    of each DataFrame. Only numeric columns are considered for the calculation.
+    
+    Parameters:
+    -----------
+    *dataframes : pd.DataFrame
+        Variable number of pandas DataFrames to compare
+    return_condition_number : bool, default False
+        If True, returns a tuple of (dataframe, condition_number)
+        If False, returns only the dataframe
+    
+    Returns:
+    --------
+    pd.DataFrame or Tuple[pd.DataFrame, float]
+        The DataFrame with the lowest condition number, optionally with the condition number value
+    
+    Raises:
+    -------
+    ValueError
+        If no DataFrames are provided, if any DataFrame is empty, 
+        or if no numeric columns are found in any DataFrame
+    """
+    
+    if not dataframes:
+        raise ValueError("At least one DataFrame must be provided")
+    
+    condition_numbers = []
+    valid_dataframes = []
+    
+    for i, df in enumerate(dataframes):
+        if df.empty:
+            raise ValueError(f"DataFrame at index {i} is empty")
+        
+        # Select only numeric columns
+        numeric_df = df.select_dtypes(include=[np.number])
+        
+        if numeric_df.empty:
+            raise ValueError(f"DataFrame at index {i} has no numeric columns")
+        
+        # Handle missing values by dropping rows with any NaN values
+        # Alternative: you could use fillna() or other imputation methods
+        clean_df = numeric_df.dropna()
+        
+        if clean_df.empty:
+            raise ValueError(f"DataFrame at index {i} has no rows after removing missing values")
+        
+        try:
+            # Calculate condition number using L2 norm
+            matrix = clean_df.values
+            condition_num = np.linalg.cond(matrix)
+            
+            # Check for infinite condition number (singular matrix)
+            if np.isinf(condition_num):
+                print(f"Warning: DataFrame at index {i} has infinite condition number (singular matrix)")
+            
+            condition_numbers.append(condition_num)
+            valid_dataframes.append(df)
+            
+        except np.linalg.LinAlgError as e:
+            raise ValueError(f"Linear algebra error for DataFrame at index {i}: {str(e)}")
+    
+    # Find the index of the DataFrame with the lowest condition number
+    min_index = np.argmin(condition_numbers)
+    best_dataframe = valid_dataframes[min_index]
+    lowest_condition_number = condition_numbers[min_index]
+    
+    return best_dataframe
+ 
 
 def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
     """

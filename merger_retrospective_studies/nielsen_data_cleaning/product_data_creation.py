@@ -22,6 +22,7 @@ from ..estimaciones.utils import save_dict_json
 from ..estimaciones.post_estimation_merger_simulation import predict_prices
 from ..estimaciones.optimal_instruments import results_optimal_instruments
 from ..nielsen_data_cleaning.utils import find_first_non_collinear_matrix
+from .utils import filter_by_market_size
 
 
 
@@ -254,6 +255,9 @@ def creating_product_data_rcl(main_dir: str,
 
     #Elimina mercados con fraccion de ventas identificadas inferiores a un threshold previamente definido.
     product_data = product_data[product_data['fraction_identified_earnings'] >= lower_threshold_identified_sales]
+    #-------------------------------------------------------------------
+    #Elimina los mercados para los que únicamente hay información sobre un producto. 
+    product_data=filter_by_market_size(product_data, min_brands=2)
     #-------------------------------------------------------------------
    
     # Después de identificar los mercados para los que las ventas identificadas por valor son superiores al threshold definido, se suman las unidades vendidas para dichos mercados. 

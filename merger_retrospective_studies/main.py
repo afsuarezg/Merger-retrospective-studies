@@ -18,7 +18,7 @@ from .estimaciones.rcl_with_demographics import rcl_with_demographics
 from .estimaciones.utils import save_dict_json
 from .estimaciones.post_estimation_merger_simulation import predicted_prices
 from .estimaciones.optimal_instruments import results_optimal_instruments
-from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filter_matching_markets, create_instruments, save_processed_data, create_formulations, check_matrix_collinearity, find_first_non_collinear_matrix, select_product_data_columns, filtering_data_by_identified_sales, filtering_data_by_number_brands, matching_agent_and_product_data, create_directories, save_product_data, run_optimization_iterations
+from .nielsen_data_cleaning.utils import create_output_directories, create_agent_data_from_cps, create_agent_data_sample, filter_by_identified_earnings, filter_by_market_size, filtering_agent_data_match_markets, create_instruments, save_processed_data, create_formulations, check_matrix_collinearity, find_first_non_collinear_matrix, select_product_data_columns, filtering_data_by_identified_sales, filtering_data_by_number_brands, matching_agent_and_product_data, create_directories, save_product_data, run_optimization_iterations
 
 
 DIRECTORY_NAME = 'Reynolds_Lorillard'
@@ -74,15 +74,15 @@ def main(num_iterations:int=1, post_estimation: bool=True):
     #-----------------------------------------------------------------
     ##### Filtrar base a partir de ventas identificadas########
     #TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
-    product_data = filter_by_identified_earnings(product_data, threshold_identified_earnings)
+    # product_data = filter_by_identified_earnings(product_data, threshold_identified_earnings)
 
     ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //
     #TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
-    product_data = filter_by_market_size(product_data, min_brands=2)
+    # product_data = filter_by_market_size(product_data, min_brands=2)
 
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
-    filtered_sample_agent_data, filtered_product_data = filter_matching_markets(sample_agent_data, product_data)
+    filtered_agent_data = filtering_agent_data_match_markets(sample_agent_data, product_data)
     ## agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
     ## product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
 
@@ -96,7 +96,7 @@ def main(num_iterations:int=1, post_estimation: bool=True):
                        blp_instruments=blp_instruments, 
                        local_instruments=local_instruments, 
                        quadratic_instruments=quadratic_instruments, 
-                       agent_data=filtered_sample_agent_data, 
+                       agent_data=filtered_agent_data, 
                        week_dir=week_dir, 
                        date=date, 
                        directory_name=DIRECTORY_NAME, 
@@ -107,7 +107,7 @@ def main(num_iterations:int=1, post_estimation: bool=True):
                             blp_inst = blp_instruments, 
                             local_inst = local_instruments, 
                             quad_inst = quadratic_instruments, 
-                            agent_data= filtered_sample_agent_data)
+                            agent_data= filtered_agent_data)
     
     product_data.to_csv(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{date}/{week_dir}/compiled_data_{DIRECTORY_NAME}_{datetime_}.csv', index=False)
 
