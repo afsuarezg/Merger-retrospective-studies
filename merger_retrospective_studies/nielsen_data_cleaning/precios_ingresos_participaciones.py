@@ -509,7 +509,7 @@ def shares_with_outside_good(row):
     float: The market share of the product including an outside good.
     """
 
-    return row['units']/(row['fraction_identified_earnings']*row['CENSUS_2020_POP']*0.78*4)
+    return row['units']/(row['fraction_identified_earnings']*row['poblacion_census_2020']*0.78*4)
 
 
 def main():
