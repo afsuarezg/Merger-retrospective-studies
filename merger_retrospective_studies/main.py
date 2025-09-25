@@ -41,6 +41,15 @@ def main(num_iterations:int=1, post_estimation: bool=True):
     optimization_algorithm = 'l-bfgs-b'
 
     #-----------------------------------------------------------------
+    # Crea las formulaciones
+    linear_formulation = '1+ prices'
+    absorb_formula = 'C(product_ids)'
+    non_linear_formulation = '1+ prices + tar'
+    agent_formulation = '0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed'
+    linear_formulation, non_linear_formulation, agent_formulation = create_formulations(linear_formula=linear_formulation, absorb_formula=absorb_formula, nonlinear_formula=non_linear_formulation, agent_formula=agent_formulation)
+
+    #-----------------------------------------------------------------
+    # Crea la base de datos de productos
     product_data = creating_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                      movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv',
                                      stores_path='Nielsen_data/2014/Annual_Files/stores_2014.tsv',
@@ -50,57 +59,45 @@ def main(num_iterations:int=1, post_estimation: bool=True):
                                      num_weeks=num_weeks,
                                      lower_threshold_identified_sales=threshold_identified_earnings)
     
-    print('product_data columns: ', product_data.columns)
     #-----------------------------------------------------------------
-    # product_data = product_data[product_data['fraction_identified_earnings']>=threshold_identified_earnings]
-    # market_counts = product_data['market_ids'].value_counts()
-    # valid_markets = market_counts[market_counts >= 2].index
-    # product_data = product_data[product_data['market_ids'].isin(valid_markets)]
-
-    #-----------------------------------------------------------------
+    # Selecciona y organizalas columnas necesarias para el análisis
     product_data = select_product_data_columns(product_data=product_data)
    
     #-------------------------------------------------------------
     # Crea directorios para guardar los datos procesados, las predicciones y los resultados de la optimización.
-    week_dir = create_output_directories(product_data=product_data, date=date,optimization_algorithm=optimization_algorithm)
+    week_dir = create_output_directories(product_data=product_data, 
+                                        date=date,
+                                        optimization_algorithm=optimization_algorithm)
 
     #-----------------------------------------------------------------
     # Agregando información sociodemográfica 
     pop_agent_data = create_agent_data_from_cps(record_layout_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/January_2014_Record_Layout.txt',
                                                 agent_data_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat')
     #-----------------------------------------------------------------
-    sample_agent_data = create_agent_data_sample(agent_data_pop=pop_agent_data, product_data=product_data)
-
-    #-----------------------------------------------------------------
-    ##### Filtrar base a partir de ventas identificadas########
-    #TODO: Quitar esta sección dado que la eliminación de retailers con ventas identificadas inferiores a un threshold se hará al interior de la función creating_product_data_rcl
-    # product_data = filter_by_identified_earnings(product_data, threshold_identified_earnings)
-
-    ####### Restringiendo la muestra a retailers que tienen 2 o más marcas identificadas ######## //
-    #TODO: La restricción de los mercados a aquellos que tengan 2 o más marcas se debería implementar con anteriordad para evitar procesar información que posteriormente será eliminada. 
-    # product_data = filter_by_market_size(product_data, min_brands=2)
+    # Crea la base de datos de consumidores
+    num_nodes=len([term.strip() for term in agent_formulation.split('+') if term.strip() != '0'])
+    filtered_sample_agent_data = create_agent_data_sample(agent_data_pop=pop_agent_data, product_data=product_data, num_samples=400, n_neighbors=4, num_nodes=num_nodes)
 
     #-----------------------------------------------------------------
     ######### Manteniendo la información en agents y data con iguales market_ids ##########
-    filtered_agent_data = filtering_agent_data_match_markets(sample_agent_data, product_data)
-    ## agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
-    ## product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+    filtered_agent_data = filtering_agent_data_match_markets(filtered_sample_agent_data, product_data)
 
     #-----------------------------------------------------------------
-    ########## Creación de instrumentos ########## //TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados.
+    ########## Creación de instrumentos ########## 
+    #TODO Revisar si las variables que se usan para crear los instrumentos también deben ser usadas al momento de definir el conjunto de características de los productos a ser analizados.
     formulation = pyblp.Formulation('0 + tar + nicotine + co + nicotine_mg_per_g + nicotine_mg_per_g_dry_weight_basis + nicotine_mg_per_cig')
     blp_instruments, local_instruments, quadratic_instruments = create_instruments(product_data, formulation)
     #-----------------------------------------------------------------
     ######### Salvando instrumentos e información de los consumidores ###########
-    save_processed_data(product_data=product_data, 
-                       blp_instruments=blp_instruments, 
-                       local_instruments=local_instruments, 
-                       quadratic_instruments=quadratic_instruments, 
-                       agent_data=filtered_agent_data, 
-                       week_dir=week_dir, 
-                       date=date, 
-                       directory_name=DIRECTORY_NAME, 
-                       datetime_str=datetime_)
+    # save_processed_data(product_data=product_data, 
+    #                    blp_instruments=blp_instruments, 
+    #                    local_instruments=local_instruments, 
+    #                    quadratic_instruments=quadratic_instruments, 
+    #                    agent_data=filtered_agent_data, 
+    #                    week_dir=week_dir, 
+    #                    date=date, 
+    #                    directory_name=DIRECTORY_NAME, 
+    #                    datetime_str=datetime_)
 
     #-----------------------------------------------------------------
     product_data = compile_data(product_data = product_data, 
@@ -115,9 +112,10 @@ def main(num_iterations:int=1, post_estimation: bool=True):
 
     #logit formulation 
     print('Logit')
-    linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
+    # linear_formulation, non_linear_formulation, agent_formulation = create_formulations()
 
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
+
 
     results=run_optimization_iterations(
         product_data=product_data,

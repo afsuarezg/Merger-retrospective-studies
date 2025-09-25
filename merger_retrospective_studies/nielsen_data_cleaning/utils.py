@@ -4,6 +4,7 @@ import pandas as pd
 import pyblp
 from scipy.linalg import svd
 from sklearn.impute import KNNImputer
+from typing import Union, Tuple
 
 
 from .consumidores_sociodemograficas import process_file
@@ -35,10 +36,6 @@ def create_output_directories(product_data: pd.DataFrame, date: str, optimizatio
     else:
         week_dir = weeks[0]
 
-    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{week_dir}/{date}', exist_ok=True)
-    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
-    # os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}', exist_ok=True)
-
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/processed_data/{date}/{week_dir}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/{date}/{week_dir}/{optimization_algorithm}', exist_ok=True)
     os.makedirs(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}', exist_ok=True)
@@ -63,10 +60,9 @@ def create_agent_data_from_cps(record_layout_path: str, agent_data_path: str) ->
     # Read agent data using fixed width format
     agent_data_pop = pd.read_fwf(agent_data_path, 
                                 widths=[int(elem) for elem in socdem_file_structure.values()])
-    
     agent_data_pop.columns = socdem_file_structure.keys()
     
-    # Remove observations where county code is 0
+    # Keep observations where county code is not 0
     agent_data_pop = agent_data_pop[agent_data_pop['GTCO']!=0]
 
     # Generate FIPS code from state and county codes
@@ -79,14 +75,16 @@ def create_agent_data_from_cps(record_layout_path: str, agent_data_path: str) ->
 
 
 
-def create_agent_data_sample(agent_data_pop: pd.DataFrame, product_data: pd.DataFrame) -> pd.DataFrame:
+def create_agent_data_sample(agent_data_pop: pd.DataFrame, product_data: pd.DataFrame, num_samples: int=400, n_neighbors: int=4, num_nodes: int=5) -> pd.DataFrame:
     """
     Creates a sample of agent data with demographic information and random nodes.
     
     Args:
         agent_data_pop (pd.DataFrame): Population agent data with demographic variables
         product_data (pd.DataFrame): Product data containing GESTFIPS codes
-        
+        num_samples (int): Number of samples to draw
+        n_neighbors (int): Number of neighbors to use for KNN imputation
+        num_nodes (int): Number of nodes to add
     Returns:
         pd.DataFrame: Sample of agent data with demographic variables, weights and random nodes
     """
@@ -94,7 +92,7 @@ def create_agent_data_sample(agent_data_pop: pd.DataFrame, product_data: pd.Data
     agent_data_sample = get_random_samples_by_code(
                         agent_data_pop, 
                         product_data['GESTFIPS'].unique(), 
-                        400)
+                        num_samples)
     
     agent_data_sample = agent_data_sample[['FIPS', 'GESTFIPS', 'HEFAMINC', 'PRTAGE', 'HRNUMHOU','PTDTRACE', 'PEEDUCA']]
 
@@ -102,27 +100,29 @@ def create_agent_data_sample(agent_data_pop: pd.DataFrame, product_data: pd.Data
     agent_data_sample.replace(-1, np.nan, inplace=True)
 
     # Impute missing values
-    knn_imputer = KNNImputer(n_neighbors=3)
+    knn_imputer = KNNImputer(n_neighbors=n_neighbors)
 
     agent_data_sample_knn_imputed = pd.DataFrame(knn_imputer.fit_transform(agent_data_sample[['HEFAMINC', 'PRTAGE', 'HRNUMHOU', 'PTDTRACE', 'PEEDUCA']]), columns=['hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'])
 
     # Calculate weights
-    grouped = agent_data_sample.groupby('GESTFIPS').size()
+    grouped = agent_data_sample.groupby('GESTFIPS').size() #computes the number of observations per GESTFIPS
     agent_data_sample['weights'] = agent_data_sample['GESTFIPS'].map(1 / grouped)
     
     # Combine data and add random nodes
     agent_data_sample = pd.concat([agent_data_sample[['FIPS', 'GESTFIPS','weights']], agent_data_sample_knn_imputed],     
                         axis=1)
-
-    agent_data_sample = add_random_nodes(agent_data_sample, mean=0, std_dev=1, num_nodes=5)
+    agent_data_sample = add_random_nodes(agent_data_sample, mean=0, std_dev=1, num_nodes=num_nodes)
 
     # Select final columns
-    agent_data_sample = agent_data_sample[[
-        'FIPS', 'GESTFIPS', 'weights',
-        'nodes0', 'nodes1', 'nodes2', 'nodes3','nodes4',
-        'hefaminc_imputed', 'prtage_imputed','hrnumhou_imputed', 
-        'ptdtrace_imputed', 'peeduca_imputed'
-    ]]
+    # Create dynamic list of node columns based on num_nodes parameter
+    node_columns = [f'nodes{i}' for i in range(num_nodes)]
+    
+    # Select final columns with dynamic node columns
+    final_columns = ['FIPS', 'GESTFIPS', 'weights'] + node_columns + [
+        'hefaminc_imputed', 'prtage_imputed', 'hrnumhou_imputed', 'ptdtrace_imputed', 'peeduca_imputed'
+    ]
+    
+    agent_data_sample = agent_data_sample[final_columns]
     
     # Merge with product data
     agent_data = pd.merge(
@@ -176,8 +176,9 @@ def filtering_agent_data_match_markets(agent_data, product_data):
         tuple: (filtered_agent_data, filtered_product_data) containing only matching market IDs
     """
     # Keep only market_ids that exist in both datasets
-    agent_data = agent_data[agent_data['market_ids'].isin(set(product_data['market_ids']))]
-    product_data = product_data[product_data['market_ids'].isin(agent_data['market_ids'].unique())]
+    common_market_ids = set(product_data['market_ids']).intersection(set(agent_data['market_ids']))
+    agent_data = agent_data[agent_data['market_ids'].isin(common_market_ids)]
+    product_data = product_data[product_data['market_ids'].isin(common_market_ids)]
     
     return agent_data
 
@@ -195,17 +196,16 @@ def create_instruments(product_data: pd.DataFrame, formulation: str='0 + tar + n
     # Update formulation with product characteristics
     # formulation = pyblp.Formulation(formula)
     # Create BLP instruments
-    blp_instruments = pyblp.build_blp_instruments(formulation, product_data)
-    blp_instruments = pd.DataFrame(blp_instruments)
+    blp_instruments = pd.DataFrame(pyblp.build_blp_instruments(formulation, product_data))
     blp_instruments.rename(columns={i:f'blp_instruments{i}' for i in blp_instruments.columns}, inplace=True)
 
     # Create local instruments
-    local_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='local')
-    local_instruments = pd.DataFrame(local_instruments, columns=[f'local_instruments{i}' for i in range(local_instruments.shape[1])])
+    local_instruments = pd.DataFrame(pyblp.build_differentiation_instruments(formulation, product_data, version='local'))
+    local_instruments.rename(columns={i:f'local_instruments{i}' for i in local_instruments.columns}, inplace=True)
 
     # Create quadratic instruments  
-    quadratic_instruments = pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic')
-    quadratic_instruments = pd.DataFrame(quadratic_instruments, columns=[f'quadratic_instruments{i}' for i in range(quadratic_instruments.shape[1])])
+    quadratic_instruments = pd.DataFrame(pyblp.build_differentiation_instruments(formulation, product_data, version='quadratic'))
+    quadratic_instruments.rename(columns={i:f'quadratic_instruments{i}' for i in quadratic_instruments.columns}, inplace=True)
 
     return blp_instruments, local_instruments, quadratic_instruments
 
@@ -324,6 +324,76 @@ def find_first_non_collinear_matrix(**dfs):
             print(key)
             return key, value
     return None
+
+
+def select_lowest_condition_dataframe(*dataframes: pd.DataFrame, 
+                                      return_condition_number: bool = False) -> Union[pd.DataFrame, Tuple[pd.DataFrame, float]]:
+    """
+    Calculate the condition number for multiple DataFrames and return the one with the lowest value.
+    
+    The condition number is calculated using the L2 norm of the matrix formed by the numeric columns
+    of each DataFrame. Only numeric columns are considered for the calculation.
+    
+    Parameters:
+    -----------
+    *dataframes : pd.DataFrame
+        Variable number of pandas DataFrames to compare
+    return_condition_number : bool, default False
+        If True, returns a tuple of (dataframe, condition_number)
+        If False, returns only the dataframe
+    
+    Returns:
+    --------
+    pd.DataFrame or Tuple[pd.DataFrame, float]
+        The DataFrame with the lowest condition number, optionally with the condition number value
+    
+    Raises:
+    -------
+    ValueError
+        If no DataFrames are provided, if any DataFrame is empty, 
+        or if no numeric columns are found in any DataFrame
+    """
+    
+    if not dataframes:
+        raise ValueError("At least one DataFrame must be provided")
+    
+    condition_numbers = []
+    valid_dataframes = []
+    
+    for i, df in enumerate(dataframes):
+        if df.empty:
+            raise ValueError(f"DataFrame at index {i} is empty")
+        
+        # Select only numeric columns
+        numeric_df = df.select_dtypes(include=[np.number])
+        
+        if numeric_df.empty:
+            raise ValueError(f"DataFrame at index {i} has no numeric columns")
+        
+        # Handle missing values by dropping rows with any NaN values
+        # Alternative: you could use fillna() or other imputation methods
+        clean_df = numeric_df.dropna()
+        
+        if clean_df.empty:
+            raise ValueError(f"DataFrame at index {i} has no data after removing NaN values")
+        
+        # Calculate condition number using numpy's linear algebra module
+        try:
+            condition_num = np.linalg.cond(clean_df.values)
+            condition_numbers.append(condition_num)
+            valid_dataframes.append(df)
+        except np.linalg.LinAlgError:
+            raise ValueError(f"Unable to calculate condition number for DataFrame at index {i}")
+    
+    # Find the index of the minimum condition number
+    min_index = np.argmin(condition_numbers)
+    best_dataframe = valid_dataframes[min_index]
+    best_condition_number = condition_numbers[min_index]
+    
+    if return_condition_number:
+        return best_dataframe, best_condition_number
+    else:
+        return best_dataframe
 
 
 def select_lowest_condition_dataframe(*dataframes: pd.DataFrame, 
