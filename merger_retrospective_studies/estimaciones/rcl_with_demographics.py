@@ -23,14 +23,16 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                           num_random:int=3,
                           seed:int=50):
     
-    product_formulations = (linear_formulation, non_linear_formulation)
+    product_formulations = (linear_formulation, 
+                            non_linear_formulation)
 
     # Optimization algorithm
     optimization = pyblp.Optimization(method=optimization_algorithm, 
                                       method_options= {'maxiter': 10000, 'gtol': gtol, 'ftol': 1e-12})
 
     # Iteration algorithm 
-    iteration = pyblp.Iteration(method='squarem', method_options={'max_evaluations': 10000, 'atol': 1e-14})
+    iteration = pyblp.Iteration(method='squarem', 
+                                method_options={'max_evaluations': 10000, 'atol': 1e-14, 'max_iterations': 10000})
 
     # Definición del problema con consumidor
     problem = pyblp.Problem(product_formulations=product_formulations,
@@ -39,13 +41,20 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                             agent_data=agent_data)
 
     # Sigma initial values
-    initial_sigma = np.diag(generate_random_floats(num_floats=problem.K2, start_range=0, end_range=4))
-    initial_pi = create_sparse_array(shape=(problem.K2,problem.D), num_random=num_random, seed=seed)
+    initial_sigma = np.diag(generate_random_floats(num_floats=problem.K2, 
+                                                   start_range=0, 
+                                                   end_range=4))
+    
+    initial_pi = create_sparse_array(shape=(problem.K2,problem.D), 
+                                     num_random=num_random, 
+                                     seed=seed)
     
     # Sigma bounds
     sigma_lower = np.zeros(initial_sigma.shape)
     sigma_upper_matrix = np.tril(np.ones(initial_sigma.shape))
-    sigma_upper=np.where(sigma_upper_matrix==1, np.inf, sigma_upper_matrix)
+    sigma_upper=np.where(sigma_upper_matrix==1,
+                         np.inf, 
+                         sigma_upper_matrix)
 
     # Results
     results = problem.solve(
