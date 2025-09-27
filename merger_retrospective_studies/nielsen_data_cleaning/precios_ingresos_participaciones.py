@@ -300,13 +300,13 @@ def fraccion_ventas_identificadas(row):
     in the market that is attributed to known brands.
     Parameters:
     row (pd.Series): A pandas Series object containing the following keys:
-        - 'total_income_market_known_brands': Total income from known brands in the market.
-        - 'total_income_market': Total income in the market.
+        - 'total_income_per_market_id_known_brands': Total income from known brands in the market.
+        - 'total_income_per_market_id': Total income in the market.
     Returns:
     float: The fraction of total income in the market that is from known brands.
     """
     
-    return row['total_income_market_known_brands']/row['total_income_market']
+    return row['total_income_per_market_id_known_brands']/row['total_income_per_market_id']
 
 
 def count_rows_meeting_condition(df, column_name, condition):
