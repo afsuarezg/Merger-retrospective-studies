@@ -261,11 +261,11 @@ def creating_product_data_rcl(main_dir: str,
     #TODO Crear una carpeta con la información poblacional para diferentes años y actualizar el path para que el archivo de fips correspondiente se cargue automáticamente 
     fips_pop= pd.read_excel('/oak/stanford/groups/polinsky/Tamaño_mercado/PopulationEstimates.xlsx', skiprows=4)
     fips_pop=fips_pop[['FIPStxt','State','CENSUS_2020_POP']]
+    fips_pop.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
     fips_pop['fips'] = fips_pop['FIPStxt'].astype('int')
     # product_data['fips'] = product_data.apply(prepend_zeros, axis=1).astype('int')
-    product_data=product_data.merge(fips_pop[['CENSUS_2020_POP','fips']], how='left', on='fips')
-    product_data.rename(columns={'fips':'FIPS', 'fips_state_code':'GESTFIPS'}, inplace=True)
-    # product_data.rename(columns={'CENSUS_2020_POP':'poblacion_census_2020'}, inplace=True)
+    product_data=product_data.merge(fips_pop[['poblacion_census_2020','fips']], how='left', on='fips')
+    product_data.rename(columns={'fips':'FIPS', 'fips_state_code':'GESTFIPS'}, inplace=True)    
     #-------------------------------------------------------------------
 
     # Calculo de participaciones de mercado incluyendo la participación del bien externo. 
