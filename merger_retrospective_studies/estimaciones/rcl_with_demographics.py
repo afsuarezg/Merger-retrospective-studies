@@ -19,7 +19,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                           date: str,                         
                           optimization_algorithm:str='l-bfgs-b',
                           iter:int=1,
-                          gtol:float=1e-12, 
+                          gtol:float=1e-5, 
                           num_random:int=3,
                           seed:int=50):
     
@@ -28,11 +28,11 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     # Optimization algorithm
     optimization = pyblp.Optimization(method=optimization_algorithm, 
-                                      method_options= {'maxiter': 10000, 'gtol': gtol, 'ftol': 1e-12})
+                                      method_options= {'maxiter': 10000, 'gtol': gtol})
 
     # Iteration algorithm 
     iteration = pyblp.Iteration(method='squarem', 
-                                method_options={'max_evaluations': 10000, 'atol': 1e-14, 'max_iterations': 10000})
+                                method_options={'max_evaluations': 10000, 'atol': 1e-14})
 
     # Definición del problema con consumidor
     problem = pyblp.Problem(product_formulations=product_formulations,
@@ -40,7 +40,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                             agent_formulation=agent_formulation,
                             agent_data=agent_data)
 
-    # Sigma initial values
+    # Sigma and pi initial values
     initial_sigma = np.diag(generate_random_floats(num_floats=problem.K2, 
                                                    start_range=0, 
                                                    end_range=4))
@@ -63,8 +63,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         beta=logit_results.beta,
         optimization=optimization,
         iteration=iteration,
-        sigma_bounds=(sigma_lower, sigma_upper),
-        method='1s'
+        sigma_bounds=(sigma_lower, sigma_upper)
     )
 
     results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
