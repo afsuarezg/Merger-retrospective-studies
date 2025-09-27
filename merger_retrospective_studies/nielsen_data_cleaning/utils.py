@@ -521,7 +521,7 @@ def select_product_data_columns(product_data: pd.DataFrame) -> pd.DataFrame:
                         'firm', 'firm_ids', 'firm_post_merger', 'firm_ids_post_merger', 'brand_code_uc', 'brand_descr', 'product_ids', 
                         'units', 'total_individual_units', 'total_units_market',
                         'shares', 'poblacion_census_2020',
-                        'total_income', 'total_income_market_known_brands', 'total_income_market', 'fraction_identified_earnings',
+                        'total_income', 'total_income_per_market_id_known_brands', 'total_income_per_market_id', 'fraction_identified_earnings',
                         'prices',
                         'from Nielsen', 'from characteristics', 'name',
                         'tar', 'nicotine', 'co', 'nicotine_mg_per_g', 'nicotine_mg_per_g_dry_weight_basis', 'nicotine_mg_per_cig']]
