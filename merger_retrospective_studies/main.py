@@ -45,8 +45,8 @@ def main(num_iterations:int=1, post_estimation: bool=True):
     linear_formulation = '1+ prices'
     absorb_formula = 'C(product_ids)'
     non_linear_formulation = '1+ prices + tar'
-    agent_formulation = '0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed'
-    linear_formulation, non_linear_formulation, agent_formulation = create_formulations(linear_formula=linear_formulation, absorb_formula=absorb_formula, nonlinear_formula=non_linear_formulation, agent_formula=agent_formulation)
+    agent_formulation_str = '0 + hefaminc_imputed + prtage_imputed + hrnumhou_imputed + ptdtrace_imputed'
+    linear_formulation, non_linear_formulation, agent_formulation = create_formulations(linear_formula=linear_formulation, absorb_formula=absorb_formula, nonlinear_formula=non_linear_formulation, agent_formula=agent_formulation_str)
 
     #-----------------------------------------------------------------
     # Crea la base de datos de productos
@@ -75,7 +75,7 @@ def main(num_iterations:int=1, post_estimation: bool=True):
                                                 agent_data_path='/oak/stanford/groups/polinsky/Current_Population_Survey/2014/apr14pub.dat')
     #-----------------------------------------------------------------
     # Crea la base de datos de consumidores
-    num_nodes=len([term.strip() for term in agent_formulation.split('+') if term.strip() != '0'])
+    num_nodes=len([term.strip() for term in agent_formulation_str.split('+') if term.strip() != '0'])
     filtered_sample_agent_data = create_agent_data_sample(agent_data_pop=pop_agent_data, product_data=product_data, num_samples=400, n_neighbors=4, num_nodes=num_nodes)
 
     #-----------------------------------------------------------------
