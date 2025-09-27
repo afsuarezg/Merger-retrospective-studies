@@ -723,13 +723,15 @@ def run_optimization_iterations(product_data: pd.DataFrame,
     
         # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
+        results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
 
-        predicted_prices=compute_and_save_price_predictions(product_data=product_data, 
-                                            results=results, 
-                                            week_dir=week_dir, 
-                                            date=date, 
-                                            optimization_algorithm=optimization_algorithm, 
-                                            iter=iter)
+
+        # predicted_prices=compute_and_save_price_predictions(product_data=product_data, 
+        #                                     results=results, 
+        #                                     week_dir=week_dir, 
+        #                                     date=date, 
+        #                                     optimization_algorithm=optimization_algorithm, 
+        #                                     iter=iter)
 
         # optimal_results = results_optimal_instruments(results)
         # except Exception as e:

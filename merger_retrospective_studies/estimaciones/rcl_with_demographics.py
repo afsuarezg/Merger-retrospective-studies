@@ -66,7 +66,6 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         sigma_bounds=(sigma_lower, sigma_upper)
     )
 
-    results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
 
     return results
 
