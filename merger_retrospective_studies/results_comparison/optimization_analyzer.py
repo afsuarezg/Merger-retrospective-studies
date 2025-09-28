@@ -364,21 +364,21 @@ class OptimizationAnalyzer:
         report.append("=" * 60)
         report.append("OPTIMIZATION RESULTS ANALYSIS REPORT")
         report.append("=" * 60)
-        report.append()
+        # report.append()
         
         # Descriptive Statistics
         report.append("DESCRIPTIVE STATISTICS")
         report.append("-" * 30)
         desc_stats = self.descriptive_statistics()
         report.append(desc_stats.to_string(index=False))
-        report.append()
+        # report.append()
         
         # Normality Tests
         report.append("NORMALITY TESTS")
         report.append("-" * 30)
         norm_tests = self.normality_tests()
         report.append(norm_tests.to_string(index=False))
-        report.append()
+        # report.append()
         
         # Success Rate Analysis (if target provided)
         if target_value is not None:
@@ -386,7 +386,7 @@ class OptimizationAnalyzer:
             report.append("-" * 30)
             success_rates = self.success_rate_analysis(target_value, tolerance, minimize)
             report.append(success_rates.to_string(index=False))
-            report.append()
+            # report.append()
         
         # Algorithm Comparison (if multiple algorithms)
         if not self.single_algorithm:
@@ -394,7 +394,7 @@ class OptimizationAnalyzer:
             report.append("-" * 30)
             comparisons = self.compare_algorithms()
             report.append(comparisons.to_string(index=False))
-            report.append()
+            #report.append()
         
         # Recommendations
         report.append("RECOMMENDATIONS")
@@ -424,8 +424,8 @@ def demo_optimization_analyzer():
     # Simulate results from three different optimization algorithms
     algorithm_results = {
         'Genetic_Algorithm': np.random.normal(10, 2, 50),  # Mean=10, std=2
-        'Particle_Swarm': np.random.normal(12, 1.5, 50),  # Mean=12, std=1.5
-        'Simulated_Annealing': np.random.exponential(8, 50) + 5  # Exponential distribution
+        # 'Particle_Swarm': np.random.normal(12, 1.5, 50),  # Mean=12, std=1.5
+        # 'Simulated_Annealing': np.random.exponential(8, 50) + 5  # Exponential distribution
     }
     
     # Create analyzer

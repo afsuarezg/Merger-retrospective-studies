@@ -116,7 +116,6 @@ def main(num_iterations:int=1, post_estimation: bool=True, iteration_max_evaluat
 
     plain_logit_results=plain_logit(product_data=product_data, formulation=linear_formulation)
 
-    results_list=[]
     results=run_optimization_iterations(
         product_data=product_data,
         filtered_sample_agent_data=filtered_sample_agent_data,
@@ -131,8 +130,8 @@ def main(num_iterations:int=1, post_estimation: bool=True, iteration_max_evaluat
         iteration_max_evaluations=iteration_max_evaluations,
         iteration_atol=iteration_atol
     )            
-    results_list.append(results)
-    return results_list
+
+    return results
 
 
 if __name__=='__main__': 

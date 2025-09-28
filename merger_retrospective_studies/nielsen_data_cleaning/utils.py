@@ -708,7 +708,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
     Returns:
         None: Saves results to pickle files and price predictions to JSON files
     """
-    
+    results_list = {}
     iter = 1
     while iter <= num_iterations:
         print('------------------------------')
@@ -724,7 +724,7 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                         iter=iter, 
                                         iteration_max_evaluations=iteration_max_evaluations,
                                         iteration_atol=iteration_atol)
-    
+        results_list[iter] = results
         # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
         results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{date}/{week_dir}/{optimization_algorithm}/iteration_{iter}.pickle')
@@ -742,7 +742,8 @@ def run_optimization_iterations(product_data: pd.DataFrame,
         #     print(e)
             
         iter += 1
-        
+
+    return results_list
         
 def compute_and_save_price_predictions(product_data: pd.DataFrame, 
                                      results: pyblp.ProblemResults, 

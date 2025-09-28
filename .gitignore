@@ -3,6 +3,7 @@ Thesis*/*
 Bibliography/*
 Thomson/*
 Thesis_presentation/*
+main.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
