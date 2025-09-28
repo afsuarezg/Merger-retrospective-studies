@@ -687,7 +687,9 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                 linear_formulation: pyblp.Formulation, 
                                 non_linear_formulation: pyblp.Formulation, 
                                 agent_formulation: pyblp.Formulation, 
-                                plain_logit_results) -> None:
+                                plain_logit_results, 
+                                iteration_max_evaluations:int,
+                                iteration_atol:float) -> None:
     """
     Runs the optimization iterations for demand estimation and price prediction.
     
@@ -719,7 +721,9 @@ def run_optimization_iterations(product_data: pd.DataFrame,
                                         logit_results=plain_logit_results,
                                         week_dir=week_dir,
                                         date=date,
-                                        iter=iter)
+                                        iter=iter, 
+                                        iteration_max_evaluations=iteration_max_evaluations,
+                                        iteration_atol=iteration_atol)
     
         # results.to_pickle(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/ProblemResults_class/pickle/{week_dir}/{date}/{optimization_algorithm}/iteration_{iter}.pickle')
 
