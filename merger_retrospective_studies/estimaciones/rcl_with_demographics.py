@@ -21,7 +21,9 @@ def rcl_with_demographics(product_data: pd.DataFrame,
                           iter:int=1,
                           gtol:float=1e-5, 
                           num_random:int=3,
-                          seed:int=50):
+                          seed:int=50, 
+                          iteration_max_evaluations:int=100000,
+                          iteration_atol:float=1e-14):
     
     product_formulations = (linear_formulation, 
                             non_linear_formulation)
@@ -32,7 +34,7 @@ def rcl_with_demographics(product_data: pd.DataFrame,
 
     # Iteration algorithm 
     iteration = pyblp.Iteration(method='squarem', 
-                                method_options={'max_evaluations': 10000, 'atol': 1e-14})
+                                method_options={'max_evaluations': iteration_max_evaluations, 'atol': iteration_atol})
 
     # Definición del problema con consumidor
     problem = pyblp.Problem(product_formulations=product_formulations,
