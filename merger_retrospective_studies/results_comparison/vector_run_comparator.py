@@ -330,6 +330,241 @@ class VectorComparator:
         plt.tight_layout()
         plt.show()
     
+    def plot_comprehensive_overview(self, reference_idx: int = 0, 
+                                   figsize: Tuple[int, int] = (20, 16)) -> None:
+        """
+        Create a comprehensive overview plot showing all analysis results in one figure.
+        
+        Parameters
+        ----------
+        reference_idx : int, default=0
+            Index of the reference vector for component analysis.
+        figsize : Tuple[int, int], default=(20, 16)
+            Figure size for the comprehensive plot.
+        """
+        fig = plt.figure(figsize=figsize)
+        
+        # Create a grid layout for all subplots
+        gs = fig.add_gridspec(4, 4, hspace=0.3, wspace=0.3)
+        
+        # 1. Line plot (top left)
+        ax1 = fig.add_subplot(gs[0, 0])
+        for vec, label in zip(self.vectors, self.labels):
+            ax1.plot(vec, label=label, marker='o', markersize=3)
+        ax1.set_title('Vector Comparison - Line Plot', fontsize=10)
+        ax1.set_xlabel('Component Index')
+        ax1.set_ylabel('Value')
+        ax1.legend(fontsize=8)
+        ax1.grid(True, alpha=0.3)
+        
+        # 2. Bar chart (top center)
+        ax2 = fig.add_subplot(gs[0, 1])
+        x = np.arange(len(self.vectors[0]))
+        width = 0.8 / len(self.vectors)
+        for i, (vec, label) in enumerate(zip(self.vectors, self.labels)):
+            ax2.bar(x + i * width, vec, width, label=label, alpha=0.8)
+        ax2.set_title('Vector Comparison - Bar Chart', fontsize=10)
+        ax2.set_xlabel('Component Index')
+        ax2.set_ylabel('Value')
+        ax2.legend(fontsize=8)
+        ax2.grid(True, alpha=0.3)
+        
+        # 3. Euclidean distance heatmap (top right)
+        ax3 = fig.add_subplot(gs[0, 2])
+        euclidean_dist = self.distance_matrix('euclidean')
+        sns.heatmap(euclidean_dist, annot=True, cmap='Reds', center=0, 
+                   square=True, fmt='.2f', ax=ax3, cbar_kws={'shrink': 0.8})
+        ax3.set_title('Euclidean Distance Matrix', fontsize=10)
+        
+        # 4. Manhattan distance heatmap (top far right)
+        ax4 = fig.add_subplot(gs[0, 3])
+        manhattan_dist = self.distance_matrix('manhattan')
+        sns.heatmap(manhattan_dist, annot=True, cmap='Reds', center=0, 
+                   square=True, fmt='.2f', ax=ax4, cbar_kws={'shrink': 0.8})
+        ax4.set_title('Manhattan Distance Matrix', fontsize=10)
+        
+        # 5. Cosine similarity heatmap (second row left)
+        ax5 = fig.add_subplot(gs[1, 0])
+        cosine_sim = self.similarity_matrix('cosine')
+        sns.heatmap(cosine_sim, annot=True, cmap='RdYlBu_r', center=0, 
+                   square=True, fmt='.3f', ax=ax5, cbar_kws={'shrink': 0.8})
+        ax5.set_title('Cosine Similarity Matrix', fontsize=10)
+        
+        # 6. Pearson correlation heatmap (second row center)
+        ax6 = fig.add_subplot(gs[1, 1])
+        pearson_sim = self.similarity_matrix('pearson')
+        sns.heatmap(pearson_sim, annot=True, cmap='RdYlBu_r', center=0, 
+                   square=True, fmt='.3f', ax=ax6, cbar_kws={'shrink': 0.8})
+        ax6.set_title('Pearson Correlation Matrix', fontsize=10)
+        
+        # 7. Magnitude comparison (second row right)
+        ax7 = fig.add_subplot(gs[1, 2])
+        mag_comp = self.magnitude_comparison()
+        norms = list(mag_comp['norms'].values())
+        labels_list = list(mag_comp['norms'].keys())
+        bars = ax7.bar(range(len(norms)), norms, alpha=0.7, color='skyblue')
+        ax7.set_title('Vector Magnitudes (L2 Norms)', fontsize=10)
+        ax7.set_xlabel('Vectors')
+        ax7.set_ylabel('Euclidean Norm')
+        ax7.set_xticks(range(len(labels_list)))
+        ax7.set_xticklabels(labels_list, rotation=45)
+        ax7.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for i, (bar, norm) in enumerate(zip(bars, norms)):
+            ax7.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{norm:.2f}', ha='center', va='bottom', fontsize=8)
+        
+        # 8. Statistical summary (second row far right)
+        ax8 = fig.add_subplot(gs[1, 3])
+        stats = self.statistical_summary()
+        x_pos = np.arange(len(stats))
+        ax8.bar(x_pos, stats['Mean'], alpha=0.7, label='Mean', color='lightcoral')
+        ax8.errorbar(x_pos, stats['Mean'], yerr=stats['Std'], 
+                    fmt='none', color='red', alpha=0.7)
+        ax8.set_title('Mean Values ± Std Dev', fontsize=10)
+        ax8.set_xlabel('Vectors')
+        ax8.set_ylabel('Value')
+        ax8.set_xticks(x_pos)
+        ax8.set_xticklabels(stats['Vector'], rotation=45)
+        ax8.grid(True, alpha=0.3)
+        
+        # 9. Component differences from reference (third row left)
+        ax9 = fig.add_subplot(gs[2, 0])
+        analysis = self.component_wise_analysis(reference_idx)
+        ref_label = self.labels[reference_idx]
+        for label, data in analysis.items():
+            if label != 'reference':
+                ax9.plot(data['differences'], label=f'{label} - {ref_label}', alpha=0.8)
+        ax9.set_title(f'Differences from {ref_label}', fontsize=10)
+        ax9.set_xlabel('Component Index')
+        ax9.set_ylabel('Difference')
+        ax9.legend(fontsize=8)
+        ax9.grid(True, alpha=0.3)
+        ax9.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+        
+        # 10. Component ratios to reference (third row center)
+        ax10 = fig.add_subplot(gs[2, 1])
+        for label, data in analysis.items():
+            if label != 'reference':
+                ax10.plot(data['ratios'], label=f'{label} / {ref_label}', alpha=0.8)
+        ax10.set_title(f'Ratios to {ref_label}', fontsize=10)
+        ax10.set_xlabel('Component Index')
+        ax10.set_ylabel('Ratio')
+        ax10.legend(fontsize=8)
+        ax10.grid(True, alpha=0.3)
+        ax10.axhline(y=1, color='black', linestyle='--', alpha=0.5)
+        
+        # 11. Range comparison (third row right)
+        ax11 = fig.add_subplot(gs[2, 2])
+        ranges = stats['Max'] - stats['Min']
+        bars = ax11.bar(range(len(ranges)), ranges, alpha=0.7, color='lightgreen')
+        ax11.set_title('Vector Ranges (Max - Min)', fontsize=10)
+        ax11.set_xlabel('Vectors')
+        ax11.set_ylabel('Range')
+        ax11.set_xticks(range(len(stats)))
+        ax11.set_xticklabels(stats['Vector'], rotation=45)
+        ax11.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for i, (bar, range_val) in enumerate(zip(bars, ranges)):
+            ax11.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                     f'{range_val:.2f}', ha='center', va='bottom', fontsize=8)
+        
+        # 12. IQR comparison (third row far right)
+        ax12 = fig.add_subplot(gs[2, 3])
+        bars = ax12.bar(range(len(stats)), stats['IQR'], alpha=0.7, color='orange')
+        ax12.set_title('Interquartile Range (IQR)', fontsize=10)
+        ax12.set_xlabel('Vectors')
+        ax12.set_ylabel('IQR')
+        ax12.set_xticks(range(len(stats)))
+        ax12.set_xticklabels(stats['Vector'], rotation=45)
+        ax12.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for i, (bar, iqr) in enumerate(zip(bars, stats['IQR'])):
+            ax12.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                     f'{iqr:.2f}', ha='center', va='bottom', fontsize=8)
+        
+        # 13. Skewness comparison (fourth row left)
+        ax13 = fig.add_subplot(gs[3, 0])
+        bars = ax13.bar(range(len(stats)), stats['Skewness'], alpha=0.7, color='purple')
+        ax13.set_title('Skewness', fontsize=10)
+        ax13.set_xlabel('Vectors')
+        ax13.set_ylabel('Skewness')
+        ax13.set_xticks(range(len(stats)))
+        ax13.set_xticklabels(stats['Vector'], rotation=45)
+        ax13.grid(True, alpha=0.3)
+        ax13.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+        
+        # Add value labels on bars
+        for i, (bar, skew) in enumerate(zip(bars, stats['Skewness'])):
+            ax13.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                     f'{skew:.2f}', ha='center', va='bottom', fontsize=8)
+        
+        # 14. Kurtosis comparison (fourth row center)
+        ax14 = fig.add_subplot(gs[3, 1])
+        bars = ax14.bar(range(len(stats)), stats['Kurtosis'], alpha=0.7, color='brown')
+        ax14.set_title('Kurtosis', fontsize=10)
+        ax14.set_xlabel('Vectors')
+        ax14.set_ylabel('Kurtosis')
+        ax14.set_xticks(range(len(stats)))
+        ax14.set_xticklabels(stats['Vector'], rotation=45)
+        ax14.grid(True, alpha=0.3)
+        ax14.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+        
+        # Add value labels on bars
+        for i, (bar, kurt) in enumerate(zip(bars, stats['Kurtosis'])):
+            ax14.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                     f'{kurt:.2f}', ha='center', va='bottom', fontsize=8)
+        
+        # 15. Min/Max comparison (fourth row right)
+        ax15 = fig.add_subplot(gs[3, 2])
+        x_pos = np.arange(len(stats))
+        ax15.bar(x_pos - 0.2, stats['Min'], 0.4, label='Min', alpha=0.7, color='lightblue')
+        ax15.bar(x_pos + 0.2, stats['Max'], 0.4, label='Max', alpha=0.7, color='lightcoral')
+        ax15.set_title('Min/Max Values', fontsize=10)
+        ax15.set_xlabel('Vectors')
+        ax15.set_ylabel('Value')
+        ax15.set_xticks(x_pos)
+        ax15.set_xticklabels(stats['Vector'], rotation=45)
+        ax15.legend(fontsize=8)
+        ax15.grid(True, alpha=0.3)
+        
+        # 16. Summary statistics table (fourth row far right)
+        ax16 = fig.add_subplot(gs[3, 3])
+        ax16.axis('off')
+        
+        # Create a summary table
+        summary_text = f"Summary Statistics\n\n"
+        summary_text += f"Number of vectors: {self.n_vectors}\n"
+        summary_text += f"Vector length: {self.vector_length}\n"
+        summary_text += f"Reference vector: {ref_label}\n\n"
+        
+        # Add key statistics
+        summary_text += f"Largest norm: {mag_comp['max_norm']:.3f}\n"
+        summary_text += f"Smallest norm: {mag_comp['min_norm']:.3f}\n"
+        summary_text += f"Norm ratio: {mag_comp['norm_ratio']:.3f}\n\n"
+        
+        # Add most similar/different pairs
+        euclidean_dist_no_diag = euclidean_dist.values
+        np.fill_diagonal(euclidean_dist_no_diag, np.inf)
+        min_dist_idx = np.unravel_index(np.argmin(euclidean_dist_no_diag), euclidean_dist_no_diag.shape)
+        max_dist_idx = np.unravel_index(np.argmax(euclidean_dist_no_diag), euclidean_dist_no_diag.shape)
+        
+        summary_text += f"Most similar: {self.labels[min_dist_idx[0]]} & {self.labels[min_dist_idx[1]]}\n"
+        summary_text += f"Most different: {self.labels[max_dist_idx[0]]} & {self.labels[max_dist_idx[1]]}\n"
+        
+        ax16.text(0.05, 0.95, summary_text, transform=ax16.transAxes, 
+                 fontsize=9, verticalalignment='top', fontfamily='monospace',
+                 bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8))
+        
+        # Add overall title
+        fig.suptitle('Comprehensive Vector Analysis Overview', fontsize=16, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.show()
+    
     def generate_report(self, include_plots: bool = True, 
                        save_path: Optional[str] = None) -> Dict[str, Any]:
         """Generate a comprehensive comparison report."""
@@ -379,9 +614,11 @@ if __name__ == "__main__":
     vectors = [
         np.random.normal(0, 1, 10),
         np.random.normal(0.5, 1.2, 10),
-        np.random.normal(-0.3, 0.8, 10)
+        np.random.normal(-0.3, 0.8, 10),
+        np.random.normal(0.2, 1.2, 10),
+        np.random.normal(-0.8, 0.8, 10)
     ]
-    labels = ["Run 1", "Run 2", "Run 3"]
+    labels = ["Run 1", "Run 2", "Run 3", "Run 4", "Run 5"]
     
     # Create comparator
     comparator = VectorComparator(vectors, labels)
@@ -454,6 +691,11 @@ if __name__ == "__main__":
     print("8. Component-wise Analysis (Reference: Run 2)")
     print("-" * 30)
     comparator.plot_component_analysis(reference_idx=1, figsize=(15, 10))
+    
+    # 9. Comprehensive overview plot (all plots in one figure)
+    print("9. Comprehensive Overview Plot (All Analysis in One Figure)")
+    print("-" * 30)
+    comparator.plot_comprehensive_overview(reference_idx=0, figsize=(20, 16))
     
     print("\nAll visualizations completed!")
     print("Note: Close each plot window to proceed to the next visualization.")
