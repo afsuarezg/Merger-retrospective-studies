@@ -1,684 +1,412 @@
 """
 Vector Run Comparator Module
 
-This module provides specialized tools for comparing multiple runs of a single algorithm
-where each run produces a vector output. It focuses on distance-based and similarity-based
-metrics to analyze the consistency, convergence, and performance of vector optimization results.
-
-Key Features:
-- Euclidean distance analysis between runs
-- Cosine similarity measurements
-- Convergence pattern analysis
-- Statistical significance testing
-- Comprehensive visualization tools
-- Performance ranking and clustering
+A comprehensive tool for comparing one-dimensional vectors resulting from 
+different optimization algorithm runs.
 """
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy import stats
+from typing import List, Union, Dict, Any, Optional, Tuple
 from scipy.spatial.distance import pdist, squareform
-from scipy.cluster.hierarchy import dendrogram, linkage
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+from scipy.stats import pearsonr
 import warnings
-from typing import List, Dict, Optional, Tuple, Union
-import itertools
 
-class VectorRunComparator:
-    """
-    A specialized tool for comparing multiple vector runs from a single algorithm.
+
+class VectorComparator:
+    """A comprehensive class for comparing multiple 1D vectors from optimization runs."""
     
-    This class provides comprehensive analysis of vector optimization results,
-    focusing on distance-based metrics, similarity measures, and convergence patterns.
-    """
-    
-    def __init__(self, vector_runs: Union[List[np.ndarray], np.ndarray], 
-                 run_labels: Optional[List[str]] = None):
-        """
-        Initialize the VectorRunComparator with multiple vector runs.
+    def __init__(self, vectors: List[Union[np.ndarray, List]], 
+                 labels: Optional[List[str]] = None,
+                 normalize: bool = False,
+                 normalization_method: str = 'l2'):
+        """Initialize the VectorComparator with multiple vectors."""
+        if not vectors:
+            raise ValueError("At least one vector must be provided")
         
-        Parameters:
-        -----------
-        vector_runs : Union[List[np.ndarray], np.ndarray]
-            List of 1D arrays where each array represents one run's results.
-            Each array should have shape (n_iterations,) for 1D vectors.
-        run_labels : List[str], optional
-            Labels for each run. If None, will use 'Run_1', 'Run_2', etc.
-        """
-        if isinstance(vector_runs, np.ndarray):
-            if vector_runs.ndim == 2:
-                # Shape: (n_runs, n_iterations) for 1D vectors
-                self.vector_runs = [vector_runs[i] for i in range(vector_runs.shape[0])]
+        # Convert to numpy arrays and validate
+        self.vectors = []
+        for i, vec in enumerate(vectors):
+            if isinstance(vec, list):
+                vec = np.array(vec)
+            elif not isinstance(vec, np.ndarray):
+                raise ValueError(f"Vector {i} must be a numpy array or list")
+            
+            if vec.ndim != 1:
+                raise ValueError(f"Vector {i} must be 1-dimensional")
+            
+            self.vectors.append(vec)
+        
+        # Check if all vectors have the same length
+        lengths = [len(vec) for vec in self.vectors]
+        if len(set(lengths)) > 1:
+            warnings.warn(f"Vectors have different lengths: {lengths}. "
+                         "Some comparisons may not be meaningful.")
+        
+        # Set labels
+        if labels is None:
+            self.labels = [f"Vector_{i}" for i in range(len(vectors))]
+        else:
+            if len(labels) != len(vectors):
+                raise ValueError("Number of labels must match number of vectors")
+            self.labels = labels
+        
+        # Normalize if requested
+        if normalize:
+            self.vectors = self._normalize_vectors(normalization_method)
+        
+        self.n_vectors = len(self.vectors)
+        self.vector_length = len(self.vectors[0]) if self.vectors else 0
+    
+    def _normalize_vectors(self, method: str) -> List[np.ndarray]:
+        """Normalize all vectors using the specified method."""
+        normalized = []
+        for vec in self.vectors:
+            if method == 'l2':
+                norm = np.linalg.norm(vec)
+                normalized.append(vec / norm if norm > 0 else vec)
+            elif method == 'standardize':
+                mean, std = np.mean(vec), np.std(vec)
+                normalized.append((vec - mean) / std if std > 0 else vec)
+            elif method == 'minmax':
+                min_val, max_val = np.min(vec), np.max(vec)
+                normalized.append((vec - min_val) / (max_val - min_val) 
+                                if max_val > min_val else vec)
             else:
-                raise ValueError("If providing numpy array, it must be 2D: (n_runs, n_iterations) for 1D vectors")
-        else:
-            self.vector_runs = [np.array(run) for run in vector_runs]
-        
-        self.n_runs = len(self.vector_runs)
-        self.n_iterations = self.vector_runs[0].shape[0]
-        self.n_dimensions = 1  # Always 1 for 1D vectors
-        
-        # Validate all runs have same length
-        for i, run in enumerate(self.vector_runs):
-            if run.shape[0] != self.n_iterations:
-                raise ValueError(f"Run {i} has {run.shape[0]} iterations, expected {self.n_iterations}")
-        
-        # Set run labels
-        if run_labels is None:
-            self.run_labels = [f'Run_{i+1}' for i in range(self.n_runs)]
-        else:
-            if len(run_labels) != self.n_runs:
-                raise ValueError(f"Number of labels ({len(run_labels)}) must match number of runs ({self.n_runs})")
-            self.run_labels = run_labels
-        
-        # Calculate basic statistics
-        self._calculate_basic_stats()
+                raise ValueError(f"Unknown normalization method: {method}")
+        return normalized
     
-    def _calculate_basic_stats(self):
-        """Calculate basic statistics for all runs."""
-        self.run_stats = {}
-        
-        for i, (run, label) in enumerate(zip(self.vector_runs, self.run_labels)):
-            # For 1D vectors, the values themselves are the 'norms'
-            values = np.abs(run)  # Use absolute values as the magnitude
-            
-            # Calculate final value (last iteration)
-            final_value = run[-1]
-            
-            # Calculate mean value across all iterations
-            mean_value = np.mean(run)
-            
-            self.run_stats[label] = {
-                'values': values,
-                'final_value': final_value,
-                'mean_value': mean_value,
-                'best_value': np.min(values),
-                'worst_value': np.max(values),
-                'mean_abs_value': np.mean(values),
-                'std_abs_value': np.std(values),
-                'convergence_rate': self._calculate_convergence_rate(values)
-            }
-    
-    def _calculate_convergence_rate(self, values: np.ndarray) -> float:
-        """Calculate convergence rate based on value improvement."""
-        if len(values) < 2:
-            return 0.0
-        
-        improvements = np.diff(values)
-        negative_improvements = improvements[improvements < 0]
-        
-        if len(negative_improvements) == 0:
-            return 0.0
-        
-        return np.mean(negative_improvements)
-    
-    def euclidean_distance_analysis(self) -> pd.DataFrame:
-        """
-        Analyze Euclidean distances between all pairs of runs.
-        
-        Returns:
-        --------
-        pd.DataFrame : Distance analysis results
-        """
-        # Calculate pairwise distances between final values
-        final_values = np.array([stats['final_value'] for stats in self.run_stats.values()])
-        distances = np.abs(final_values[:, np.newaxis] - final_values[np.newaxis, :])
-        
-        # Calculate pairwise distances between mean values
-        mean_values = np.array([stats['mean_value'] for stats in self.run_stats.values()])
-        mean_distances = np.abs(mean_values[:, np.newaxis] - mean_values[np.newaxis, :])
-        
-        # Create results dataframe
-        results = []
-        for i in range(self.n_runs):
-            for j in range(i+1, self.n_runs):
-                results.append({
-                    'Run_1': self.run_labels[i],
-                    'Run_2': self.run_labels[j],
-                    'Final_Value_Distance': distances[i, j],
-                    'Mean_Value_Distance': mean_distances[i, j],
-                    'Distance_Ratio': distances[i, j] / mean_distances[i, j] if mean_distances[i, j] > 0 else np.inf
-                })
-        
-        return pd.DataFrame(results)
-    
-    def correlation_analysis(self) -> pd.DataFrame:
-        """
-        Analyze correlations between all pairs of runs.
-        
-        Returns:
-        --------
-        pd.DataFrame : Correlation analysis results
-        """
-        # Calculate pairwise correlations between runs
-        run_data = np.array(self.vector_runs)  # Shape: (n_runs, n_iterations)
-        correlations = np.corrcoef(run_data)
-        
-        # Create results dataframe
-        results = []
-        for i in range(self.n_runs):
-            for j in range(i+1, self.n_runs):
-                results.append({
-                    'Run_1': self.run_labels[i],
-                    'Run_2': self.run_labels[j],
-                    'Correlation': correlations[i, j],
-                    'Abs_Correlation': abs(correlations[i, j]),
-                    'Correlation_Strength': self._interpret_correlation(abs(correlations[i, j]))
-                })
-        
-        return pd.DataFrame(results)
-    
-    def convergence_analysis(self) -> pd.DataFrame:
-        """
-        Analyze convergence patterns across runs.
-        
-        Returns:
-        --------
-        pd.DataFrame : Convergence analysis results
-        """
-        results = []
-        
-        for label, stats in self.run_stats.items():
-            values = stats['values']
-            
-            # Calculate convergence metrics
-            initial_value = float(values[0])
-            final_value = float(values[-1])
-            improvement = initial_value - final_value
-            improvement_ratio = improvement / initial_value if abs(float(initial_value)) > 1e-10 else 0
-            
-            # Calculate stability (variance in last quarter)
-            last_quarter = int(0.75 * len(values))
-            stability = np.std(values[last_quarter:])
-            
-            # Calculate monotonicity (fraction of improving steps)
-            improvements = np.diff(values)
-            monotonicity = np.sum(improvements < 0) / len(improvements) if len(improvements) > 0 else 0
-            
-            results.append({
-                'Run': label,
-                'Initial_Value': initial_value,
-                'Final_Value': final_value,
-                'Improvement': improvement,
-                'Improvement_Ratio': improvement_ratio,
-                'Convergence_Rate': stats['convergence_rate'],
-                'Stability': stability,
-                'Monotonicity': monotonicity,
-                'Best_Value': stats['best_value'],
-                'Mean_Value': stats['mean_abs_value'],
-                'Std_Value': stats['std_abs_value']
-            })
-        
-        return pd.DataFrame(results)
-    
-    def statistical_significance_tests(self, alpha: float = 0.05) -> pd.DataFrame:
-        """
-        Perform statistical significance tests between runs.
-        
-        Parameters:
-        -----------
-        alpha : float
-            Significance level for tests
-            
-        Returns:
-        --------
-        pd.DataFrame : Statistical test results
-        """
-        results = []
-        
-        for i in range(self.n_runs):
-            for j in range(i+1, self.n_runs):
-                run1_values = self.vector_runs[i]
-                run2_values = self.vector_runs[j]
-                
-                # Mann-Whitney U test
-                mw_stat, mw_p = stats.mannwhitneyu(run1_values, run2_values, alternative='two-sided')
-                
-                # Welch's t-test
-                t_stat, t_p = stats.ttest_ind(run1_values, run2_values, equal_var=False)
-                
-                # Kolmogorov-Smirnov test
-                ks_stat, ks_p = stats.ks_2samp(run1_values, run2_values)
-                
-                # Effect size (Cohen's d)
-                pooled_std = np.sqrt(((len(run1_values)-1)*np.var(run1_values, ddof=1) + 
-                                    (len(run2_values)-1)*np.var(run2_values, ddof=1)) / 
-                                   (len(run1_values) + len(run2_values) - 2))
-                cohens_d = (np.mean(run1_values) - np.mean(run2_values)) / pooled_std
-                
-                results.append({
-                    'Run_1': self.run_labels[i],
-                    'Run_2': self.run_labels[j],
-                    'MannWhitney_Stat': mw_stat,
-                    'MannWhitney_p': mw_p,
-                    'MannWhitney_Significant': mw_p < alpha,
-                    'TTest_Stat': t_stat,
-                    'TTest_p': t_p,
-                    'TTest_Significant': t_p < alpha,
-                    'KS_Stat': ks_stat,
-                    'KS_p': ks_p,
-                    'KS_Significant': ks_p < alpha,
-                    'Cohens_d': cohens_d,
-                    'Effect_Size': self._interpret_effect_size(abs(cohens_d))
-                })
-        
-        return pd.DataFrame(results)
-    
-    def _interpret_effect_size(self, d: float) -> str:
-        """Interpret Cohen's d effect size."""
-        if d < 0.2:
-            return 'Negligible'
-        elif d < 0.5:
-            return 'Small'
-        elif d < 0.8:
-            return 'Medium'
-        else:
-            return 'Large'
-    
-    def _interpret_correlation(self, r: float) -> str:
-        """Interpret correlation strength."""
-        if r < 0.1:
-            return 'Negligible'
-        elif r < 0.3:
-            return 'Small'
-        elif r < 0.5:
-            return 'Medium'
-        elif r < 0.7:
-            return 'Large'
-        else:
-            return 'Very Large'
-    
-    def clustering_analysis(self, method: str = 'ward') -> Dict:
-        """
-        Perform hierarchical clustering analysis of runs.
-        
-        Parameters:
-        -----------
-        method : str
-            Linkage method for clustering ('ward', 'complete', 'average', 'single')
-            
-        Returns:
-        --------
-        Dict : Clustering analysis results
-        """
-        # Use final values for clustering
-        final_values = np.array([stats['final_value'] for stats in self.run_stats.values()])
-        
-        # Calculate condensed distance matrix for linkage
-        condensed_distances = pdist(final_values.reshape(-1, 1), metric='euclidean')
-        
-        # Perform hierarchical clustering
-        linkage_matrix = linkage(condensed_distances, method=method)
-        
-        # Calculate cophenetic correlation
-        from scipy.cluster.hierarchy import cophenet
-        cophenetic_distances = cophenet(linkage_matrix)
-        cophenetic_corr = np.corrcoef(condensed_distances, cophenetic_distances)[0, 1]
-        
-        # Convert back to square form for visualization
-        distance_matrix = squareform(condensed_distances)
+    def magnitude_comparison(self) -> Dict[str, Any]:
+        """Calculate and compare Euclidean norms (L2 norms) of all vectors."""
+        norms = [np.linalg.norm(vec) for vec in self.vectors]
+        rankings = np.argsort(norms)[::-1]  # Descending order
         
         return {
-            'linkage_matrix': linkage_matrix,
-            'distance_matrix': distance_matrix,
-            'cophenetic_correlation': cophenetic_corr,
-            'run_labels': self.run_labels
+            'norms': dict(zip(self.labels, norms)),
+            'rankings': dict(zip(self.labels, rankings)),
+            'max_norm': max(norms),
+            'min_norm': min(norms),
+            'norm_ratio': max(norms) / min(norms) if min(norms) > 0 else np.inf,
+            'norm_std': np.std(norms)
         }
     
-    def plot_comprehensive_analysis(self, figsize: tuple = (20, 15)) -> plt.Figure:
-        """
-        Create comprehensive visualization of vector run analysis.
+    def component_wise_analysis(self, reference_idx: int = 0) -> Dict[str, Any]:
+        """Perform element-wise analysis between vectors and a reference vector."""
+        if reference_idx >= self.n_vectors:
+            raise ValueError(f"Reference index {reference_idx} out of range")
         
-        Parameters:
-        -----------
-        figsize : tuple
-            Figure size (width, height)
+        ref_vector = self.vectors[reference_idx]
+        ref_label = self.labels[reference_idx]
+        
+        results = {'reference': ref_label}
+        
+        for i, (vec, label) in enumerate(zip(self.vectors, self.labels)):
+            if i == reference_idx:
+                continue
             
-        Returns:
-        --------
-        plt.Figure : The created figure
-        """
-        fig = plt.figure(figsize=figsize)
+            # Element-wise differences
+            diff = vec - ref_vector
+            ratio = np.divide(vec, ref_vector, out=np.zeros_like(vec), 
+                            where=ref_vector != 0)
+            
+            # Find positions with largest differences
+            max_diff_idx = np.argmax(np.abs(diff))
+            max_ratio_idx = np.argmax(np.abs(ratio - 1))
+            
+            results[label] = {
+                'differences': diff,
+                'ratios': ratio,
+                'max_difference': np.max(np.abs(diff)),
+                'max_difference_idx': max_diff_idx,
+                'max_ratio': np.max(np.abs(ratio)),
+                'max_ratio_idx': max_ratio_idx,
+                'mean_absolute_difference': np.mean(np.abs(diff)),
+                'mean_absolute_ratio_deviation': np.mean(np.abs(ratio - 1))
+            }
         
-        # 1. Convergence plots
-        ax1 = plt.subplot(3, 4, 1)
-        for i, (label, stats) in enumerate(self.run_stats.items()):
-            ax1.plot(stats['values'], alpha=0.7, label=label, linewidth=2)
-        ax1.set_title('Convergence of All Runs')
-        ax1.set_xlabel('Iteration')
-        ax1.set_ylabel('Value')
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
+        return results
+    
+    def statistical_summary(self) -> pd.DataFrame:
+        """Calculate comprehensive statistical summaries for all vectors."""
+        stats_data = []
         
-        # 2. Final values distribution
-        ax2 = plt.subplot(3, 4, 2)
-        final_values = [stats['final_value'] for stats in self.run_stats.values()]
-        ax2.bar(self.run_labels, final_values, alpha=0.7)
-        ax2.set_title('Final Values by Run')
-        ax2.set_ylabel('Final Value')
-        ax2.tick_params(axis='x', rotation=45)
-        ax2.grid(True, alpha=0.3)
+        for vec, label in zip(self.vectors, self.labels):
+            stats = {
+                'Vector': label,
+                'Length': len(vec),
+                'Mean': np.mean(vec),
+                'Median': np.median(vec),
+                'Std': np.std(vec),
+                'Min': np.min(vec),
+                'Max': np.max(vec),
+                'Range': np.max(vec) - np.min(vec),
+                'Q1': np.percentile(vec, 25),
+                'Q3': np.percentile(vec, 75),
+                'IQR': np.percentile(vec, 75) - np.percentile(vec, 25),
+                'Min_Idx': np.argmin(vec),
+                'Max_Idx': np.argmax(vec),
+                'Skewness': self._calculate_skewness(vec),
+                'Kurtosis': self._calculate_kurtosis(vec)
+            }
+            stats_data.append(stats)
         
-        # 3. Distance matrix heatmap
-        ax3 = plt.subplot(3, 4, 3)
-        euclidean_df = self.euclidean_distance_analysis()
-        n_runs = len(self.run_labels)
-        distance_matrix = np.zeros((n_runs, n_runs))
+        return pd.DataFrame(stats_data)
+    
+    def _calculate_skewness(self, vec: np.ndarray) -> float:
+        """Calculate skewness of a vector."""
+        mean = np.mean(vec)
+        std = np.std(vec)
+        if std == 0:
+            return 0
+        return np.mean(((vec - mean) / std) ** 3)
+    
+    def _calculate_kurtosis(self, vec: np.ndarray) -> float:
+        """Calculate kurtosis of a vector."""
+        mean = np.mean(vec)
+        std = np.std(vec)
+        if std == 0:
+            return 0
+        return np.mean(((vec - mean) / std) ** 4) - 3
+    
+    def distance_matrix(self, metric: str = 'euclidean') -> pd.DataFrame:
+        """Calculate distance matrix between all pairs of vectors."""
+        if metric not in ['euclidean', 'manhattan']:
+            raise ValueError("Metric must be 'euclidean' or 'manhattan'")
         
-        for _, row in euclidean_df.iterrows():
-            i = self.run_labels.index(row['Run_1'])
-            j = self.run_labels.index(row['Run_2'])
-            distance_matrix[i, j] = row['Final_Value_Distance']
-            distance_matrix[j, i] = row['Final_Value_Distance']
+        # Convert to 2D array for pdist
+        vectors_2d = np.array(self.vectors)
         
-        im = ax3.imshow(distance_matrix, cmap='viridis', aspect='auto')
-        ax3.set_title('Value Distance Matrix')
-        ax3.set_xticks(range(n_runs))
-        ax3.set_yticks(range(n_runs))
-        ax3.set_xticklabels(self.run_labels, rotation=45)
-        ax3.set_yticklabels(self.run_labels)
-        plt.colorbar(im, ax=ax3)
+        if metric == 'euclidean':
+            distances = pdist(vectors_2d, metric='euclidean')
+        else:  # manhattan
+            distances = pdist(vectors_2d, metric='cityblock')
         
-        # 4. Correlation heatmap
-        ax4 = plt.subplot(3, 4, 4)
-        correlation_df = self.correlation_analysis()
-        correlation_matrix = np.eye(n_runs)  # Identity matrix for diagonal
+        # Convert to square matrix
+        dist_matrix = squareform(distances)
         
-        for _, row in correlation_df.iterrows():
-            i = self.run_labels.index(row['Run_1'])
-            j = self.run_labels.index(row['Run_2'])
-            correlation_matrix[i, j] = row['Correlation']
-            correlation_matrix[j, i] = row['Correlation']
+        return pd.DataFrame(dist_matrix, 
+                          index=self.labels, 
+                          columns=self.labels)
+    
+    def similarity_matrix(self, metric: str = 'cosine') -> pd.DataFrame:
+        """Calculate similarity matrix between all pairs of vectors."""
+        if metric not in ['cosine', 'pearson']:
+            raise ValueError("Metric must be 'cosine' or 'pearson'")
         
-        im = ax4.imshow(correlation_matrix, cmap='RdYlBu_r', aspect='auto', vmin=-1, vmax=1)
-        ax4.set_title('Correlation Matrix')
-        ax4.set_xticks(range(n_runs))
-        ax4.set_yticks(range(n_runs))
-        ax4.set_xticklabels(self.run_labels, rotation=45)
-        ax4.set_yticklabels(self.run_labels)
-        plt.colorbar(im, ax=ax4)
+        n = len(self.vectors)
+        sim_matrix = np.eye(n)  # Initialize with identity matrix
         
-        # 5. Final values scatter plot
-        ax5 = plt.subplot(3, 4, 5)
-        for i, (label, stats) in enumerate(self.run_stats.items()):
-            final_val = stats['final_value']
-            ax5.scatter(i, final_val, label=label, s=100, alpha=0.7)
-        ax5.set_title('Final Values by Run')
-        ax5.set_xlabel('Run Index')
-        ax5.set_ylabel('Final Value')
-        ax5.set_xticks(range(len(self.run_labels)))
-        ax5.set_xticklabels(self.run_labels, rotation=45)
-        ax5.grid(True, alpha=0.3)
+        for i in range(n):
+            for j in range(i + 1, n):
+                if metric == 'cosine':
+                    # Cosine similarity
+                    dot_product = np.dot(self.vectors[i], self.vectors[j])
+                    norm_i = np.linalg.norm(self.vectors[i])
+                    norm_j = np.linalg.norm(self.vectors[j])
+                    
+                    if norm_i == 0 or norm_j == 0:
+                        similarity = 0
+                    else:
+                        similarity = dot_product / (norm_i * norm_j)
+                else:  # pearson
+                    # Pearson correlation
+                    if len(self.vectors[i]) < 2:
+                        similarity = 0
+                    else:
+                        corr, _ = pearsonr(self.vectors[i], self.vectors[j])
+                        similarity = corr if not np.isnan(corr) else 0
+                
+                sim_matrix[i, j] = similarity
+                sim_matrix[j, i] = similarity
         
-        # 6. Value distribution histogram
-        ax6 = plt.subplot(3, 4, 6)
-        all_values = np.concatenate([run for run in self.vector_runs])
-        ax6.hist(all_values, bins=20, alpha=0.7, edgecolor='black')
-        ax6.set_title('Distribution of All Values')
-        ax6.set_xlabel('Value')
-        ax6.set_ylabel('Frequency')
-        ax6.grid(True, alpha=0.3)
+        return pd.DataFrame(sim_matrix, 
+                          index=self.labels, 
+                          columns=self.labels)
+    
+    def normalize_vectors(self, method: str = 'l2') -> 'VectorComparator':
+        """Create a new VectorComparator with normalized vectors."""
+        normalized_vectors = self._normalize_vectors(method)
+        return VectorComparator(normalized_vectors, self.labels)
+    
+    def plot_vectors(self, figsize: Tuple[int, int] = (12, 8), 
+                    style: str = 'line') -> None:
+        """Create visualizations comparing all vectors."""
+        plt.figure(figsize=figsize)
         
-        # 7. Box plot of values
-        ax7 = plt.subplot(3, 4, 7)
-        value_data = [run for run in self.vector_runs]
-        box_plot = ax7.boxplot(value_data, patch_artist=True)
-        ax7.set_xticklabels(self.run_labels)
-        colors = plt.cm.Set3(np.linspace(0, 1, len(value_data)))
-        for patch, color in zip(box_plot['boxes'], colors):
-            patch.set_facecolor(color)
-        ax7.set_title('Distribution of Values by Run')
-        ax7.set_ylabel('Value')
-        ax7.tick_params(axis='x', rotation=45)
-        ax7.grid(True, alpha=0.3)
+        if style == 'line':
+            for vec, label in zip(self.vectors, self.labels):
+                plt.plot(vec, label=label, marker='o', markersize=4)
+            plt.xlabel('Component Index')
+            plt.ylabel('Value')
+            plt.title('Vector Comparison - Line Plot')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
         
-        # 8. Improvement analysis
-        ax8 = plt.subplot(3, 4, 8)
-        convergence_df = self.convergence_analysis()
-        ax8.bar(convergence_df['Run'], convergence_df['Improvement_Ratio'], alpha=0.7)
-        ax8.set_title('Improvement Ratio by Run')
-        ax8.set_ylabel('Improvement Ratio')
-        ax8.tick_params(axis='x', rotation=45)
-        ax8.grid(True, alpha=0.3)
-        
-        # 9. Stability analysis
-        ax9 = plt.subplot(3, 4, 9)
-        ax9.bar(convergence_df['Run'], convergence_df['Stability'], alpha=0.7)
-        ax9.set_title('Stability by Run (Lower is Better)')
-        ax9.set_ylabel('Stability (Std of Last Quarter)')
-        ax9.tick_params(axis='x', rotation=45)
-        ax9.grid(True, alpha=0.3)
-        
-        # 10. Monotonicity analysis
-        ax10 = plt.subplot(3, 4, 10)
-        ax10.bar(convergence_df['Run'], convergence_df['Monotonicity'], alpha=0.7)
-        ax10.set_title('Monotonicity by Run (Higher is Better)')
-        ax10.set_ylabel('Fraction of Improving Steps')
-        ax10.tick_params(axis='x', rotation=45)
-        ax10.grid(True, alpha=0.3)
-        
-        # 11. Dendrogram
-        ax11 = plt.subplot(3, 4, 11)
-        try:
-            clustering_results = self.clustering_analysis()
-            dendrogram(clustering_results['linkage_matrix'], 
-                      labels=clustering_results['run_labels'],
-                      ax=ax11)
-            ax11.set_title(f'Clustering Dendrogram\n(Cophenetic Corr: {clustering_results["cophenetic_correlation"]:.3f})')
-            ax11.tick_params(axis='x', rotation=45)
-        except Exception as e:
-            ax11.text(0.5, 0.5, f'Clustering Error: {str(e)}', ha='center', va='center', transform=ax11.transAxes)
-            ax11.set_title('Clustering Dendrogram (Error)')
-        
-        # 12. Summary statistics
-        ax12 = plt.subplot(3, 4, 12)
-        ax12.axis('off')
-        
-        # Create summary text
-        final_values = [stats['final_value'] for stats in self.run_stats.values()]
-        summary_text = f"""
-        Summary Statistics:
-        
-        Number of Runs: {self.n_runs}
-        Iterations per Run: {self.n_iterations}
-        Dimensions: {self.n_dimensions}
-        
-        Best Final Value: {min(final_values):.4f}
-        Worst Final Value: {max(final_values):.4f}
-        
-        Mean Distance: {euclidean_df['Final_Value_Distance'].mean():.4f}
-        Mean Correlation: {correlation_df['Correlation'].mean():.4f}
-        """
-        
-        ax12.text(0.1, 0.9, summary_text, transform=ax12.transAxes, 
-                 fontsize=10, verticalalignment='top', fontfamily='monospace')
+        elif style == 'bar':
+            x = np.arange(len(self.vectors[0]))
+            width = 0.8 / len(self.vectors)
+            
+            for i, (vec, label) in enumerate(zip(self.vectors, self.labels)):
+                plt.bar(x + i * width, vec, width, label=label, alpha=0.8)
+            
+            plt.xlabel('Component Index')
+            plt.ylabel('Value')
+            plt.title('Vector Comparison - Bar Chart')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
         
         plt.tight_layout()
-        return fig
+        plt.show()
     
-    def generate_comprehensive_report(self) -> str:
-        """
-        Generate a comprehensive text report of the analysis.
+    def plot_distance_heatmap(self, metric: str = 'euclidean', 
+                             figsize: Tuple[int, int] = (8, 6)) -> None:
+        """Create heatmap visualization of distance/similarity matrix."""
+        plt.figure(figsize=figsize)
         
-        Returns:
-        --------
-        str : Formatted analysis report
-        """
-        report = []
-        report.append("=" * 80)
-        report.append("VECTOR RUN COMPARISON ANALYSIS REPORT")
-        report.append("=" * 80)
-        report.append("")
+        if metric in ['euclidean', 'manhattan']:
+            matrix = self.distance_matrix(metric)
+            title = f'Distance Matrix ({metric.title()})'
+            cmap = 'Reds'
+        else:  # cosine or pearson
+            matrix = self.similarity_matrix(metric)
+            title = f'Similarity Matrix ({metric.title()})'
+            cmap = 'RdYlBu_r'
         
-        # Basic information
-        report.append("BASIC INFORMATION")
-        report.append("-" * 40)
-        report.append(f"Number of Runs: {self.n_runs}")
-        report.append(f"Iterations per Run: {self.n_iterations}")
-        report.append(f"Dimensions: {self.n_dimensions}")
-        report.append("")
+        sns.heatmap(matrix, annot=True, cmap=cmap, center=0, 
+                   square=True, fmt='.3f')
+        plt.title(title)
+        plt.tight_layout()
+        plt.show()
+    
+    def plot_component_analysis(self, reference_idx: int = 0, 
+                               figsize: Tuple[int, int] = (15, 10)) -> None:
+        """Create detailed component-wise analysis plots."""
+        analysis = self.component_wise_analysis(reference_idx)
+        ref_label = self.labels[reference_idx]
         
-        # Convergence analysis
-        report.append("CONVERGENCE ANALYSIS")
-        report.append("-" * 40)
-        convergence_df = self.convergence_analysis()
-        report.append(convergence_df.to_string(index=False))
-        report.append("")
+        fig, axes = plt.subplots(2, 2, figsize=figsize)
         
-        # Distance analysis
-        report.append("EUCLIDEAN DISTANCE ANALYSIS")
-        report.append("-" * 40)
-        euclidean_df = self.euclidean_distance_analysis()
-        report.append(euclidean_df.to_string(index=False))
-        report.append("")
+        # Plot 1: All vectors
+        axes[0, 0].plot(self.vectors[reference_idx], label=ref_label, 
+                       linewidth=2, marker='o')
+        for i, (vec, label) in enumerate(zip(self.vectors, self.labels)):
+            if i != reference_idx:
+                axes[0, 0].plot(vec, label=label, alpha=0.7, marker='s')
+        axes[0, 0].set_title('All Vectors')
+        axes[0, 0].legend()
+        axes[0, 0].grid(True, alpha=0.3)
         
-        # Correlation analysis
-        report.append("CORRELATION ANALYSIS")
-        report.append("-" * 40)
-        correlation_df = self.correlation_analysis()
-        report.append(correlation_df.to_string(index=False))
-        report.append("")
+        # Plot 2: Differences from reference
+        for label, data in analysis.items():
+            if label != 'reference':
+                axes[0, 1].plot(data['differences'], label=f'{label} - {ref_label}')
+        axes[0, 1].set_title('Differences from Reference')
+        axes[0, 1].legend()
+        axes[0, 1].grid(True, alpha=0.3)
+        axes[0, 1].axhline(y=0, color='black', linestyle='--', alpha=0.5)
         
-        # Statistical tests
-        report.append("STATISTICAL SIGNIFICANCE TESTS")
-        report.append("-" * 40)
-        stats_df = self.statistical_significance_tests()
-        report.append(stats_df.to_string(index=False))
-        report.append("")
+        # Plot 3: Ratios to reference
+        for label, data in analysis.items():
+            if label != 'reference':
+                axes[1, 0].plot(data['ratios'], label=f'{label} / {ref_label}')
+        axes[1, 0].set_title('Ratios to Reference')
+        axes[1, 0].legend()
+        axes[1, 0].grid(True, alpha=0.3)
+        axes[1, 0].axhline(y=1, color='black', linestyle='--', alpha=0.5)
         
-        # Clustering analysis
-        report.append("CLUSTERING ANALYSIS")
-        report.append("-" * 40)
-        clustering_results = self.clustering_analysis()
-        report.append(f"Cophenetic Correlation: {clustering_results['cophenetic_correlation']:.4f}")
-        report.append("")
+        # Plot 4: Statistical summary
+        stats = self.statistical_summary()
+        x_pos = np.arange(len(stats))
+        axes[1, 1].bar(x_pos, stats['Mean'], alpha=0.7, label='Mean')
+        axes[1, 1].errorbar(x_pos, stats['Mean'], yerr=stats['Std'], 
+                           fmt='none', color='red', alpha=0.7)
+        axes[1, 1].set_title('Mean Values with Standard Deviation')
+        axes[1, 1].set_xticks(x_pos)
+        axes[1, 1].set_xticklabels(stats['Vector'], rotation=45)
+        axes[1, 1].grid(True, alpha=0.3)
         
-        # Recommendations
-        report.append("RECOMMENDATIONS")
-        report.append("-" * 40)
+        plt.tight_layout()
+        plt.show()
+    
+    def generate_report(self, include_plots: bool = True, 
+                       save_path: Optional[str] = None) -> Dict[str, Any]:
+        """Generate a comprehensive comparison report."""
+        report = {
+            'summary': {
+                'n_vectors': self.n_vectors,
+                'vector_length': self.vector_length,
+                'labels': self.labels
+            },
+            'magnitude_comparison': self.magnitude_comparison(),
+            'statistical_summary': self.statistical_summary().to_dict('records'),
+            'distance_matrix': self.distance_matrix().to_dict(),
+            'similarity_matrix': self.similarity_matrix().to_dict(),
+            'component_analysis': self.component_wise_analysis()
+        }
         
-        # Find best and worst runs
-        best_run = convergence_df.loc[convergence_df['Final_Value'].idxmin(), 'Run']
-        worst_run = convergence_df.loc[convergence_df['Final_Value'].idxmax(), 'Run']
+        if include_plots:
+            # Note: In a real implementation, you might want to save plots
+            # and include their paths in the report
+            report['plots_generated'] = True
         
-        report.append(f"• Best performing run: {best_run}")
-        report.append(f"• Worst performing run: {worst_run}")
+        if save_path:
+            import json
+            with open(save_path, 'w') as f:
+                # Convert numpy arrays to lists for JSON serialization
+                json_report = self._convert_numpy_for_json(report)
+                json.dump(json_report, f, indent=2)
         
-        # Consistency analysis
-        mean_distance = euclidean_df['Final_Value_Distance'].mean()
-        mean_correlation = correlation_df['Correlation'].mean()
-        
-        if mean_distance < 0.1:
-            report.append("• High consistency: Runs converge to similar values")
-        elif mean_distance < 0.5:
-            report.append("• Moderate consistency: Some variation in final values")
+        return report
+    
+    def _convert_numpy_for_json(self, obj):
+        """Convert numpy arrays to lists for JSON serialization."""
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, dict):
+            return {key: self._convert_numpy_for_json(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_numpy_for_json(item) for item in obj]
         else:
-            report.append("• Low consistency: High variation in final values")
-        
-        if mean_correlation > 0.9:
-            report.append("• High correlation: Runs follow similar optimization paths")
-        elif mean_correlation > 0.7:
-            report.append("• Moderate correlation: Some similarity in optimization paths")
-        else:
-            report.append("• Low correlation: High variation in optimization paths")
-        
-        return "\n".join(report)
+            return obj
 
 
-# Example usage and demonstration
-def demo_vector_run_comparator():
-    """Demonstrate the VectorRunComparator with sample data."""
-    
-    # Generate sample vector runs
+# Example usage and testing
+if __name__ == "__main__":
+    # Create sample vectors for testing
     np.random.seed(42)
-    
-    print("=" * 80)
-    print("VECTOR RUN COMPARATOR DEMONSTRATION")
-    print("=" * 80)
-    print()
-    
-    # Create sample vector runs (4 runs, 50 iterations each, 1D vectors)
-    vector_runs = []
-    run_labels = ['Standard_Params', 'Tuned_Params', 'High_Exploration', 'Low_Exploration']
-    
-    # Run 1: Standard parameters
-    vector_runs.append(np.random.normal(5, 1, 50))
-    
-    # Run 2: Tuned parameters (better convergence)
-    base_trajectory = np.linspace(5, 4, 50)
-    noise = np.random.normal(0, 0.5, 50)
-    vector_runs.append(base_trajectory + noise)
-    
-    # Run 3: High exploration (more noise, slower convergence)
-    base_trajectory = np.linspace(5, 4.5, 50)
-    noise = np.random.normal(0, 1.5, 50)
-    vector_runs.append(base_trajectory + noise)
-    
-    # Run 4: Low exploration (very little noise, fast convergence)
-    base_trajectory = np.linspace(5, 4.2, 50)
-    noise = np.random.normal(0, 0.2, 50)
-    vector_runs.append(base_trajectory + noise)
+    vectors = [
+        np.random.normal(0, 1, 10),
+        np.random.normal(0.5, 1.2, 10),
+        np.random.normal(-0.3, 0.8, 10)
+    ]
+    labels = ["Run 1", "Run 2", "Run 3"]
     
     # Create comparator
-    comparator = VectorRunComparator(vector_runs, run_labels)
+    comparator = VectorComparator(vectors, labels)
     
-    print("Creating comprehensive vector run analysis...")
-    print(f"Analyzing {comparator.n_runs} runs with {comparator.n_iterations} iterations each")
-    print(f"Each run produces {comparator.n_dimensions}-dimensional vectors")
-    print()
+    # Generate report
+    print("Vector Comparison Report")
+    print("=" * 50)
     
-    # Perform analyses
-    print("1. CONVERGENCE ANALYSIS")
-    print("-" * 40)
-    convergence_df = comparator.convergence_analysis()
-    print(convergence_df)
-    print()
+    # Statistical summary
+    stats = comparator.statistical_summary()
+    print("\nStatistical Summary:")
+    print(stats)
     
-    print("2. EUCLIDEAN DISTANCE ANALYSIS")
-    print("-" * 40)
-    euclidean_df = comparator.euclidean_distance_analysis()
-    print(euclidean_df)
-    print()
+    # Magnitude comparison
+    mag_comp = comparator.magnitude_comparison()
+    print(f"\nMagnitude Comparison:")
+    print(f"Norms: {mag_comp['norms']}")
+    print(f"Rankings: {mag_comp['rankings']}")
     
-    print("3. CORRELATION ANALYSIS")
-    print("-" * 40)
-    correlation_df = comparator.correlation_analysis()
-    print(correlation_df)
-    print()
+    # Distance matrix
+    distances = comparator.distance_matrix()
+    print(f"\nEuclidean Distance Matrix:")
+    print(distances)
     
-    print("4. STATISTICAL SIGNIFICANCE TESTS")
-    print("-" * 40)
-    stats_df = comparator.statistical_significance_tests()
-    print(stats_df)
-    print()
-    
-    print("5. CLUSTERING ANALYSIS")
-    print("-" * 40)
-    clustering_results = comparator.clustering_analysis()
-    print(f"Cophenetic Correlation: {clustering_results['cophenetic_correlation']:.4f}")
-    print()
-    
-    # Create visualizations
-    print("Creating comprehensive visualizations...")
-    fig = comparator.plot_comprehensive_analysis(figsize=(24, 18))
-    plt.suptitle('Vector Run Comparator - Comprehensive Analysis', fontsize=20, y=0.98)
-    plt.show()
-    
-    # Generate comprehensive report
-    print("=" * 80)
-    print("COMPREHENSIVE REPORT")
-    print("=" * 80)
-    
-    report = comparator.generate_comprehensive_report()
-    print(report)
-    
-    return comparator
-
-
-# Run demonstration if script is executed directly
-if __name__ == "__main__":
-    demo_comparator = demo_vector_run_comparator()
+    # Similarity matrix
+    similarities = comparator.similarity_matrix()
+    print(f"\nCosine Similarity Matrix:")
+    print(similarities)
