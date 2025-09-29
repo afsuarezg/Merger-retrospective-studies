@@ -410,3 +410,50 @@ if __name__ == "__main__":
     similarities = comparator.similarity_matrix()
     print(f"\nCosine Similarity Matrix:")
     print(similarities)
+    
+    # Visualization demonstrations
+    print(f"\nGenerating visualizations...")
+    print("=" * 50)
+    
+    # 1. Line plot comparison
+    print("1. Line Plot - Vector Comparison")
+    print("-" * 30)
+    comparator.plot_vectors(style='line', figsize=(10, 6))
+    
+    # 2. Bar chart comparison
+    print("2. Bar Chart - Vector Comparison")
+    print("-" * 30)
+    comparator.plot_vectors(style='bar', figsize=(12, 6))
+    
+    # 3. Distance matrix heatmap
+    print("3. Distance Matrix Heatmap (Euclidean)")
+    print("-" * 30)
+    comparator.plot_distance_heatmap(metric='euclidean', figsize=(8, 6))
+    
+    # 4. Manhattan distance heatmap
+    print("4. Distance Matrix Heatmap (Manhattan)")
+    print("-" * 30)
+    comparator.plot_distance_heatmap(metric='manhattan', figsize=(8, 6))
+    
+    # 5. Cosine similarity heatmap
+    print("5. Similarity Matrix Heatmap (Cosine)")
+    print("-" * 30)
+    comparator.plot_distance_heatmap(metric='cosine', figsize=(8, 6))
+    
+    # 6. Pearson correlation heatmap
+    print("6. Similarity Matrix Heatmap (Pearson)")
+    print("-" * 30)
+    comparator.plot_distance_heatmap(metric='pearson', figsize=(8, 6))
+    
+    # 7. Component-wise analysis (comprehensive 4-panel plot)
+    print("7. Component-wise Analysis (4-panel plot)")
+    print("-" * 30)
+    comparator.plot_component_analysis(reference_idx=0, figsize=(15, 10))
+    
+    # 8. Component-wise analysis with different reference
+    print("8. Component-wise Analysis (Reference: Run 2)")
+    print("-" * 30)
+    comparator.plot_component_analysis(reference_idx=1, figsize=(15, 10))
+    
+    print("\nAll visualizations completed!")
+    print("Note: Close each plot window to proceed to the next visualization.")
