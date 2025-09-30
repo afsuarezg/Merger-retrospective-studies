@@ -31,7 +31,10 @@ YEAR = 2014
 #TODO: organizar las funciones de Nielsen_data_cleaning dependiendo de la base que está procesando. Las que se usen en diferentes bases deberían ir en un archivo más general. 
 
 
-def main(num_iterations:int=1, post_estimation: bool=True, iteration_max_evaluations:int=100000, iteration_atol:float=1e-14):
+def main(num_iterations:int=1, post_estimation: bool=True, 
+         iteration_max_evaluations:int=100000, 
+         iteration_atol:float=1e-14):
+         
     date = datetime.datetime.today().strftime("%Y-%m-%d")
     datetime_=datetime.datetime.today()
     year=2014
