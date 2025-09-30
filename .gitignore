@@ -4,6 +4,9 @@ Bibliography/*
 Thomson/*
 Thesis_presentation/*
 main.py
+*.csv
+*.json
+*example*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

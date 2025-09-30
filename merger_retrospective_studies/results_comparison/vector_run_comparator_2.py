@@ -134,6 +134,7 @@ class VectorComparator:
         norm_ratio = max(norms) / min(norms) if min(norms) > 0 else np.inf
         
         # Calculate pairwise differences
+        # breakpoint()
         norm_differences = np.abs(np.array(norms)[:, np.newaxis] - np.array(norms))
         
         return {

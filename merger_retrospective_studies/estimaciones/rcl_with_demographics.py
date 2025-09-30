@@ -65,7 +65,8 @@ def rcl_with_demographics(product_data: pd.DataFrame,
         beta=logit_results.beta,
         optimization=optimization,
         iteration=iteration,
-        sigma_bounds=(sigma_lower, sigma_upper)
+        sigma_bounds=(sigma_lower, sigma_upper), 
+        method='1s'
     )
 
 
