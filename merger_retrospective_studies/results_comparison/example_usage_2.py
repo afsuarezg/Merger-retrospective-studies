@@ -7,7 +7,7 @@ to compare optimization result vectors with comprehensive analysis.
 
 import numpy as np
 import matplotlib.pyplot as plt
-from vector_run_comparator_2 import VectorComparator, quick_compare
+from merger_retrospective_studies.results_comparison.vector_run_comparator_2 import VectorComparator, quick_compare
 
 def main():
     """Demonstrate VectorComparator usage with sample data."""
@@ -150,19 +150,22 @@ def main():
     print("\nExample completed successfully!")
     
     # Uncomment the following lines to generate plots
-    # print("\nGenerating plots...")
-    # comparator.plot_vectors()
+    print("\nGenerating plots...")
+    comparator.plot_vectors().show()
+    # breakpoint()
     # plt.savefig('vector_comparison.png', dpi=300, bbox_inches='tight')
     # plt.close()
     
-    # comparator.plot_distance_heatmap()
+    comparator.plot_distance_heatmap().show()
     # plt.savefig('distance_heatmap.png', dpi=300, bbox_inches='tight')
     # plt.close()
-    
-    # comparator.plot_optimization_metrics()
+    # breakpoint()
+
+    comparator.plot_optimization_metrics().show()
     # plt.savefig('optimization_metrics.png', dpi=300, bbox_inches='tight')
     # plt.close()
-    
+    # breakpoint()
+
     # print("Plots saved as PNG files")
 
 if __name__ == "__main__":
