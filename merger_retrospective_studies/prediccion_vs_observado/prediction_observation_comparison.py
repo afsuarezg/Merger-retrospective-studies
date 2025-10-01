@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
+from scipy.stats import ks_2samp, mannwhitneyu, chi2_contingency
 from typing import Union, List, Dict, Any, Optional, Tuple
 import warnings
 
@@ -191,6 +192,258 @@ class PredictionObservationComparison:
         
         return results
     
+    def perform_ks_test(self) -> Dict[str, Any]:
+        """
+        Perform Kolmogorov-Smirnov test to compare distributions.
+        
+        The KS test compares the empirical distribution functions of two samples
+        to determine if they come from the same distribution.
+        
+        Returns:
+        --------
+        dict : KS test results for each prediction
+        """
+        results = {}
+        
+        for i, pred in enumerate(self.predictions):
+            # Create a sample by repeating the prediction to match observation count
+            # This allows us to compare the prediction "distribution" with observations
+            prediction_sample = np.full(len(self.observations), pred)
+            
+            # Perform two-sample KS test
+            ks_statistic, p_value = ks_2samp(self.observations, prediction_sample)
+            
+            # Calculate effect size (Cohen's d approximation)
+            pooled_std = np.sqrt((np.var(self.observations) + np.var(prediction_sample)) / 2)
+            cohens_d = (np.mean(self.observations) - pred) / pooled_std if pooled_std != 0 else 0
+            
+            results[f'pred_{i}'] = {
+                'ks_statistic': ks_statistic,
+                'p_value': p_value,
+                'significant_difference': p_value < 0.05,
+                'cohens_d': cohens_d,
+                'effect_size': 'small' if abs(cohens_d) < 0.5 else 'medium' if abs(cohens_d) < 0.8 else 'large'
+            }
+        
+        return results
+    
+    def perform_mann_whitney_test(self) -> Dict[str, Any]:
+        """
+        Perform Mann-Whitney U test (Wilcoxon rank-sum test).
+        
+        This non-parametric test compares two independent samples to determine
+        if one tends to have larger values than the other.
+        
+        Returns:
+        --------
+        dict : Mann-Whitney U test results for each prediction
+        """
+        results = {}
+        
+        for i, pred in enumerate(self.predictions):
+            # Create a sample by repeating the prediction
+            prediction_sample = np.full(len(self.observations), pred)
+            
+            # Perform Mann-Whitney U test
+            try:
+                u_statistic, p_value = mannwhitneyu(
+                    self.observations, 
+                    prediction_sample, 
+                    alternative='two-sided'
+                )
+                
+                # Calculate effect size (r = Z / sqrt(N))
+                n1, n2 = len(self.observations), len(prediction_sample)
+                z_score = (u_statistic - (n1 * n2) / 2) / np.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12)
+                effect_size_r = abs(z_score) / np.sqrt(n1 + n2)
+                
+                # Determine which group tends to have larger values
+                median_obs = np.median(self.observations)
+                median_pred = pred
+                obs_tends_larger = median_obs > median_pred
+                
+            except ValueError as e:
+                # Handle edge cases (e.g., identical values)
+                u_statistic, p_value = np.nan, 1.0
+                effect_size_r = 0.0
+                obs_tends_larger = False
+            
+            results[f'pred_{i}'] = {
+                'u_statistic': u_statistic,
+                'p_value': p_value,
+                'significant_difference': p_value < 0.05,
+                'effect_size_r': effect_size_r,
+                'effect_size': 'small' if effect_size_r < 0.3 else 'medium' if effect_size_r < 0.5 else 'large',
+                'observations_tend_larger': obs_tends_larger
+            }
+        
+        return results
+    
+    def perform_chi_square_test(self, bins: int = 10) -> Dict[str, Any]:
+        """
+        Perform Chi-square test of independence.
+        
+        This test compares the frequency distributions of two samples by
+        creating bins and testing if the distributions are independent.
+        
+        Parameters:
+        -----------
+        bins : int
+            Number of bins to use for creating frequency tables (default: 10)
+        
+        Returns:
+        --------
+        dict : Chi-square test results for each prediction
+        """
+        results = {}
+        
+        # Create bins based on the combined range of observations and predictions
+        all_values = np.concatenate([self.observations, self.predictions])
+        bin_edges = np.linspace(np.min(all_values), np.max(all_values), bins + 1)
+        
+        for i, pred in enumerate(self.predictions):
+            # Create frequency tables
+            obs_freq, _ = np.histogram(self.observations, bins=bin_edges)
+            pred_freq, _ = np.histogram([pred], bins=bin_edges)
+            
+            # Ensure we have at least 2 bins with non-zero frequencies
+            if np.sum(obs_freq) == 0 or np.sum(pred_freq) == 0:
+                results[f'pred_{i}'] = {
+                    'chi2_statistic': np.nan,
+                    'p_value': 1.0,
+                    'significant_difference': False,
+                    'cramers_v': 0.0,
+                    'effect_size': 'none',
+                    'warning': 'Insufficient data for chi-square test'
+                }
+                continue
+            
+            # Create contingency table
+            contingency_table = np.array([obs_freq, pred_freq])
+            
+            # Remove bins with zero frequencies in both groups
+            valid_bins = np.any(contingency_table > 0, axis=0)
+            if np.sum(valid_bins) < 2:
+                results[f'pred_{i}'] = {
+                    'chi2_statistic': np.nan,
+                    'p_value': 1.0,
+                    'significant_difference': False,
+                    'cramers_v': 0.0,
+                    'effect_size': 'none',
+                    'warning': 'Insufficient variation for chi-square test'
+                }
+                continue
+            
+            contingency_table = contingency_table[:, valid_bins]
+            
+            try:
+                # Perform chi-square test
+                chi2_stat, p_value, dof, expected = chi2_contingency(contingency_table)
+                
+                # Calculate Cramer's V (effect size)
+                n = np.sum(contingency_table)
+                min_dim = min(contingency_table.shape)
+                cramers_v = np.sqrt(chi2_stat / (n * (min_dim - 1))) if n > 0 and min_dim > 1 else 0
+                
+                # Determine effect size
+                if cramers_v < 0.1:
+                    effect_size = 'negligible'
+                elif cramers_v < 0.3:
+                    effect_size = 'small'
+                elif cramers_v < 0.5:
+                    effect_size = 'medium'
+                else:
+                    effect_size = 'large'
+                
+            except Exception as e:
+                chi2_stat, p_value, cramers_v = np.nan, 1.0, 0.0
+                effect_size = 'none'
+            
+            results[f'pred_{i}'] = {
+                'chi2_statistic': chi2_stat,
+                'p_value': p_value,
+                'significant_difference': p_value < 0.05 if not np.isnan(p_value) else False,
+                'cramers_v': cramers_v,
+                'effect_size': effect_size,
+                'degrees_of_freedom': dof if 'dof' in locals() else np.nan
+            }
+        
+        return results
+    
+    def perform_all_statistical_tests(self, alpha: float = 0.05, chi_square_bins: int = 10) -> Dict[str, Any]:
+        """
+        Perform all statistical tests for comprehensive comparison.
+        
+        Parameters:
+        -----------
+        alpha : float
+            Significance level for tests (default: 0.05)
+        chi_square_bins : int
+            Number of bins for chi-square test (default: 10)
+        
+        Returns:
+        --------
+        dict : Results from all statistical tests
+        """
+        results = {
+            'one_sample_t_test': self.perform_statistical_test(alpha),
+            'kolmogorov_smirnov': self.perform_ks_test(),
+            'mann_whitney_u': self.perform_mann_whitney_test(),
+            'chi_square': self.perform_chi_square_test(chi_square_bins),
+            'alpha': alpha
+        }
+        
+        # Add summary statistics
+        results['summary'] = self._generate_test_summary(results)
+        
+        return results
+    
+    def _generate_test_summary(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a summary of all test results."""
+        summary = {
+            'total_predictions': len(self.predictions),
+            'total_observations': len(self.observations),
+            'tests_performed': ['one_sample_t_test', 'kolmogorov_smirnov', 'mann_whitney_u', 'chi_square'],
+            'significant_differences': {},
+            'effect_sizes': {},
+            'recommendations': []
+        }
+        
+        # Analyze significance across tests
+        for pred_key in [f'pred_{i}' for i in range(len(self.predictions))]:
+            significant_tests = []
+            effect_sizes = {}
+            
+            # Check each test
+            for test_name in summary['tests_performed']:
+                if pred_key in test_results[test_name]:
+                    test_result = test_results[test_name][pred_key]
+                    if test_result.get('significant_difference', False):
+                        significant_tests.append(test_name)
+                    
+                    # Collect effect sizes
+                    if 'cohens_d' in test_result:
+                        effect_sizes[test_name] = test_result['cohens_d']
+                    elif 'effect_size_r' in test_result:
+                        effect_sizes[test_name] = test_result['effect_size_r']
+                    elif 'cramers_v' in test_result:
+                        effect_sizes[test_name] = test_result['cramers_v']
+            
+            summary['significant_differences'][pred_key] = significant_tests
+            summary['effect_sizes'][pred_key] = effect_sizes
+            
+            # Generate recommendations
+            if len(significant_tests) >= 3:
+                summary['recommendations'].append(f"{pred_key}: Strong evidence of difference from observations")
+            elif len(significant_tests) >= 2:
+                summary['recommendations'].append(f"{pred_key}: Moderate evidence of difference from observations")
+            elif len(significant_tests) == 1:
+                summary['recommendations'].append(f"{pred_key}: Weak evidence of difference from observations")
+            else:
+                summary['recommendations'].append(f"{pred_key}: No significant difference from observations")
+        
+        return summary
+    
     def create_visualizations(self, figsize: Tuple[int, int] = (15, 10)) -> Dict[str, plt.Figure]:
         """Create comprehensive visualizations comparing predictions and observations."""
         figures = {}
@@ -284,13 +537,18 @@ class PredictionObservationComparison:
         
         return figures
     
-    def generate_report(self, alpha: float = 0.05) -> str:
+    def generate_report(self, alpha: float = 0.05, include_advanced_tests: bool = False) -> str:
         """Generate a comprehensive comparison report."""
         # Calculate all analyses
         central_tendency = self.calculate_central_tendency()
         distribution = self.calculate_distribution_analysis()
         error_metrics = self.calculate_error_metrics()
         statistical_test = self.perform_statistical_test(alpha)
+        
+        # Calculate advanced statistical tests if requested
+        advanced_tests = None
+        if include_advanced_tests:
+            advanced_tests = self.perform_all_statistical_tests(alpha)
         
         # Start building report
         report = []
@@ -363,8 +621,62 @@ class PredictionObservationComparison:
             report.append(f"   - Conclusion: Prediction is {significance} from observations")
             report.append("")
         
-        # Interpretation
-        report.append("5. INTERPRETATION")
+        # Advanced statistical tests
+        if include_advanced_tests and advanced_tests:
+            report.append("5. ADVANCED STATISTICAL TESTS")
+            report.append("   " + "-" * 40)
+            
+            for i, pred in enumerate(self.predictions):
+                pred_key = f'pred_{i}'
+                report.append(f"   Prediction {i+1} ({pred:.4f}):")
+                
+                # Kolmogorov-Smirnov test
+                ks_result = advanced_tests['kolmogorov_smirnov'][pred_key]
+                report.append(f"   - Kolmogorov-Smirnov test:")
+                report.append(f"     * KS statistic: {ks_result['ks_statistic']:.6f}")
+                report.append(f"     * P-value: {ks_result['p_value']:.6f}")
+                report.append(f"     * Effect size (Cohen's d): {ks_result['cohens_d']:.4f} ({ks_result['effect_size']})")
+                
+                # Mann-Whitney U test
+                mw_result = advanced_tests['mann_whitney_u'][pred_key]
+                report.append(f"   - Mann-Whitney U test:")
+                report.append(f"     * U statistic: {mw_result['u_statistic']:.2f}")
+                report.append(f"     * P-value: {mw_result['p_value']:.6f}")
+                report.append(f"     * Effect size (r): {mw_result['effect_size_r']:.4f} ({mw_result['effect_size']})")
+                report.append(f"     * Observations tend larger: {mw_result['observations_tend_larger']}")
+                
+                # Chi-square test
+                chi2_result = advanced_tests['chi_square'][pred_key]
+                report.append(f"   - Chi-square test:")
+                if 'warning' in chi2_result:
+                    report.append(f"     * Warning: {chi2_result['warning']}")
+                else:
+                    report.append(f"     * Chi-square statistic: {chi2_result['chi2_statistic']:.4f}")
+                    report.append(f"     * P-value: {chi2_result['p_value']:.6f}")
+                    report.append(f"     * Cramer's V: {chi2_result['cramers_v']:.4f} ({chi2_result['effect_size']})")
+                    report.append(f"     * Degrees of freedom: {chi2_result['degrees_of_freedom']}")
+                
+                report.append("")
+            
+            # Summary of all tests
+            summary = advanced_tests['summary']
+            report.append("   SUMMARY OF ALL TESTS:")
+            report.append(f"   - Total predictions analyzed: {summary['total_predictions']}")
+            report.append(f"   - Total observations: {summary['total_observations']}")
+            report.append(f"   - Tests performed: {', '.join(summary['tests_performed'])}")
+            report.append("")
+            
+            for i, pred in enumerate(self.predictions):
+                pred_key = f'pred_{i}'
+                significant_tests = summary['significant_differences'][pred_key]
+                report.append(f"   Prediction {i+1}:")
+                report.append(f"   - Significant differences found in: {significant_tests if significant_tests else 'None'}")
+                report.append(f"   - Recommendation: {summary['recommendations'][i]}")
+                report.append("")
+            
+            report.append("6. INTERPRETATION")
+        else:
+            report.append("5. INTERPRETATION")
         
         # Overall assessment
         obs_mean = central_tendency['observed_mean']
@@ -401,7 +713,7 @@ class PredictionObservationComparison:
         return "\n".join(report)
     
     def run_full_analysis(self, alpha: float = 0.05, create_plots: bool = True, 
-                         figsize: Tuple[int, int] = (15, 10)) -> Dict[str, Any]:
+                         figsize: Tuple[int, int] = (15, 10), include_advanced_tests: bool = False) -> Dict[str, Any]:
         """
         Run the complete analysis and return all results.
         
@@ -413,6 +725,8 @@ class PredictionObservationComparison:
             Whether to create visualizations (default: True)
         figsize : tuple
             Figure size for plots (default: (15, 10))
+        include_advanced_tests : bool
+            Whether to include advanced statistical tests (default: False)
         
         Returns:
         --------
@@ -423,8 +737,11 @@ class PredictionObservationComparison:
             'distribution_analysis': self.calculate_distribution_analysis(),
             'error_metrics': self.calculate_error_metrics(),
             'statistical_test': self.perform_statistical_test(alpha),
-            'report': self.generate_report(alpha)
+            'report': self.generate_report(alpha, include_advanced_tests)
         }
+        
+        if include_advanced_tests:
+            results['advanced_statistical_tests'] = self.perform_all_statistical_tests(alpha)
         
         if create_plots:
             results['visualizations'] = self.create_visualizations(figsize)
@@ -439,7 +756,8 @@ def compare_prediction_observations(prediction_data: Union[float, List[float], p
                                   units: str = "",
                                   alpha: float = 0.05,
                                   create_plots: bool = True,
-                                  figsize: Tuple[int, int] = (15, 10)) -> Dict[str, Any]:
+                                  figsize: Tuple[int, int] = (15, 10),
+                                  include_advanced_tests: bool = False) -> Dict[str, Any]:
     """
     Convenience function to perform complete prediction vs observation comparison.
     
@@ -461,6 +779,8 @@ def compare_prediction_observations(prediction_data: Union[float, List[float], p
         Whether to create visualizations (default: True)
     figsize : tuple
         Figure size for plots (default: (15, 10))
+    include_advanced_tests : bool
+        Whether to include advanced statistical tests (default: False)
     
     Returns:
     --------
@@ -474,7 +794,7 @@ def compare_prediction_observations(prediction_data: Union[float, List[float], p
         units=units
     )
     
-    return comparison.run_full_analysis(alpha=alpha, create_plots=create_plots, figsize=figsize)
+    return comparison.run_full_analysis(alpha=alpha, create_plots=create_plots, figsize=figsize, include_advanced_tests=include_advanced_tests)
 
 
 if __name__ == "__main__":
@@ -499,11 +819,12 @@ if __name__ == "__main__":
         observation_data=observed_prices,
         prediction_name="Predicted Price",
         observation_name="Actual Prices",
-        units="USD"
+        units="USD", 
+        include_advanced_tests=True,
     )
     
     print(results1['report'])
-    breakpoint()
+    # breakpoint()
     # Show plots
     if 'visualizations' in results1:
         pass
@@ -523,7 +844,8 @@ if __name__ == "__main__":
         observation_data=observed_prices_2,
         prediction_name="Scenario Prediction",
         observation_name="Market Prices",
-        units="USD"
+        units="USD",
+        include_advanced_tests=True,
     )
     
     print(results2['report'])
@@ -546,7 +868,8 @@ if __name__ == "__main__":
         observation_data=gdp_growth_observed,
         prediction_name="IMF Forecast",
         observation_name="Actual GDP Growth",
-        units="%"
+        units="%",
+        include_advanced_tests=True,
     )
     
     print(results3['report'])
