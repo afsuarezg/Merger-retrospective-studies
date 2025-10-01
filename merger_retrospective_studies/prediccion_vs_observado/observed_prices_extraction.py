@@ -43,6 +43,27 @@ def filter_observed_by_predicted_data(group, key, reference_dict) -> pd.DataFram
     return set(reference_dict[key]).issubset(set(group['brand_code_uc']))
 
 
+def filter_observed_by_predicted_data(group, key1, key2, reference_dict) -> pd.DataFrame:
+    """
+    Filters the observed data by comparing it with the predicted data.
+    This function checks if all elements in the reference dictionary's list 
+    for a given key are present in the group's list for the same key.
+    Args:
+        group (pd.DataFrame): The DataFrame containing the observed data.
+        key (str): The key to be used for comparison.
+        reference_dict (dict): A dictionary containing the predicted data.
+    Returns:
+        pd.DataFrame: A DataFrame indicating whether the reference data is a subset of the group data.
+    """
+    if (key1 not in reference_dict.keys()):
+        return False
+    else:
+        if key2 in reference_dict[key1]:
+            return True
+        else: 
+            return False
+
+
 def long_to_wide(df, id_col, time_col, value_col):
     """
     Transforms a long-format DataFrame into a wide-format DataFrame.

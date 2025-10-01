@@ -46,7 +46,17 @@ def add_descriptive_stats(data):
 
 
 def plot_histogram(data_descriptive, prediction_columns):
-    data_descriptive.iloc[0][prediction_columns].plot.hist(bins=20, title="Histogram of Series")
+    """
+    Plots a histogram for the specified prediction columns from the data_descriptive DataFrame.
+
+    Args:
+        data_descriptive (pd.DataFrame): The DataFrame containing descriptive statistics and prediction columns.
+        prediction_columns (list): A list of column names corresponding to the price prediction columns to plot.
+
+    Returns:
+        None. Displays a histogram plot of the specified prediction columns for the first row in the DataFrame.
+    """
+    data_descriptive.iloc[0].plot.hist(bins=20, title="Histogram of Series")
     plt.xlabel("Bins")
     plt.ylabel("Frequency")
     plt.show()
