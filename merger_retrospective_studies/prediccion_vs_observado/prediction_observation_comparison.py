@@ -1142,35 +1142,26 @@ if __name__ == "__main__":
     #     units="USD", 
     #     include_advanced_tests=True,
     # )
-
-    results1=PredictionObservationComparison(
-        prediction_data=predicted_price,
-        observation_data=observed_prices,
-        prediction_name="Predicted Price",
-        observation_name="Actual Prices",
-        units="USD", 
-    )
-    breakpoint()
     # print(results1['report'])
+    # results1=PredictionObservationComparison(
+    #     prediction_data=predicted_price,
+    #     observation_data=observed_prices,
+    #     prediction_name="Predicted Price",
+    #     observation_name="Actual Prices",
+    #     units="USD", 
+    # )
+    # breakpoint()
+
     # breakpoint()
     # Show plots
     # if 'visualizations' in results1:
     #     pass  
         # plt.show()
 
-    results1.visualize_single_prediction(plot_type='all', backend='matplotlib')
-    plt.show()
-    breakpoint()
-    results1.plot_scatter_with_reference(results1.observations, results1.predictions[0])
+    # results1.visualize_single_prediction(plot_type='all', backend='matplotlib')
     # plt.show()
-    # results1.plot_scatter_with_reference_seaborn(results1.observations, results1.predictions[0])
-    # plt.show()
-    results1.plot_boxplot_with_prediction(results1.observations, results1.predictions[0])   
-    # plt.show()
-    # results1.plot_boxplot_with_prediction_seaborn(results1.observations, results1.predictions[0])
-    results1.plot_residuals(results1.observations, results1.predictions[0])
-    # plt.show()
-    breakpoint()
+    # breakpoint()
+    # results1.plot
 
     # Example 2: Multiple predictions vs observations
     print("\n\n2. Multiple Predictions Example:")
@@ -1194,8 +1185,9 @@ if __name__ == "__main__":
     
     # Show plots
     if 'visualizations' in results2:
-        pass
-        # plt.show()
+        plt.show()
+
+     
     
     # Example 3: Real-world example with economic data
     print("\n\n3. Economic Data Example:")
