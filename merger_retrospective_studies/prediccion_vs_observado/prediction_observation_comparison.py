@@ -14,6 +14,8 @@ from scipy import stats
 from scipy.stats import ks_2samp, mannwhitneyu, chi2_contingency
 from typing import Union, List, Dict, Any, Optional, Tuple
 import warnings
+import plotly.graph_objects as go
+import plotly.express as px
 
 # Set style for better plots
 plt.style.use('seaborn-v0_8')
@@ -70,6 +72,321 @@ class PredictionObservationComparison:
         
         if len(self.observations) == 0:
             raise ValueError("No valid observations found after removing NaN values")
+
+    # =============================
+    # Single-prediction visualizations
+    # =============================
+    def _validate_inputs_single(self, observations: Union[List[float], np.ndarray], prediction: float) -> np.ndarray:
+        """Validate inputs and handle edge cases for single prediction visuals."""
+        observations = np.array(observations)
+        if len(observations) < 3:
+            warnings.warn("Very few observations (< 3). Box plot may not be meaningful.")
+        if np.any(np.isnan(observations)) or np.any(np.isinf(observations)):
+            raise ValueError("Observations contain NaN or infinite values")
+        if np.isnan(prediction) or np.isinf(prediction):
+            raise ValueError("Prediction is NaN or infinite")
+        if np.allclose(observations, prediction):
+            warnings.warn("All observations match prediction exactly (zero residuals)")
+        return observations
+
+    def _optimize_for_large_data(self, observations: np.ndarray, max_points: int = 1000) -> Tuple[np.ndarray, np.ndarray]:
+        """Downsample observations for visualization if needed."""
+        if len(observations) > max_points:
+            warnings.warn(f"Downsampling from {len(observations)} to {max_points} points for visualization")
+            indices = np.linspace(0, len(observations) - 1, max_points, dtype=int)
+            return observations[indices], indices
+        return observations, np.arange(len(observations))
+
+    # --- Scatter Plot with Reference Line ---
+    def plot_scatter_with_reference(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None):
+        """
+        Create scatter plot with prediction reference line (Matplotlib).
+        """
+        observations = self._validate_inputs_single(observations, prediction)
+        observations, _ = self._optimize_for_large_data(observations)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        if observation_ids is None:
+            x_values = np.arange(1, len(observations) + 1)
+            x_label = 'Observation Index'
+        else:
+            x_values = np.arange(len(observations))
+            x_label = 'Observation ID'
+
+        ax.scatter(x_values, observations, s=100, alpha=0.7, color='#3b82f6', label='Observed Values', zorder=3)
+        ax.axhline(y=prediction, color='#ef4444', linestyle='--', linewidth=2, label=f'{self.prediction_name}: {prediction:.2f}', zorder=2)
+        ax.set_xlabel(x_label, fontsize=12)
+        ax.set_ylabel(f'Value {self.units}'.strip(), fontsize=12)
+        ax.set_title('Scatter Plot: Observations vs Prediction', fontsize=14, fontweight='bold')
+        ax.legend(loc='best', fontsize=10)
+        ax.grid(True, alpha=0.3, zorder=1)
+        if observation_ids is not None:
+            ax.set_xticks(x_values)
+            ax.set_xticklabels(observation_ids, rotation=45, ha='right')
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_scatter_with_reference_plotly(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None):
+        """Create interactive scatter plot with Plotly."""
+        observations = self._validate_inputs_single(observations, prediction)
+        observations, _ = self._optimize_for_large_data(observations)
+        if observation_ids is None:
+            observation_ids = [f'Obs {i+1}' for i in range(len(observations))]
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=list(range(len(observations))),
+            y=observations,
+            mode='markers',
+            name=self.observation_name,
+            marker=dict(size=10, color='#3b82f6'),
+            text=observation_ids,
+            hovertemplate='<b>%{text}</b><br>Value: %{y:.2f}<extra></extra>'
+        ))
+
+        fig.add_hline(
+            y=prediction,
+            line_dash="dash",
+            line_color="#ef4444",
+            line_width=2,
+            annotation_text=f"{self.prediction_name}: {prediction:.2f}",
+            annotation_position="right"
+        )
+
+        fig.update_layout(
+            title='Scatter Plot: Observations vs Prediction',
+            xaxis_title='Observation Index',
+            yaxis_title=f'Value {self.units}'.strip(),
+            hovermode='closest',
+            showlegend=True
+        )
+        return fig
+
+    def plot_scatter_with_reference_seaborn(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None):
+        """Create scatter plot using Seaborn."""
+        import pandas as pd
+        observations = self._validate_inputs_single(observations, prediction)
+        observations, _ = self._optimize_for_large_data(observations)
+        df = pd.DataFrame({
+            'index': range(len(observations)),
+            'value': observations,
+            'id': observation_ids if observation_ids else [f'Obs {i+1}' for i in range(len(observations))]
+        })
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(data=df, x='index', y='value', s=100, color='#3b82f6', ax=ax)
+        ax.axhline(y=prediction, color='#ef4444', linestyle='--', linewidth=2, label=f'{self.prediction_name}: {prediction:.2f}')
+        ax.set_xlabel('Observation Index')
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Scatter Plot: Observations vs Prediction')
+        ax.legend()
+        plt.tight_layout()
+        return fig, ax
+
+    # --- Box Plot with Prediction Marker ---
+    def calculate_box_stats(self, observations: Union[List[float], np.ndarray]) -> Dict[str, Any]:
+        """Calculate box plot statistics for observations."""
+        observations = np.array(observations)
+        stats_dict = {
+            'q1': np.percentile(observations, 25),
+            'median': np.median(observations),
+            'q3': np.percentile(observations, 75),
+            'min': np.min(observations),
+            'max': np.max(observations),
+            'mean': np.mean(observations),
+            'std': np.std(observations)
+        }
+        iqr = stats_dict['q3'] - stats_dict['q1']
+        lower_bound = stats_dict['q1'] - 1.5 * iqr
+        upper_bound = stats_dict['q3'] + 1.5 * iqr
+        stats_dict['iqr'] = iqr
+        stats_dict['lower_bound'] = lower_bound
+        stats_dict['upper_bound'] = upper_bound
+        stats_dict['outliers'] = observations[(observations < lower_bound) | (observations > upper_bound)]
+        return stats_dict
+
+    def plot_boxplot_with_prediction(self, observations: Union[List[float], np.ndarray], prediction: float):
+        """Create box plot with prediction marker (Matplotlib)."""
+        observations = self._validate_inputs_single(observations, prediction)
+        fig, ax = plt.subplots(figsize=(8, 10))
+        ax.boxplot([observations], vert=True, patch_artist=True, widths=0.5,
+                    boxprops=dict(facecolor='#3b82f6', alpha=0.5),
+                    medianprops=dict(color='#1e40af', linewidth=2),
+                    whiskerprops=dict(color='#3b82f6', linewidth=1.5),
+                    capprops=dict(color='#3b82f6', linewidth=1.5))
+        ax.axhline(y=prediction, color='#ef4444', linestyle='--', linewidth=2.5, label=f'{self.prediction_name}: {prediction:.2f}', zorder=3)
+        stats_box = self.calculate_box_stats(observations)
+        ax.text(1.15, stats_box['q1'], f"Q1: {stats_box['q1']:.2f}", verticalalignment='center', fontsize=9)
+        ax.text(1.15, stats_box['median'], f"Median: {stats_box['median']:.2f}", verticalalignment='center', fontsize=9, fontweight='bold')
+        ax.text(1.15, stats_box['q3'], f"Q3: {stats_box['q3']:.2f}", verticalalignment='center', fontsize=9)
+        ax.set_ylabel(f'Value {self.units}'.strip(), fontsize=12)
+        ax.set_title('Box Plot: Distribution with Prediction', fontsize=14, fontweight='bold')
+        ax.set_xticks([1])
+        ax.set_xticklabels([self.observation_name])
+        ax.legend(loc='best', fontsize=10)
+        ax.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_boxplot_with_prediction_plotly(self, observations: Union[List[float], np.ndarray], prediction: float):
+        """Create interactive box plot with Plotly."""
+        observations = self._validate_inputs_single(observations, prediction)
+        fig = go.Figure()
+        fig.add_trace(go.Box(y=observations, name=self.observation_name, marker_color='#3b82f6', boxmean='sd'))
+        fig.add_hline(y=prediction, line_dash="dash", line_color="#ef4444", line_width=2.5,
+                      annotation_text=f"{self.prediction_name}: {prediction:.2f}", annotation_position="right")
+        fig.update_layout(title='Box Plot: Distribution with Prediction', yaxis_title=f'Value {self.units}'.strip(), showlegend=True, height=600)
+        return fig
+
+    def plot_boxplot_with_prediction_seaborn(self, observations: Union[List[float], np.ndarray], prediction: float):
+        """Create box plot using Seaborn."""
+        observations = self._validate_inputs_single(observations, prediction)
+        fig, ax = plt.subplots(figsize=(8, 10))
+        sns.boxplot(y=observations, color='#3b82f6', ax=ax, width=0.3)
+        ax.axhline(y=prediction, color='#ef4444', linestyle='--', linewidth=2.5, label=f'{self.prediction_name}: {prediction:.2f}')
+        ax.set_ylabel(f'Value {self.units}'.strip(), fontsize=12)
+        ax.set_title('Box Plot: Distribution with Prediction', fontsize=14, fontweight='bold')
+        ax.legend(loc='best', fontsize=10)
+        ax.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        return fig, ax
+
+    # --- Residual Plot ---
+    def calculate_residuals(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None) -> pd.DataFrame:
+        """Calculate residuals and prepare data for plotting."""
+        import pandas as pd
+        observations = np.array(observations)
+        residuals = observations - prediction
+        if observation_ids is None:
+            observation_ids = [f'Obs {i+1}' for i in range(len(observations))]
+        df = pd.DataFrame({
+            'observation_id': observation_ids,
+            'observed': observations,
+            'predicted': prediction,
+            'residual': residuals,
+            'abs_residual': np.abs(residuals)
+        })
+        df['mean_residual'] = residuals.mean()
+        df['std_residual'] = residuals.std()
+        return df
+
+    def plot_residuals(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None):
+        """Create residual plot (Matplotlib)."""
+        residuals_df = self.calculate_residuals(observations, prediction, observation_ids)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        x_values = np.arange(len(residuals_df))
+        colors = ['#3b82f6' if r >= 0 else '#ef4444' for r in residuals_df['residual']]
+        ax.bar(x_values, residuals_df['residual'], color=colors, alpha=0.7, edgecolor='black')
+        ax.axhline(y=0, color='#374151', linestyle='-', linewidth=2, zorder=1)
+        mean_residual = residuals_df['residual'].mean()
+        if abs(mean_residual) > 0.01:
+            ax.axhline(y=mean_residual, color='#f97316', linestyle='--', linewidth=1.5, label=f'Mean Residual: {mean_residual:.2f}', zorder=2)
+        ax.set_xlabel('Observation', fontsize=12)
+        ax.set_ylabel('Residual (Observed - Predicted)', fontsize=12)
+        ax.set_title('Residual Plot: Prediction Errors', fontsize=14, fontweight='bold')
+        ax.set_xticks(x_values)
+        ax.set_xticklabels(residuals_df['observation_id'], rotation=45, ha='right')
+        ax.grid(True, alpha=0.3, axis='y', zorder=0)
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='#3b82f6', alpha=0.7, label='Positive Residual (Over-prediction)'),
+            Patch(facecolor='#ef4444', alpha=0.7, label='Negative Residual (Under-prediction)')
+        ]
+        ax.legend(handles=legend_elements, loc='best', fontsize=9)
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_residuals_plotly(self, observations: Union[List[float], np.ndarray], prediction: float, observation_ids: Optional[List[str]] = None):
+        """Create interactive residual plot with Plotly."""
+        residuals_df = self.calculate_residuals(observations, prediction, observation_ids)
+        colors = ['#3b82f6' if r >= 0 else '#ef4444' for r in residuals_df['residual']]
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=residuals_df['observation_id'],
+            y=residuals_df['residual'],
+            marker_color=colors,
+            name='Residual',
+            hovertemplate='<b>%{x}</b><br>' +
+                          'Observed: %{customdata[0]:.2f}<br>' +
+                          'Predicted: %{customdata[1]:.2f}<br>' +
+                          'Residual: %{y:.2f}<extra></extra>',
+            customdata=residuals_df[['observed', 'predicted']].values
+        ))
+        fig.add_hline(y=0, line_color='#374151', line_width=2)
+        mean_residual = residuals_df['residual'].mean()
+        if abs(mean_residual) > 0.01:
+            fig.add_hline(y=mean_residual, line_dash="dash", line_color="#f97316", line_width=1.5,
+                          annotation_text=f"Mean: {mean_residual:.2f}", annotation_position="right")
+        fig.update_layout(title='Residual Plot: Prediction Errors', xaxis_title='Observation', yaxis_title='Residual (Observed - Predicted)', showlegend=False, hovermode='closest')
+        return fig
+
+    def visualize_single_prediction(self, observation_ids: Optional[List[str]] = None, plot_type: str = 'all', backend: str = 'matplotlib') -> Dict[str, Any]:
+        """
+        Generate visualizations for single prediction vs multiple observations.
+        Only enabled when exactly one prediction and more than one observation exist.
+        """
+        if not (len(self.predictions) == 1 and len(self.observations) > 1):
+            return {}
+        prediction = float(self.predictions[0])
+        observations = np.array(self.observations)
+        figures: Dict[str, Any] = {}
+        if backend == 'matplotlib':
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_scatter_with_reference(observations, prediction, observation_ids)
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_boxplot_with_prediction(observations, prediction)
+            if plot_type in ['residual', 'all']:
+                figures['residual'] = self.plot_residuals(observations, prediction, observation_ids)
+        elif backend == 'plotly':
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_scatter_with_reference_plotly(observations, prediction, observation_ids)
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_boxplot_with_prediction_plotly(observations, prediction)
+            if plot_type in ['residual', 'all']:
+                figures['residual'] = self.plot_residuals_plotly(observations, prediction, observation_ids)
+        elif backend == 'seaborn':
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_scatter_with_reference_seaborn(observations, prediction, observation_ids)
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_boxplot_with_prediction_seaborn(observations, prediction)
+            if plot_type in ['residual', 'all']:
+                figures['residual'] = self.plot_residuals(observations, prediction, observation_ids)
+        return figures
+
+    def save_plots(self, figures: Dict[str, Any], output_dir: str = './plots', format: str = 'png', dpi: int = 300) -> None:
+        """Save all generated plots to disk."""
+        import os
+        os.makedirs(output_dir, exist_ok=True)
+        for name, fig_obj in figures.items():
+            filepath = os.path.join(output_dir, f'{name}_plot.{format}')
+            if isinstance(fig_obj, tuple):
+                fig, ax = fig_obj
+                fig.savefig(filepath, dpi=dpi, bbox_inches='tight')
+            else:
+                if format == 'html':
+                    fig_obj.write_html(filepath)
+                else:
+                    fig_obj.write_image(filepath, width=1200, height=800)
+
+    def print_summary_statistics(self, observations: Union[List[float], np.ndarray], prediction: float) -> None:
+        """Print summary statistics for observations and prediction."""
+        observations = np.array(observations)
+        residuals = observations - prediction
+        print("=" * 50)
+        print("SUMMARY STATISTICS")
+        print("=" * 50)
+        print(f"{self.prediction_name} Value: {prediction:.2f}")
+        print(f"\n{self.observation_name} (n={len(observations)}):")
+        print(f"  Mean:   {observations.mean():.2f}")
+        print(f"  Median: {np.median(observations):.2f}")
+        print(f"  Std:    {observations.std():.2f}")
+        print(f"  Min:    {observations.min():.2f}")
+        print(f"  Max:    {observations.max():.2f}")
+        print(f"  Range:  {observations.max() - observations.min():.2f}")
+        print(f"\nResiduals:")
+        print(f"  Mean:   {residuals.mean():.2f} (bias)")
+        print(f"  Std:    {residuals.std():.2f}")
+        print(f"  MAE:    {np.abs(residuals).mean():.2f}")
+        print(f"  RMSE:   {np.sqrt((residuals**2).mean()):.2f}")
     
     def calculate_central_tendency(self) -> Dict[str, Any]:
         """Calculate central tendency measures for observations."""
@@ -745,6 +1062,9 @@ class PredictionObservationComparison:
         
         if create_plots:
             results['visualizations'] = self.create_visualizations(figsize)
+            # Add single-prediction specific visualizations when applicable
+            if len(self.predictions) == 1 and len(self.observations) > 1:
+                results['single_prediction_visualizations'] = self.visualize_single_prediction(plot_type='all', backend='matplotlib')
         
         return results
 
@@ -814,22 +1134,44 @@ if __name__ == "__main__":
     predicted_price = 105.5  # Single prediction
     
     # Run comparison
-    results1 = compare_prediction_observations(
+    # results1 = compare_prediction_observations(
+    #     prediction_data=predicted_price,
+    #     observation_data=observed_prices,
+    #     prediction_name="Predicted Price",
+    #     observation_name="Actual Prices",
+    #     units="USD", 
+    #     include_advanced_tests=True,
+    # )
+
+    results1=PredictionObservationComparison(
         prediction_data=predicted_price,
         observation_data=observed_prices,
         prediction_name="Predicted Price",
         observation_name="Actual Prices",
         units="USD", 
-        include_advanced_tests=True,
     )
-    
-    print(results1['report'])
+    breakpoint()
+    # print(results1['report'])
     # breakpoint()
     # Show plots
-    if 'visualizations' in results1:
-        pass
+    # if 'visualizations' in results1:
+    #     pass  
         # plt.show()
-    
+
+    results1.visualize_single_prediction(plot_type='all', backend='matplotlib')
+    plt.show()
+    breakpoint()
+    results1.plot_scatter_with_reference(results1.observations, results1.predictions[0])
+    # plt.show()
+    # results1.plot_scatter_with_reference_seaborn(results1.observations, results1.predictions[0])
+    # plt.show()
+    results1.plot_boxplot_with_prediction(results1.observations, results1.predictions[0])   
+    # plt.show()
+    # results1.plot_boxplot_with_prediction_seaborn(results1.observations, results1.predictions[0])
+    results1.plot_residuals(results1.observations, results1.predictions[0])
+    # plt.show()
+    breakpoint()
+
     # Example 2: Multiple predictions vs observations
     print("\n\n2. Multiple Predictions Example:")
     print("-" * 35)
