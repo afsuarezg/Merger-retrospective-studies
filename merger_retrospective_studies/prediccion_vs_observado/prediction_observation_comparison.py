@@ -319,6 +319,305 @@ class PredictionObservationComparison:
         fig.update_layout(title='Residual Plot: Prediction Errors', xaxis_title='Observation', yaxis_title='Residual (Observed - Predicted)', showlegend=False, hovermode='closest')
         return fig
 
+    # --- Histogram with Prediction Marker ---
+    def plot_histogram_with_prediction(self, observations: Union[List[float], np.ndarray], prediction: float, 
+                                     bins: Union[int, str] = 'auto', density: bool = False, 
+                                     include_stats: bool = True, figsize: Tuple[int, int] = (10, 6)):
+        """
+        Create histogram comparing one prediction with multiple observed values.
+        
+        This function creates a histogram of observed values and marks the prediction
+        with a vertical line, helping visualize where the prediction falls relative
+        to the distribution of actual observations.
+        
+        Parameters:
+        -----------
+        observations : array-like
+            The observed values to create histogram from
+        prediction : float
+            The single prediction value to mark on the histogram
+        bins : int or str, optional
+            Number of bins or binning strategy (default: 'auto')
+        density : bool, optional
+            If True, plot density instead of count (default: False)
+        include_stats : bool, optional
+            If True, add statistical markers (mean, median) (default: True)
+        figsize : tuple, optional
+            Figure size (width, height) (default: (10, 6))
+        
+        Returns:
+        --------
+        tuple : (fig, ax) matplotlib figure and axis objects
+        """
+        observations = self._validate_inputs_single(observations, prediction)
+        
+        # Determine optimal number of bins if 'auto' is specified
+        if bins == 'auto':
+            # Use Freedman-Diaconis rule for optimal bin width
+            q75, q25 = np.percentile(observations, [75, 25])
+            iqr = q75 - q25
+            bin_width = 2 * iqr * (len(observations) ** (-1/3))
+            if bin_width > 0:
+                bins = int((np.max(observations) - np.min(observations)) / bin_width)
+                bins = max(10, min(30, bins))  # Keep between 10 and 30 bins
+            else:
+                bins = 20
+        elif isinstance(bins, str):
+            bins = 20  # fallback for other string values
+        
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Create histogram
+        n, bin_edges, patches = ax.hist(observations, bins=bins, alpha=0.7, color='#3b82f6', 
+                                       edgecolor='black', linewidth=0.5, density=density,
+                                       label=f'{self.observation_name} (n={len(observations)})')
+        
+        # Mark the prediction with a vertical line
+        ax.axvline(prediction, color='#ef4444', linestyle='--', linewidth=3, 
+                  label=f'{self.prediction_name}: {prediction:.2f}', zorder=3)
+        
+        # Add statistical markers if requested
+        if include_stats:
+            obs_mean = np.mean(observations)
+            obs_median = np.median(observations)
+            
+            # Mark mean and median
+            ax.axvline(obs_mean, color='#10b981', linestyle='-', linewidth=2, alpha=0.8,
+                      label=f'Observed Mean: {obs_mean:.2f}', zorder=2)
+            ax.axvline(obs_median, color='#f59e0b', linestyle=':', linewidth=2, alpha=0.8,
+                      label=f'Observed Median: {obs_median:.2f}', zorder=2)
+        
+        # Determine if prediction is within the observed range
+        obs_min, obs_max = np.min(observations), np.max(observations)
+        within_range = obs_min <= prediction <= obs_max
+        
+        # Add range information
+        ax.axvline(obs_min, color='#6b7280', linestyle=':', linewidth=1, alpha=0.6,
+                  label=f'Observed Range: [{obs_min:.2f}, {obs_max:.2f}]', zorder=1)
+        ax.axvline(obs_max, color='#6b7280', linestyle=':', linewidth=1, alpha=0.6, zorder=1)
+        
+        # Calculate and display percentile rank
+        percentile_rank = (np.sum(observations <= prediction) / len(observations)) * 100
+        
+        # Set labels and title
+        y_label = 'Density' if density else 'Frequency'
+        ax.set_xlabel(f'Value {self.units}'.strip(), fontsize=12)
+        ax.set_ylabel(y_label, fontsize=12)
+        
+        # Create informative title
+        range_status = "within" if within_range else "outside"
+        title = f'Histogram: Observed Data vs Prediction\n' \
+                f'Prediction is {range_status} observed range ({percentile_rank:.1f}th percentile)'
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        
+        # Add legend
+        ax.legend(loc='best', fontsize=10, framealpha=0.9)
+        
+        # Add grid for better readability
+        ax.grid(True, alpha=0.3, axis='y', zorder=0)
+        
+        # Add text box with key statistics
+        stats_text = f'Prediction: {prediction:.2f}\n'
+        stats_text += f'Observed Mean: {obs_mean:.2f}\n'
+        stats_text += f'Observed Std: {np.std(observations):.2f}\n'
+        stats_text += f'Percentile Rank: {percentile_rank:.1f}th'
+        
+        # Position text box in upper right
+        ax.text(0.98, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
+                verticalalignment='top', horizontalalignment='right',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_histogram_with_prediction_plotly(self, observations: Union[List[float], np.ndarray], prediction: float,
+                                            bins: Union[int, str] = 'auto', density: bool = False,
+                                            include_stats: bool = True):
+        """
+        Create interactive histogram with Plotly.
+        
+        Parameters:
+        -----------
+        observations : array-like
+            The observed values to create histogram from
+        prediction : float
+            The single prediction value to mark on the histogram
+        bins : int or str, optional
+            Number of bins or binning strategy (default: 'auto')
+        density : bool, optional
+            If True, plot density instead of count (default: False)
+        include_stats : bool, optional
+            If True, add statistical markers (mean, median) (default: True)
+        
+        Returns:
+        --------
+        plotly.graph_objects.Figure : Interactive histogram figure
+        """
+        observations = self._validate_inputs_single(observations, prediction)
+        
+        # Determine optimal number of bins
+        if bins == 'auto':
+            q75, q25 = np.percentile(observations, [75, 25])
+            iqr = q75 - q25
+            bin_width = 2 * iqr * (len(observations) ** (-1/3))
+            if bin_width > 0:
+                bins = int((np.max(observations) - np.min(observations)) / bin_width)
+                bins = max(10, min(30, bins))
+            else:
+                bins = 20
+        elif isinstance(bins, str):
+            bins = 20
+        
+        fig = go.Figure()
+        
+        # Create histogram
+        y_label = 'Density' if density else 'Frequency'
+        fig.add_trace(go.Histogram(
+            x=observations,
+            nbinsx=bins,
+            name=f'{self.observation_name} (n={len(observations)})',
+            marker_color='#3b82f6',
+            opacity=0.7,
+            histnorm='density' if density else 'count',
+            hovertemplate='<b>Value Range</b>: %{x}<br>' +
+                         f'<b>{y_label}</b>: %{{y}}<br>' +
+                         '<extra></extra>'
+        ))
+        
+        # Mark the prediction
+        fig.add_vline(
+            x=prediction,
+            line_dash="dash",
+            line_color="#ef4444",
+            line_width=3,
+            annotation_text=f"{self.prediction_name}: {prediction:.2f}",
+            annotation_position="top"
+        )
+        
+        # Add statistical markers if requested
+        if include_stats:
+            obs_mean = np.mean(observations)
+            obs_median = np.median(observations)
+            
+            # Mark mean
+            fig.add_vline(
+                x=obs_mean,
+                line_dash="solid",
+                line_color="#10b981",
+                line_width=2,
+                annotation_text=f"Mean: {obs_mean:.2f}",
+                annotation_position="bottom"
+            )
+            
+            # Mark median
+            fig.add_vline(
+                x=obs_median,
+                line_dash="dot",
+                line_color="#f59e0b",
+                line_width=2,
+                annotation_text=f"Median: {obs_median:.2f}",
+                annotation_position="bottom"
+            )
+        
+        # Calculate percentile rank
+        percentile_rank = (np.sum(observations <= prediction) / len(observations)) * 100
+        within_range = np.min(observations) <= prediction <= np.max(observations)
+        range_status = "within" if within_range else "outside"
+        
+        # Update layout
+        y_label = 'Density' if density else 'Frequency'
+        fig.update_layout(
+            title=f'Histogram: Observed Data vs Prediction<br>'
+                  f'<sub>Prediction is {range_status} observed range ({percentile_rank:.1f}th percentile)</sub>',
+            xaxis_title=f'Value {self.units}'.strip(),
+            yaxis_title=y_label,
+            showlegend=True,
+            hovermode='closest',
+            height=600
+        )
+        
+        return fig
+
+    def plot_histogram_with_prediction_seaborn(self, observations: Union[List[float], np.ndarray], prediction: float,
+                                             bins: Union[int, str] = 'auto', density: bool = False,
+                                             include_stats: bool = True, figsize: Tuple[int, int] = (10, 6)):
+        """
+        Create histogram using Seaborn.
+        
+        Parameters:
+        -----------
+        observations : array-like
+            The observed values to create histogram from
+        prediction : float
+            The single prediction value to mark on the histogram
+        bins : int or str, optional
+            Number of bins or binning strategy (default: 'auto')
+        density : bool, optional
+            If True, plot density instead of count (default: False)
+        include_stats : bool, optional
+            If True, add statistical markers (mean, median) (default: True)
+        figsize : tuple, optional
+            Figure size (width, height) (default: (10, 6))
+        
+        Returns:
+        --------
+        tuple : (fig, ax) matplotlib figure and axis objects
+        """
+        observations = self._validate_inputs_single(observations, prediction)
+        
+        # Determine optimal number of bins
+        if bins == 'auto':
+            q75, q25 = np.percentile(observations, [75, 25])
+            iqr = q75 - q25
+            bin_width = 2 * iqr * (len(observations) ** (-1/3))
+            if bin_width > 0:
+                bins = int((np.max(observations) - np.min(observations)) / bin_width)
+                bins = max(10, min(30, bins))
+            else:
+                bins = 20
+        elif isinstance(bins, str):
+            bins = 20
+        
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Create histogram using seaborn
+        sns.histplot(data=observations, bins=bins, kde=False, stat='density' if density else 'count',
+                    alpha=0.7, color='#3b82f6', edgecolor='black', linewidth=0.5, ax=ax)
+        
+        # Mark the prediction
+        ax.axvline(prediction, color='#ef4444', linestyle='--', linewidth=3,
+                  label=f'{self.prediction_name}: {prediction:.2f}', zorder=3)
+        
+        # Add statistical markers if requested
+        if include_stats:
+            obs_mean = np.mean(observations)
+            obs_median = np.median(observations)
+            
+            ax.axvline(obs_mean, color='#10b981', linestyle='-', linewidth=2, alpha=0.8,
+                      label=f'Observed Mean: {obs_mean:.2f}', zorder=2)
+            ax.axvline(obs_median, color='#f59e0b', linestyle=':', linewidth=2, alpha=0.8,
+                      label=f'Observed Median: {obs_median:.2f}', zorder=2)
+        
+        # Calculate percentile rank and range status
+        percentile_rank = (np.sum(observations <= prediction) / len(observations)) * 100
+        within_range = np.min(observations) <= prediction <= np.max(observations)
+        range_status = "within" if within_range else "outside"
+        
+        # Set labels and title
+        y_label = 'Density' if density else 'Frequency'
+        ax.set_xlabel(f'Value {self.units}'.strip(), fontsize=12)
+        ax.set_ylabel(y_label, fontsize=12)
+        ax.set_title(f'Histogram: Observed Data vs Prediction\n'
+                    f'Prediction is {range_status} observed range ({percentile_rank:.1f}th percentile)',
+                    fontsize=14, fontweight='bold')
+        
+        # Add legend and grid
+        ax.legend(loc='best', fontsize=10, framealpha=0.9)
+        ax.grid(True, alpha=0.3, axis='y', zorder=0)
+        
+        plt.tight_layout()
+        return fig, ax
+
     def visualize_single_prediction(self, observation_ids: Optional[List[str]] = None, plot_type: str = 'all', backend: str = 'matplotlib') -> Dict[str, Any]:
         """
         Generate visualizations for single prediction vs multiple observations.
@@ -336,6 +635,8 @@ class PredictionObservationComparison:
                 figures['boxplot'] = self.plot_boxplot_with_prediction(observations, prediction)
             if plot_type in ['residual', 'all']:
                 figures['residual'] = self.plot_residuals(observations, prediction, observation_ids)
+            if plot_type in ['histogram', 'all']:
+                figures['histogram'] = self.plot_histogram_with_prediction(observations, prediction)
         elif backend == 'plotly':
             if plot_type in ['scatter', 'all']:
                 figures['scatter'] = self.plot_scatter_with_reference_plotly(observations, prediction, observation_ids)
@@ -343,6 +644,8 @@ class PredictionObservationComparison:
                 figures['boxplot'] = self.plot_boxplot_with_prediction_plotly(observations, prediction)
             if plot_type in ['residual', 'all']:
                 figures['residual'] = self.plot_residuals_plotly(observations, prediction, observation_ids)
+            if plot_type in ['histogram', 'all']:
+                figures['histogram'] = self.plot_histogram_with_prediction_plotly(observations, prediction)
         elif backend == 'seaborn':
             if plot_type in ['scatter', 'all']:
                 figures['scatter'] = self.plot_scatter_with_reference_seaborn(observations, prediction, observation_ids)
@@ -350,6 +653,8 @@ class PredictionObservationComparison:
                 figures['boxplot'] = self.plot_boxplot_with_prediction_seaborn(observations, prediction)
             if plot_type in ['residual', 'all']:
                 figures['residual'] = self.plot_residuals(observations, prediction, observation_ids)
+            if plot_type in ['histogram', 'all']:
+                figures['histogram'] = self.plot_histogram_with_prediction_seaborn(observations, prediction)
         return figures
 
     def save_plots(self, figures: Dict[str, Any], output_dir: str = './plots', format: str = 'png', dpi: int = 300) -> None:
@@ -1142,7 +1447,7 @@ if __name__ == "__main__":
     #     units="USD", 
     #     include_advanced_tests=True,
     # )
-    # print(results1['report'])
+    # # print(results1['report'])
     # results1=PredictionObservationComparison(
     #     prediction_data=predicted_price,
     #     observation_data=observed_prices,
@@ -1150,18 +1455,18 @@ if __name__ == "__main__":
     #     observation_name="Actual Prices",
     #     units="USD", 
     # )
-    # breakpoint()
+    # # breakpoint()
 
-    # breakpoint()
-    # Show plots
-    # if 'visualizations' in results1:
-    #     pass  
-        # plt.show()
+    # # breakpoint()
+    # # Show plots
+    # # if 'visualizations' in results1:
+    # #     pass  
+    #     # plt.show()
 
     # results1.visualize_single_prediction(plot_type='all', backend='matplotlib')
     # plt.show()
-    # breakpoint()
-    # results1.plot
+    # # breakpoint()
+    # # results1.plot
 
     # Example 2: Multiple predictions vs observations
     print("\n\n2. Multiple Predictions Example:")
