@@ -618,6 +618,235 @@ class PredictionObservationComparison:
         plt.tight_layout()
         return fig, ax
 
+    # --- Distribution Comparison for Multiple Predictions vs Observations ---
+    def plot_distribution_comparison(self, observations: Union[List[float], np.ndarray], 
+                                   predictions: Union[List[float], np.ndarray], 
+                                   figsize: Tuple[int, int] = (20, 12), 
+                                   save_path: Optional[str] = None) -> Optional[plt.Figure]:
+        """
+        Create comprehensive comparison of two distributions using 6 different visualization methods.
+        
+        This function generates six subplots comparing observations and predictions:
+        1. Overlapping Histograms
+        2. Density Plots
+        3. Box Plots Side-by-Side
+        4. Violin Plots
+        5. Q-Q Plot
+        6. Empirical CDF (ECDF)
+        
+        Parameters:
+        -----------
+        observations : array-like
+            Array of observed values (must have length > 1)
+        predictions : array-like
+            Array of predicted values (must have length > 1)
+        figsize : tuple, optional
+            Figure size (width, height) (default: (20, 12))
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        fig : matplotlib.figure.Figure
+            The created figure object, or None if inputs invalid
+        """
+        # Convert to numpy arrays and validate
+        observations = np.array(observations)
+        predictions = np.array(predictions)
+        
+        # Validation
+        if len(observations) <= 1 or len(predictions) <= 1:
+            raise ValueError("Both observations and predictions must have length > 1")
+        
+        # Remove NaN values
+        obs_valid = ~np.isnan(observations)
+        pred_valid = ~np.isnan(predictions)
+        
+        if not np.any(obs_valid) or not np.any(pred_valid):
+            raise ValueError("No valid values found after removing NaN values")
+        
+        observations = observations[obs_valid]
+        predictions = predictions[pred_valid]
+        
+        # Create figure with 6 subplots (2 rows × 3 columns)
+        fig, axes = plt.subplots(2, 3, figsize=figsize)
+        fig.suptitle("Distribution Comparison: Observations vs Predictions", fontsize=16, y=1.02)
+        
+        # Color scheme
+        obs_color = '#3b82f6'  # Blue
+        pred_color = '#ef4444'  # Red
+        
+        # 1. Overlapping Histograms (subplot 1)
+        ax1 = axes[0, 0]
+        ax1.hist(observations, bins=30, alpha=0.6, color=obs_color, 
+                label=f'{self.observation_name} (n={len(observations)})', density=True)
+        ax1.hist(predictions, bins=30, alpha=0.6, color=pred_color, 
+                label=f'{self.prediction_name} (n={len(predictions)})', density=True)
+        ax1.set_xlabel(f'Value {self.units}'.strip())
+        ax1.set_ylabel('Density')
+        ax1.set_title('Overlapping Histograms')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+        
+        # 2. Density Plots (subplot 2)
+        ax2 = axes[0, 1]
+        from scipy.stats import gaussian_kde
+        
+        # Calculate density for observations
+        if len(observations) > 1:
+            obs_density = gaussian_kde(observations)
+            obs_x = np.linspace(observations.min(), observations.max(), 200)
+            obs_y = obs_density(obs_x)
+            ax2.plot(obs_x, obs_y, color=obs_color, linewidth=2, 
+                    label=f'{self.observation_name} (n={len(observations)})')
+        
+        # Calculate density for predictions
+        if len(predictions) > 1:
+            pred_density = gaussian_kde(predictions)
+            pred_x = np.linspace(predictions.min(), predictions.max(), 200)
+            pred_y = pred_density(pred_x)
+            ax2.plot(pred_x, pred_y, color=pred_color, linewidth=2, 
+                    label=f'{self.prediction_name} (n={len(predictions)})')
+        
+        ax2.set_xlabel(f'Value {self.units}'.strip())
+        ax2.set_ylabel('Density')
+        ax2.set_title('Density Plots')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+        
+        # 3. Box Plots Side-by-Side (subplot 3)
+        ax3 = axes[0, 2]
+        box_data = [observations, predictions]
+        box_labels = [f'{self.observation_name}\n(n={len(observations)})', 
+                     f'{self.prediction_name}\n(n={len(predictions)})']
+        
+        bp = ax3.boxplot(box_data, positions=[1, 2], labels=box_labels, patch_artist=True)
+        bp['boxes'][0].set_facecolor(obs_color)
+        bp['boxes'][0].set_alpha(0.7)
+        bp['boxes'][1].set_facecolor(pred_color)
+        bp['boxes'][1].set_alpha(0.7)
+        
+        ax3.set_ylabel(f'Value {self.units}'.strip())
+        ax3.set_title('Box Plots')
+        ax3.grid(True, alpha=0.3, axis='y')
+        
+        # 4. Violin Plots (subplot 4)
+        ax4 = axes[1, 0]
+        
+        # Create data for violin plot
+        violin_data = []
+        violin_labels = []
+        violin_colors = []
+        
+        for i, (data, label, color) in enumerate(zip([observations, predictions], 
+                                                    [f'{self.observation_name}', f'{self.prediction_name}'],
+                                                    [obs_color, pred_color])):
+            violin_data.extend(data)
+            violin_labels.extend([label] * len(data))
+            violin_colors.extend([color] * len(data))
+        
+        # Create DataFrame for seaborn violin plot
+        import pandas as pd
+        df_violin = pd.DataFrame({
+            'value': violin_data,
+            'type': violin_labels
+        })
+        
+        sns.violinplot(data=df_violin, x='type', y='value', ax=ax4, 
+                      palette=[obs_color, pred_color])
+        ax4.set_xlabel('')
+        ax4.set_ylabel(f'Value {self.units}'.strip())
+        ax4.set_title('Violin Plots')
+        ax4.grid(True, alpha=0.3, axis='y')
+        
+        # 5. Q-Q Plot (subplot 5)
+        ax5 = axes[1, 1]
+        
+        # Sort both arrays
+        sorted_obs = np.sort(observations)
+        sorted_pred = np.sort(predictions)
+        
+        # Create quantile pairs by matching indices
+        min_len = min(len(sorted_obs), len(sorted_pred))
+        obs_quantiles = sorted_obs[:min_len]
+        pred_quantiles = sorted_pred[:min_len]
+        
+        ax5.scatter(obs_quantiles, pred_quantiles, alpha=0.6, s=20, color='#6b7280')
+        
+        # Add diagonal reference line
+        min_val = min(obs_quantiles.min(), pred_quantiles.min())
+        max_val = max(obs_quantiles.max(), pred_quantiles.max())
+        ax5.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.3, linewidth=2)
+        
+        ax5.set_xlabel(f'{self.observation_name} Quantiles')
+        ax5.set_ylabel(f'{self.prediction_name} Quantiles')
+        ax5.set_title('Q-Q Plot')
+        ax5.grid(True, alpha=0.3)
+        
+        # Add correlation coefficient
+        if len(obs_quantiles) > 1:
+            corr = np.corrcoef(obs_quantiles, pred_quantiles)[0, 1]
+            ax5.text(0.05, 0.95, f'r = {corr:.3f}', transform=ax5.transAxes, 
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # 6. Empirical CDF (subplot 6)
+        ax6 = axes[1, 2]
+        
+        # Calculate ECDF for observations
+        obs_sorted = np.sort(observations)
+        obs_ecdf = np.arange(1, len(obs_sorted) + 1) / len(obs_sorted)
+        ax6.step(obs_sorted, obs_ecdf, where='post', color=obs_color, 
+                linewidth=2, label=f'{self.observation_name} (n={len(observations)})')
+        
+        # Calculate ECDF for predictions
+        pred_sorted = np.sort(predictions)
+        pred_ecdf = np.arange(1, len(pred_sorted) + 1) / len(pred_sorted)
+        ax6.step(pred_sorted, pred_ecdf, where='post', color=pred_color, 
+                linewidth=2, label=f'{self.prediction_name} (n={len(predictions)})')
+        
+        ax6.set_xlabel(f'Value {self.units}'.strip())
+        ax6.set_ylabel('Cumulative Probability')
+        ax6.set_title('Empirical CDF (ECDF)')
+        ax6.set_ylim([0, 1])
+        ax6.legend()
+        ax6.grid(True, alpha=0.3)
+        
+        # Add statistical information text box
+        obs_mean, obs_std = np.mean(observations), np.std(observations)
+        pred_mean, pred_std = np.mean(predictions), np.std(predictions)
+        
+        stats_text = f'{self.observation_name}:\n'
+        stats_text += f'  n = {len(observations)}\n'
+        stats_text += f'  μ = {obs_mean:.2f}\n'
+        stats_text += f'  σ = {obs_std:.2f}\n\n'
+        stats_text += f'{self.prediction_name}:\n'
+        stats_text += f'  n = {len(predictions)}\n'
+        stats_text += f'  μ = {pred_mean:.2f}\n'
+        stats_text += f'  σ = {pred_std:.2f}'
+        
+        # Add KS test statistic
+        try:
+            from scipy.stats import ks_2samp
+            ks_stat, ks_p = ks_2samp(observations, predictions)
+            stats_text += f'\n\nKS test:\n'
+            stats_text += f'  D = {ks_stat:.3f}\n'
+            stats_text += f'  p = {ks_p:.3f}'
+        except:
+            pass
+        
+        ax6.text(0.02, 0.98, stats_text, transform=ax6.transAxes, 
+                verticalalignment='top', fontsize=8,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save if path provided
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+
     def visualize_single_prediction(self, observation_ids: Optional[List[str]] = None, plot_type: str = 'all', backend: str = 'matplotlib') -> Dict[str, Any]:
         """
         Generate visualizations for single prediction vs multiple observations.
@@ -656,6 +885,390 @@ class PredictionObservationComparison:
             if plot_type in ['histogram', 'all']:
                 figures['histogram'] = self.plot_histogram_with_prediction_seaborn(observations, prediction)
         return figures
+
+    def visualize_multiple_prediction(self, plot_type: str = 'all', backend: str = 'matplotlib') -> Dict[str, Any]:
+        """
+        Generate visualizations for multiple predictions vs multiple observations.
+        Only enabled when both predictions and observations have more than one value.
+        
+        Parameters:
+        -----------
+        plot_type : str, optional
+            Type of plots to generate ('all', 'distribution', 'scatter', 'boxplot', 'histogram', 'qq', 'ecdf')
+        backend : str, optional
+            Backend to use ('matplotlib', 'plotly', 'seaborn')
+        
+        Returns:
+        --------
+        dict : Dictionary containing generated figures
+        """
+        if not (len(self.predictions) > 1 and len(self.observations) > 1):
+            return {}
+        
+        figures: Dict[str, Any] = {}
+        
+        if backend == 'matplotlib':
+            if plot_type in ['distribution', 'all']:
+                figures['distribution_comparison'] = self.plot_distribution_comparison(
+                    self.observations, self.predictions
+                )
+            
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_multiple_scatter()
+            
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_multiple_boxplot()
+            
+            if plot_type in ['histogram', 'all']:
+                figures['histogram'] = self.plot_multiple_histogram()
+            
+            if plot_type in ['qq', 'all']:
+                figures['qq_plot'] = self.plot_qq_comparison()
+            
+            if plot_type in ['ecdf', 'all']:
+                figures['ecdf'] = self.plot_ecdf_comparison()
+        
+        elif backend == 'plotly':
+            if plot_type in ['distribution', 'all']:
+                figures['distribution_comparison'] = self.plot_distribution_comparison_plotly()
+            
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_multiple_scatter_plotly()
+            
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_multiple_boxplot_plotly()
+        
+        elif backend == 'seaborn':
+            if plot_type in ['distribution', 'all']:
+                figures['distribution_comparison'] = self.plot_distribution_comparison(
+                    self.observations, self.predictions
+                )
+            
+            if plot_type in ['scatter', 'all']:
+                figures['scatter'] = self.plot_multiple_scatter_seaborn()
+            
+            if plot_type in ['boxplot', 'all']:
+                figures['boxplot'] = self.plot_multiple_boxplot_seaborn()
+        
+        return figures
+
+    def plot_multiple_scatter(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create scatter plot for multiple predictions vs observations."""
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Plot observations
+        ax.scatter(range(len(self.observations)), self.observations, 
+                  alpha=0.6, s=50, color='#3b82f6', label=f'{self.observation_name} (n={len(self.observations)})')
+        
+        # Plot predictions
+        ax.scatter(range(len(self.predictions)), self.predictions, 
+                  alpha=0.8, s=80, color='#ef4444', marker='s', 
+                  label=f'{self.prediction_name} (n={len(self.predictions)})')
+        
+        ax.set_xlabel('Index')
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Scatter Plot: Observations vs Predictions')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_multiple_boxplot(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create box plot for multiple predictions vs observations."""
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        box_data = [self.observations, self.predictions]
+        box_labels = [f'{self.observation_name}\n(n={len(self.observations)})', 
+                     f'{self.prediction_name}\n(n={len(self.predictions)})']
+        
+        bp = ax.boxplot(box_data, labels=box_labels, patch_artist=True)
+        bp['boxes'][0].set_facecolor('#3b82f6')
+        bp['boxes'][0].set_alpha(0.7)
+        bp['boxes'][1].set_facecolor('#ef4444')
+        bp['boxes'][1].set_alpha(0.7)
+        
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Box Plot: Observations vs Predictions')
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_multiple_histogram(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create overlapping histograms for multiple predictions vs observations."""
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        ax.hist(self.observations, bins=30, alpha=0.6, color='#3b82f6', 
+                label=f'{self.observation_name} (n={len(self.observations)})', density=True)
+        ax.hist(self.predictions, bins=30, alpha=0.6, color='#ef4444', 
+                label=f'{self.prediction_name} (n={len(self.predictions)})', density=True)
+        
+        ax.set_xlabel(f'Value {self.units}'.strip())
+        ax.set_ylabel('Density')
+        ax.set_title('Overlapping Histograms: Observations vs Predictions')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_qq_comparison(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create Q-Q plot for multiple predictions vs observations."""
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        # Sort both arrays
+        sorted_obs = np.sort(self.observations)
+        sorted_pred = np.sort(self.predictions)
+        
+        # Create quantile pairs by matching indices
+        min_len = min(len(sorted_obs), len(sorted_pred))
+        obs_quantiles = sorted_obs[:min_len]
+        pred_quantiles = sorted_pred[:min_len]
+        
+        ax.scatter(obs_quantiles, pred_quantiles, alpha=0.6, s=20, color='#6b7280')
+        
+        # Add diagonal reference line
+        min_val = min(obs_quantiles.min(), pred_quantiles.min())
+        max_val = max(obs_quantiles.max(), pred_quantiles.max())
+        ax.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.3, linewidth=2)
+        
+        ax.set_xlabel(f'{self.observation_name} Quantiles')
+        ax.set_ylabel(f'{self.prediction_name} Quantiles')
+        ax.set_title('Q-Q Plot: Observations vs Predictions')
+        ax.grid(True, alpha=0.3)
+        
+        # Add correlation coefficient
+        if len(obs_quantiles) > 1:
+            corr = np.corrcoef(obs_quantiles, pred_quantiles)[0, 1]
+            ax.text(0.05, 0.95, f'r = {corr:.3f}', transform=ax.transAxes, 
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_ecdf_comparison(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create ECDF plot for multiple predictions vs observations."""
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Calculate ECDF for observations
+        obs_sorted = np.sort(self.observations)
+        obs_ecdf = np.arange(1, len(obs_sorted) + 1) / len(obs_sorted)
+        ax.step(obs_sorted, obs_ecdf, where='post', color='#3b82f6', 
+                linewidth=2, label=f'{self.observation_name} (n={len(self.observations)})')
+        
+        # Calculate ECDF for predictions
+        pred_sorted = np.sort(self.predictions)
+        pred_ecdf = np.arange(1, len(pred_sorted) + 1) / len(pred_sorted)
+        ax.step(pred_sorted, pred_ecdf, where='post', color='#ef4444', 
+                linewidth=2, label=f'{self.prediction_name} (n={len(self.predictions)})')
+        
+        ax.set_xlabel(f'Value {self.units}'.strip())
+        ax.set_ylabel('Cumulative Probability')
+        ax.set_title('Empirical CDF: Observations vs Predictions')
+        ax.set_ylim([0, 1])
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_multiple_scatter_plotly(self):
+        """Create interactive scatter plot with Plotly."""
+        fig = go.Figure()
+        
+        # Add observations
+        fig.add_trace(go.Scatter(
+            x=list(range(len(self.observations))),
+            y=self.observations,
+            mode='markers',
+            name=f'{self.observation_name} (n={len(self.observations)})',
+            marker=dict(size=8, color='#3b82f6'),
+            hovertemplate='<b>Observation</b><br>Index: %{x}<br>Value: %{y:.2f}<extra></extra>'
+        ))
+        
+        # Add predictions
+        fig.add_trace(go.Scatter(
+            x=list(range(len(self.predictions))),
+            y=self.predictions,
+            mode='markers',
+            name=f'{self.prediction_name} (n={len(self.predictions)})',
+            marker=dict(size=10, color='#ef4444', symbol='square'),
+            hovertemplate='<b>Prediction</b><br>Index: %{x}<br>Value: %{y:.2f}<extra></extra>'
+        ))
+        
+        fig.update_layout(
+            title='Scatter Plot: Observations vs Predictions',
+            xaxis_title='Index',
+            yaxis_title=f'Value {self.units}'.strip(),
+            hovermode='closest',
+            showlegend=True,
+            height=600
+        )
+        
+        return fig
+
+    def plot_multiple_boxplot_plotly(self):
+        """Create interactive box plot with Plotly."""
+        fig = go.Figure()
+        
+        # Add observations box plot
+        fig.add_trace(go.Box(
+            y=self.observations,
+            name=f'{self.observation_name} (n={len(self.observations)})',
+            marker_color='#3b82f6',
+            boxmean='sd'
+        ))
+        
+        # Add predictions box plot
+        fig.add_trace(go.Box(
+            y=self.predictions,
+            name=f'{self.prediction_name} (n={len(self.predictions)})',
+            marker_color='#ef4444',
+            boxmean='sd'
+        ))
+        
+        fig.update_layout(
+            title='Box Plot: Observations vs Predictions',
+            yaxis_title=f'Value {self.units}'.strip(),
+            showlegend=True,
+            height=600
+        )
+        
+        return fig
+
+    def plot_distribution_comparison_plotly(self):
+        """Create interactive distribution comparison with Plotly."""
+        from plotly.subplots import make_subplots
+        
+        # Create subplots
+        fig = make_subplots(
+            rows=2, cols=3,
+            subplot_titles=('Overlapping Histograms', 'Density Plots', 'Box Plots',
+                          'Violin Plots', 'Q-Q Plot', 'Empirical CDF'),
+            specs=[[{"secondary_y": False}, {"secondary_y": False}, {"secondary_y": False}],
+                   [{"secondary_y": False}, {"secondary_y": False}, {"secondary_y": False}]]
+        )
+        
+        # 1. Histograms
+        fig.add_trace(go.Histogram(x=self.observations, name=f'{self.observation_name}', 
+                                 opacity=0.6, marker_color='#3b82f6'), row=1, col=1)
+        fig.add_trace(go.Histogram(x=self.predictions, name=f'{self.prediction_name}', 
+                                 opacity=0.6, marker_color='#ef4444'), row=1, col=1)
+        
+        # 2. Density plots
+        from scipy.stats import gaussian_kde
+        obs_density = gaussian_kde(self.observations)
+        pred_density = gaussian_kde(self.predictions)
+        
+        x_range = np.linspace(min(self.observations.min(), self.predictions.min()),
+                             max(self.observations.max(), self.predictions.max()), 200)
+        
+        fig.add_trace(go.Scatter(x=x_range, y=obs_density(x_range), 
+                               name=f'{self.observation_name} Density', 
+                               line=dict(color='#3b82f6', width=2)), row=1, col=2)
+        fig.add_trace(go.Scatter(x=x_range, y=pred_density(x_range), 
+                               name=f'{self.prediction_name} Density', 
+                               line=dict(color='#ef4444', width=2)), row=1, col=2)
+        
+        # 3. Box plots
+        fig.add_trace(go.Box(y=self.observations, name=f'{self.observation_name}', 
+                            marker_color='#3b82f6'), row=1, col=3)
+        fig.add_trace(go.Box(y=self.predictions, name=f'{self.prediction_name}', 
+                            marker_color='#ef4444'), row=1, col=3)
+        
+        # 4. Violin plots
+        fig.add_trace(go.Violin(y=self.observations, name=f'{self.observation_name}', 
+                               marker_color='#3b82f6'), row=2, col=1)
+        fig.add_trace(go.Violin(y=self.predictions, name=f'{self.prediction_name}', 
+                               marker_color='#ef4444'), row=2, col=1)
+        
+        # 5. Q-Q plot
+        sorted_obs = np.sort(self.observations)
+        sorted_pred = np.sort(self.predictions)
+        min_len = min(len(sorted_obs), len(sorted_pred))
+        obs_quantiles = sorted_obs[:min_len]
+        pred_quantiles = sorted_pred[:min_len]
+        
+        fig.add_trace(go.Scatter(x=obs_quantiles, y=pred_quantiles, 
+                               mode='markers', name='Q-Q Points',
+                               marker=dict(color='#6b7280', size=4)), row=2, col=2)
+        
+        # Add diagonal line
+        min_val = min(obs_quantiles.min(), pred_quantiles.min())
+        max_val = max(obs_quantiles.max(), pred_quantiles.max())
+        fig.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], 
+                               mode='lines', name='Perfect Agreement',
+                               line=dict(dash='dash', color='black', width=1)), row=2, col=2)
+        
+        # 6. ECDF
+        obs_sorted = np.sort(self.observations)
+        obs_ecdf = np.arange(1, len(obs_sorted) + 1) / len(obs_sorted)
+        pred_sorted = np.sort(self.predictions)
+        pred_ecdf = np.arange(1, len(pred_sorted) + 1) / len(pred_sorted)
+        
+        fig.add_trace(go.Scatter(x=obs_sorted, y=obs_ecdf, mode='lines', 
+                               name=f'{self.observation_name} ECDF',
+                               line=dict(color='#3b82f6', width=2)), row=2, col=3)
+        fig.add_trace(go.Scatter(x=pred_sorted, y=pred_ecdf, mode='lines', 
+                               name=f'{self.prediction_name} ECDF',
+                               line=dict(color='#ef4444', width=2)), row=2, col=3)
+        
+        fig.update_layout(
+            title_text="Distribution Comparison: Observations vs Predictions",
+            showlegend=True,
+            height=800
+        )
+        
+        return fig
+
+    def plot_multiple_scatter_seaborn(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create scatter plot using Seaborn."""
+        import pandas as pd
+        
+        # Create DataFrame
+        data = []
+        for i, val in enumerate(self.observations):
+            data.append({'index': i, 'value': val, 'type': self.observation_name})
+        for i, val in enumerate(self.predictions):
+            data.append({'index': i, 'value': val, 'type': self.prediction_name})
+        
+        df = pd.DataFrame(data)
+        
+        fig, ax = plt.subplots(figsize=(12, 8))
+        sns.scatterplot(data=df, x='index', y='value', hue='type', s=50, ax=ax)
+        
+        ax.set_xlabel('Index')
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Scatter Plot: Observations vs Predictions')
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_multiple_boxplot_seaborn(self) -> Tuple[plt.Figure, plt.Axes]:
+        """Create box plot using Seaborn."""
+        import pandas as pd
+        
+        # Create DataFrame
+        data = []
+        for val in self.observations:
+            data.append({'value': val, 'type': self.observation_name})
+        for val in self.predictions:
+            data.append({'value': val, 'type': self.prediction_name})
+        
+        df = pd.DataFrame(data)
+        
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sns.boxplot(data=df, x='type', y='value', ax=ax, palette=['#3b82f6', '#ef4444'])
+        
+        ax.set_xlabel('')
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Box Plot: Observations vs Predictions')
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        plt.tight_layout()
+        return fig, ax
 
     def save_plots(self, figures: Dict[str, Any], output_dir: str = './plots', format: str = 'png', dpi: int = 300) -> None:
         """Save all generated plots to disk."""
@@ -1066,98 +1679,6 @@ class PredictionObservationComparison:
         
         return summary
     
-    def create_visualizations(self, figsize: Tuple[int, int] = (15, 10)) -> Dict[str, plt.Figure]:
-        """Create comprehensive visualizations comparing predictions and observations."""
-        figures = {}
-        
-        # 1. Scatter plot with prediction lines
-        fig1, axes1 = plt.subplots(1, 2, figsize=figsize)
-        
-        # Left: Observations vs Index with prediction lines
-        axes1[0].scatter(range(len(self.observations)), self.observations, 
-                        alpha=0.6, label=self.observation_name)
-        for i, pred in enumerate(self.predictions):
-            axes1[0].axhline(y=pred, color=f'C{i+1}', linestyle='--', 
-                           label=f'{self.prediction_name} {i+1}' if len(self.predictions) > 1 else self.prediction_name)
-        axes1[0].set_xlabel('Observation Index')
-        axes1[0].set_ylabel(f'Value {self.units}')
-        axes1[0].set_title('Observations vs Predictions')
-        axes1[0].legend()
-        axes1[0].grid(True, alpha=0.3)
-        
-        # Right: Prediction vs Mean comparison
-        obs_mean = np.mean(self.observations)
-        axes1[1].scatter([obs_mean] * len(self.predictions), self.predictions, 
-                        s=100, alpha=0.7, label='Predictions')
-        axes1[1].axhline(y=obs_mean, color='red', linestyle='-', 
-                        label=f'Observed Mean ({obs_mean:.2f})')
-        axes1[1].set_xlabel('Observed Mean')
-        axes1[1].set_ylabel(f'Prediction Value {self.units}')
-        axes1[1].set_title('Predictions vs Observed Mean')
-        axes1[1].legend()
-        axes1[1].grid(True, alpha=0.3)
-        
-        figures['scatter_plots'] = fig1
-        
-        # 2. Box plot with predictions
-        fig2, ax2 = plt.subplots(figsize=(8, 6))
-        box_data = [self.observations] + [[pred] for pred in self.predictions]
-        labels = [self.observation_name] + [f'{self.prediction_name} {i+1}' for i in range(len(self.predictions))]
-        
-        bp = ax2.boxplot(box_data, labels=labels, patch_artist=True)
-        colors = ['lightblue'] + [f'C{i}' for i in range(len(self.predictions))]
-        for patch, color in zip(bp['boxes'], colors):
-            patch.set_facecolor(color)
-        
-        ax2.set_ylabel(f'Value {self.units}')
-        ax2.set_title('Distribution of Observations vs Predictions')
-        ax2.grid(True, alpha=0.3)
-        
-        figures['box_plot'] = fig2
-        
-        # 3. Histogram with prediction lines
-        fig3, ax3 = plt.subplots(figsize=(10, 6))
-        ax3.hist(self.observations, bins=min(30, len(self.observations)//2), 
-                alpha=0.7, label=self.observation_name, density=True)
-        
-        for i, pred in enumerate(self.predictions):
-            ax3.axvline(x=pred, color=f'C{i+1}', linestyle='--', linewidth=2,
-                       label=f'{self.prediction_name} {i+1}' if len(self.predictions) > 1 else self.prediction_name)
-        
-        ax3.set_xlabel(f'Value {self.units}')
-        ax3.set_ylabel('Density')
-        ax3.set_title('Distribution of Observations with Predictions')
-        ax3.legend()
-        ax3.grid(True, alpha=0.3)
-        
-        figures['histogram'] = fig3
-        
-        # 4. Error bars plot
-        if len(self.predictions) > 0:
-            fig4, ax4 = plt.subplots(figsize=(10, 6))
-            
-            obs_mean = np.mean(self.observations)
-            obs_std = np.std(self.observations, ddof=1)
-            n = len(self.predictions)
-            
-            x_pos = np.arange(n)
-            ax4.errorbar(x_pos, self.predictions, yerr=obs_std, 
-                        fmt='o', capsize=5, capthick=2, 
-                        label=f'Predictions ± 1 std of observations')
-            ax4.axhline(y=obs_mean, color='red', linestyle='-', 
-                       label=f'Observed Mean ({obs_mean:.2f})')
-            
-            ax4.set_xlabel('Prediction Index')
-            ax4.set_ylabel(f'Value {self.units}')
-            ax4.set_title('Predictions with Observation Uncertainty')
-            ax4.set_xticks(x_pos)
-            ax4.set_xticklabels([f'Pred {i+1}' for i in range(n)])
-            ax4.legend()
-            ax4.grid(True, alpha=0.3)
-            
-            figures['error_bars'] = fig4
-        
-        return figures
     
     def generate_report(self, alpha: float = 0.05, include_advanced_tests: bool = False) -> str:
         """Generate a comprehensive comparison report."""
@@ -1366,12 +1887,43 @@ class PredictionObservationComparison:
             results['advanced_statistical_tests'] = self.perform_all_statistical_tests(alpha)
         
         if create_plots:
-            results['visualizations'] = self.create_visualizations(figsize)
-            # Add single-prediction specific visualizations when applicable
+            # Use appropriate visualization method based on data structure
             if len(self.predictions) == 1 and len(self.observations) > 1:
+                # Single prediction vs multiple observations
                 results['single_prediction_visualizations'] = self.visualize_single_prediction(plot_type='all', backend='matplotlib')
+            elif len(self.predictions) > 1 and len(self.observations) > 1:
+                # Multiple predictions vs multiple observations
+                results['multiple_prediction_visualizations'] = self.visualize_multiple_prediction(plot_type='all', backend='matplotlib')
+            else:
+                # Fallback for other cases - create basic visualizations
+                results['basic_visualizations'] = self._create_basic_visualizations(figsize)
         
         return results
+
+    def _create_basic_visualizations(self, figsize: Tuple[int, int] = (15, 10)) -> Dict[str, Any]:
+        """Create basic visualizations for edge cases."""
+        figures = {}
+        
+        # Simple scatter plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.scatter(range(len(self.observations)), self.observations, 
+                  alpha=0.6, label=f'{self.observation_name} (n={len(self.observations)})')
+        
+        if len(self.predictions) > 0:
+            ax.scatter(range(len(self.predictions)), self.predictions, 
+                      alpha=0.8, s=80, color='red', marker='s', 
+                      label=f'{self.prediction_name} (n={len(self.predictions)})')
+        
+        ax.set_xlabel('Index')
+        ax.set_ylabel(f'Value {self.units}'.strip())
+        ax.set_title('Basic Comparison: Observations vs Predictions')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        figures['basic_scatter'] = (fig, ax)
+        
+        return figures
 
 
 def compare_prediction_observations(prediction_data: Union[float, List[float], pd.Series], 
