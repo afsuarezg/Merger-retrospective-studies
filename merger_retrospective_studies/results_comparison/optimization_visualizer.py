@@ -305,6 +305,45 @@ class OptimizationVisualizer:
         
         return fig
 
+    def _plot_log_scatter_ax(self, ax):
+        """Helper method to plot log scatter on given axis."""
+        # Create scatter plot with log scale on y-axis
+        scatter = ax.scatter(self.objectives, 
+                           self.gradient_norms,
+                           c=range(len(self.objectives)),  # Color by iteration order
+                           cmap='viridis',
+                           s=50,
+                           alpha=0.7,
+                           edgecolors='black',
+                           linewidth=0.5)
+        
+        # Set y-axis to log scale
+        ax.set_yscale('log')
+        
+        # Labels and title
+        ax.set_xlabel('Objective Value', fontsize=12)
+        ax.set_ylabel('Projected Gradient Norm (log scale)', fontsize=12)
+        ax.set_title('Objective vs Gradient Norm (Log Scale)', fontsize=14, fontweight='bold')
+        
+        # Add grid
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        # Annotate best and worst points
+        best_idx = np.argmin(self.objectives)
+        worst_idx = np.argmax(self.objectives)
+        
+        ax.annotate(f'Best: {self.objectives[best_idx]:.4f}',
+                    xy=(self.objectives[best_idx], self.gradient_norms[best_idx]),
+                    xytext=(10, 10), textcoords='offset points',
+                    bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7),
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+        
+        ax.annotate(f'Worst: {self.objectives[worst_idx]:.2f}',
+                    xy=(self.objectives[worst_idx], self.gradient_norms[worst_idx]),
+                    xytext=(10, -20), textcoords='offset points',
+                    bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7),
+                    arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+
     def plot_hessian_eigenvalues(self, figsize: Tuple[int, int] = (10, 6), 
                                 save_path: Optional[str] = None) -> plt.Figure:
         """
@@ -584,9 +623,9 @@ class OptimizationVisualizer:
         ax2 = fig.add_subplot(gs[0, 1])
         self._plot_gradient_norm_ax(ax2)
         
-        # Row 2: Hessian scatter and Euclidean distances
+        # Row 2: Log scatter and Euclidean distances
         ax3 = fig.add_subplot(gs[1, 0])
-        self.plot_log_scatter(ax3)
+        self._plot_log_scatter_ax(ax3)
         
         ax4 = fig.add_subplot(gs[1, 1])
         self._plot_pairwise_distances_ax(ax4, 'euclidean')
