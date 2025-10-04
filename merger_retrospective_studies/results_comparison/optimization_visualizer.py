@@ -1,0 +1,743 @@
+"""
+Optimization Results Visualization Module
+
+This module provides comprehensive visualization tools for optimization results,
+including individual plots and a combined dashboard for analyzing convergence,
+parameter distributions, and solution similarities.
+
+Author: Generated for merger retrospective studies
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.spatial.distance import pdist, squareform, cosine
+from sklearn.metrics.pairwise import euclidean_distances, manhattan_distances, cosine_similarity
+import os
+from typing import Union, Tuple, List, Dict, Any, Optional
+import warnings
+
+# Set style
+sns.set_style("whitegrid")
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['font.size'] = 10
+plt.rcParams['axes.titlesize'] = 14
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['xtick.labelsize'] = 10
+plt.rcParams['ytick.labelsize'] = 10
+plt.rcParams['legend.fontsize'] = 9
+
+
+class OptimizationVisualizer:
+    """
+    A comprehensive visualization tool for optimization results analysis.
+    
+    This class provides methods to visualize objective function values,
+    convergence metrics, parameter distributions, and solution similarities
+    through various plot types including bar charts, scatter plots, and heatmaps.
+    """
+    
+    def __init__(self, data: Union[np.ndarray, pd.DataFrame], parameter_start_col: int = 5):
+        """
+        Initialize visualizer with optimization results.
+        
+        Parameters:
+        -----------
+        data : numpy.ndarray or pandas.DataFrame
+            Optimization results with columns as described:
+            - Column 0: row_index
+            - Column 1: objective
+            - Column 2: projected_gradient_norm
+            - Column 3: min_reduced_hessian
+            - Column 4: max_reduced_hessian
+            - Columns 5+: parameter values (sigma_*, pi_prices_*, pi_tar_*)
+        parameter_start_col : int
+            Column index where parameter values start (default: 5)
+        """
+        # Convert to numpy array if needed
+        if isinstance(data, pd.DataFrame):
+            self.data = data.values
+        else:
+            self.data = data.copy()
+        
+        self.parameter_start_col = parameter_start_col
+        self.n_solutions, self.n_features = self.data.shape
+        self.n_parameters = self.n_features - parameter_start_col
+        
+        # Extract key columns
+        self.row_indices = self.data[:, 0].astype(int)
+        self.objectives = self.data[:, 1]
+        self.gradient_norms = self.data[:, 2]
+        self.min_hessian = self.data[:, 3]
+        self.max_hessian = self.data[:, 4]
+        self.parameters = self.data[:, parameter_start_col:]
+        
+        # Validate data
+        self._validate_data()
+        
+        # Calculate pairwise distances (lazy loading)
+        self._distance_cache = {}
+        
+    def _validate_data(self):
+        """Validate input data for common issues."""
+        if self.n_solutions < 1:
+            raise ValueError("Data must contain at least one solution")
+        
+        if self.n_parameters < 1:
+            raise ValueError("No parameter columns found")
+        
+        # Check for NaN or Inf values
+        if np.any(np.isnan(self.data)) or np.any(np.isinf(self.data)):
+            warnings.warn("Data contains NaN or Inf values")
+        
+        # Check for negative gradient norms
+        if np.any(self.gradient_norms < 0):
+            warnings.warn("Some gradient norms are negative")
+    
+    def _get_color_palette(self, n: int) -> np.ndarray:
+        """Return list of n distinct colors."""
+        if n <= 10:
+            return plt.cm.tab10(np.linspace(0, 1, n))
+        elif n <= 20:
+            return plt.cm.tab20(np.linspace(0, 1, n))
+        else:
+            return plt.cm.gist_rainbow(np.linspace(0, 1, n))
+    
+    def plot_objective_function(self, figsize: Tuple[int, int] = (10, 6), 
+                               save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot objective function values as bar chart.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Create bar chart
+        colors = self._get_color_palette(self.n_solutions)
+        bars = ax.bar(range(self.n_solutions), self.objectives, color=colors)
+        
+        # Find best and worst solutions
+        best_idx = np.argmin(self.objectives)
+        worst_idx = np.argmax(self.objectives)
+        
+        # Highlight best and worst
+        bars[best_idx].set_edgecolor('green')
+        bars[best_idx].set_linewidth(3)
+        bars[worst_idx].set_edgecolor('red')
+        bars[worst_idx].set_linewidth(3)
+        
+        # Add annotations
+        ax.annotate(f'Best: {self.objectives[best_idx]:.6f}', 
+                   xy=(best_idx, self.objectives[best_idx]),
+                   xytext=(10, 10), textcoords='offset points',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgreen'),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+        
+        ax.annotate(f'Worst: {self.objectives[worst_idx]:.6f}', 
+                   xy=(worst_idx, self.objectives[worst_idx]),
+                   xytext=(10, -20), textcoords='offset points',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='lightcoral'),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+        
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Objective Value')
+        ax.set_title('Objective Function Values', fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        
+        # Set x-axis labels
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def plot_gradient_norm(self, figsize: Tuple[int, int] = (10, 6), 
+                          save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot projected gradient norm on log scale.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Create bar chart on log scale
+        colors = self._get_color_palette(self.n_solutions)
+        bars = ax.bar(range(self.n_solutions), self.gradient_norms, color=colors)
+        
+        # Set log scale
+        ax.set_yscale('log')
+        
+        # Add convergence threshold line
+        threshold = 1e-6
+        ax.axhline(y=threshold, color='red', linestyle='--', linewidth=2, 
+                  label=f'Convergence threshold ({threshold})')
+        
+        # Find best converged solution
+        converged_mask = self.gradient_norms <= threshold
+        if np.any(converged_mask):
+            best_converged_idx = np.argmin(self.gradient_norms[converged_mask])
+            converged_indices = np.where(converged_mask)[0]
+            actual_best_idx = converged_indices[best_converged_idx]
+            
+            # Highlight best converged solution
+            bars[actual_best_idx].set_edgecolor('green')
+            bars[actual_best_idx].set_linewidth(3)
+            
+            ax.annotate(f'Best converged: {self.gradient_norms[actual_best_idx]:.2e}', 
+                       xy=(actual_best_idx, self.gradient_norms[actual_best_idx]),
+                       xytext=(10, 10), textcoords='offset points',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgreen'),
+                       arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+        
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Gradient Norm (Log Scale)')
+        ax.set_title('Projected Gradient Norm (Log Scale)', fontweight='bold')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        # Set x-axis labels
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def plot_hessian_eigenvalues(self, figsize: Tuple[int, int] = (10, 6), 
+                                save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot min vs max Hessian eigenvalues as scatter plot.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Separate positive and negative min eigenvalues
+        positive_mask = self.min_hessian > 0
+        negative_mask = self.min_hessian <= 0
+        
+        # Plot points
+        if np.any(positive_mask):
+            ax.scatter(self.min_hessian[positive_mask], self.max_hessian[positive_mask], 
+                      c='green', s=100, alpha=0.7, label='Local minima', zorder=3)
+        
+        if np.any(negative_mask):
+            ax.scatter(self.min_hessian[negative_mask], self.max_hessian[negative_mask], 
+                      c='red', s=100, alpha=0.7, label='Saddle points', zorder=3)
+        
+        # Add vertical line at x=0
+        ax.axvline(x=0, color='black', linestyle='--', alpha=0.5, zorder=1)
+        
+        # Label each point with row index
+        for i, (min_val, max_val) in enumerate(zip(self.min_hessian, self.max_hessian)):
+            ax.annotate(f'{self.row_indices[i]}', (min_val, max_val), 
+                       xytext=(5, 5), textcoords='offset points', fontsize=8)
+        
+        # Set log scale for y-axis
+        ax.set_yscale('log')
+        
+        ax.set_xlabel('Min Eigenvalue')
+        ax.set_ylabel('Max Eigenvalue (Log Scale)')
+        ax.set_title('Reduced Hessian Eigenvalues', fontweight='bold')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def _calculate_pairwise_distances(self, metric: str = 'euclidean') -> Tuple[np.ndarray, List[Tuple[int, int, float]]]:
+        """
+        Calculate pairwise distances between all parameter vectors.
+        
+        Parameters:
+        -----------
+        metric : str
+            Distance metric ('euclidean', 'manhattan', 'cosine')
+            
+        Returns:
+        --------
+        distance_matrix : numpy.ndarray
+            N×N symmetric matrix of distances
+        pairs : list of tuples
+            List of (i, j, distance) for all pairs i < j
+        """
+        if metric in self._distance_cache:
+            return self._distance_cache[metric]
+        
+        if metric == 'euclidean':
+            distance_matrix = self._euclidean_distance_matrix(self.parameters)
+        elif metric == 'manhattan':
+            distance_matrix = self._manhattan_distance_matrix(self.parameters)
+        elif metric == 'cosine':
+            distance_matrix = self._cosine_similarity_matrix(self.parameters)
+        else:
+            raise ValueError(f"Unknown metric: {metric}")
+        
+        # Create pairs list
+        pairs = []
+        for i in range(self.n_solutions):
+            for j in range(i + 1, self.n_solutions):
+                pairs.append((i, j, distance_matrix[i, j]))
+        
+        # Cache result
+        self._distance_cache[metric] = (distance_matrix, pairs)
+        
+        return distance_matrix, pairs
+    
+    def _euclidean_distance_matrix(self, vectors: np.ndarray) -> np.ndarray:
+        """Calculate Euclidean distance matrix."""
+        return euclidean_distances(vectors)
+    
+    def _manhattan_distance_matrix(self, vectors: np.ndarray) -> np.ndarray:
+        """Calculate Manhattan distance matrix."""
+        return manhattan_distances(vectors)
+    
+    def _cosine_similarity_matrix(self, vectors: np.ndarray) -> np.ndarray:
+        """Calculate cosine similarity matrix."""
+        return cosine_similarity(vectors)
+    
+    def plot_pairwise_distances(self, metric: str = 'euclidean', figsize: Tuple[int, int] = (10, 6), 
+                               save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot pairwise distances between parameter vectors as bar chart.
+        
+        Parameters:
+        -----------
+        metric : str
+            Distance metric ('euclidean', 'manhattan', 'cosine')
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        _, pairs = self._calculate_pairwise_distances(metric)
+        
+        # Sort pairs by distance/similarity
+        pairs.sort(key=lambda x: x[2], reverse=(metric == 'cosine'))
+        
+        # Take top 30 pairs
+        top_pairs = pairs[:30]
+        
+        # Create labels and values
+        labels = [f"{self.row_indices[i]}-{self.row_indices[j]}" for i, j, _ in top_pairs]
+        values = [dist for _, _, dist in top_pairs]
+        
+        # Create bar chart
+        colors = plt.cm.viridis(np.linspace(0, 1, len(top_pairs)))
+        bars = ax.bar(range(len(top_pairs)), values, color=colors)
+        
+        # Add annotations for most/least similar pairs
+        if metric == 'cosine':
+            ax.annotate(f'Most similar: {values[0]:.3f}', 
+                       xy=(0, values[0]), xytext=(10, 10), textcoords='offset points',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgreen'))
+            ax.annotate(f'Least similar: {values[-1]:.3f}', 
+                       xy=(len(values)-1, values[-1]), xytext=(10, -20), textcoords='offset points',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightcoral'))
+        else:
+            ax.annotate(f'Most similar: {values[0]:.3f}', 
+                       xy=(0, values[0]), xytext=(10, 10), textcoords='offset points',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgreen'))
+            ax.annotate(f'Most different: {values[-1]:.3f}', 
+                       xy=(len(values)-1, values[-1]), xytext=(10, -20), textcoords='offset points',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightcoral'))
+        
+        ax.set_xlabel('Solution Pairs')
+        ylabel = f'{metric.title()} Similarity' if metric == 'cosine' else f'{metric.title()} Distance'
+        ax.set_ylabel(ylabel)
+        ax.set_title(f'Pairwise {metric.title()} {"Similarity" if metric == "cosine" else "Distances"} (Top 30)', 
+                    fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        
+        # Rotate x-axis labels
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def plot_distance_heatmap(self, metric: str = 'euclidean', figsize: Tuple[int, int] = (10, 8), 
+                             save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot pairwise distance heatmap.
+        
+        Parameters:
+        -----------
+        metric : str
+            Distance metric ('euclidean', 'manhattan', 'cosine')
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        distance_matrix, _ = self._calculate_pairwise_distances(metric)
+        
+        # Set diagonal to NaN for better visualization
+        np.fill_diagonal(distance_matrix, np.nan)
+        
+        # Choose colormap
+        if metric == 'cosine':
+            cmap = 'RdYlGn'  # Red-Yellow-Green for similarity
+            vmin, vmax = -1, 1
+        else:
+            cmap = 'RdYlGn_r'  # Red-Yellow-Green reversed for distance
+            vmin, vmax = None, None
+        
+        # Create heatmap
+        im = ax.imshow(distance_matrix, cmap=cmap, vmin=vmin, vmax=vmax)
+        
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label(f'{metric.title()} {"Similarity" if metric == "cosine" else "Distance"}')
+        
+        # Add annotations
+        for i in range(self.n_solutions):
+            for j in range(self.n_solutions):
+                if not np.isnan(distance_matrix[i, j]):
+                    text = ax.text(j, i, f'{distance_matrix[i, j]:.2f}',
+                                 ha="center", va="center", color="black", fontsize=8)
+        
+        # Set labels
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_yticks(range(self.n_solutions))
+        ax.set_xticklabels([str(i) for i in self.row_indices])
+        ax.set_yticklabels([str(i) for i in self.row_indices])
+        
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Solution Index')
+        ax.set_title(f'{metric.title()} {"Similarity" if metric == "cosine" else "Distance"} Heatmap', 
+                    fontweight='bold')
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def create_dashboard(self, figsize: Tuple[int, int] = (20, 16), 
+                        save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Create comprehensive dashboard with all visualizations.
+        
+        Layout:
+        - Row 1: Objective function, Gradient norm
+        - Row 2: Hessian scatter, Euclidean distances (bar)
+        - Row 3: Euclidean heatmap, Manhattan heatmap
+        - Row 4: Cosine similarity heatmap
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig = plt.figure(figsize=figsize)
+        
+        # Create grid layout
+        gs = fig.add_gridspec(4, 2, hspace=0.3, wspace=0.3)
+        
+        # Row 1: Objective function and Gradient norm
+        ax1 = fig.add_subplot(gs[0, 0])
+        self._plot_objective_function_ax(ax1)
+        
+        ax2 = fig.add_subplot(gs[0, 1])
+        self._plot_gradient_norm_ax(ax2)
+        
+        # Row 2: Hessian scatter and Euclidean distances
+        ax3 = fig.add_subplot(gs[1, 0])
+        self._plot_hessian_eigenvalues_ax(ax3)
+        
+        ax4 = fig.add_subplot(gs[1, 1])
+        self._plot_pairwise_distances_ax(ax4, 'euclidean')
+        
+        # Row 3: Euclidean and Manhattan heatmaps
+        ax5 = fig.add_subplot(gs[2, 0])
+        self._plot_distance_heatmap_ax(ax5, 'euclidean')
+        
+        ax6 = fig.add_subplot(gs[2, 1])
+        self._plot_distance_heatmap_ax(ax6, 'manhattan')
+        
+        # Row 4: Cosine similarity heatmap (spanning both columns)
+        ax7 = fig.add_subplot(gs[3, :])
+        self._plot_distance_heatmap_ax(ax7, 'cosine')
+        
+        # Add overall title
+        fig.suptitle('Optimization Results Analysis Dashboard', fontsize=16, fontweight='bold')
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+    
+    def _plot_objective_function_ax(self, ax):
+        """Helper method to plot objective function on given axis."""
+        colors = self._get_color_palette(self.n_solutions)
+        bars = ax.bar(range(self.n_solutions), self.objectives, color=colors)
+        
+        best_idx = np.argmin(self.objectives)
+        worst_idx = np.argmax(self.objectives)
+        
+        bars[best_idx].set_edgecolor('green')
+        bars[best_idx].set_linewidth(3)
+        bars[worst_idx].set_edgecolor('red')
+        bars[worst_idx].set_linewidth(3)
+        
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Objective Value')
+        ax.set_title('Objective Function Values', fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+    
+    def _plot_gradient_norm_ax(self, ax):
+        """Helper method to plot gradient norm on given axis."""
+        colors = self._get_color_palette(self.n_solutions)
+        ax.bar(range(self.n_solutions), self.gradient_norms, color=colors)
+        ax.set_yscale('log')
+        
+        threshold = 1e-6
+        ax.axhline(y=threshold, color='red', linestyle='--', linewidth=2, 
+                  label=f'Threshold ({threshold})')
+        
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Gradient Norm (Log Scale)')
+        ax.set_title('Projected Gradient Norm', fontweight='bold')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+    
+    def _plot_hessian_eigenvalues_ax(self, ax):
+        """Helper method to plot Hessian eigenvalues on given axis."""
+        positive_mask = self.min_hessian > 0
+        negative_mask = self.min_hessian <= 0
+        
+        if np.any(positive_mask):
+            ax.scatter(self.min_hessian[positive_mask], self.max_hessian[positive_mask], 
+                      c='green', s=100, alpha=0.7, label='Local minima', zorder=3)
+        
+        if np.any(negative_mask):
+            ax.scatter(self.min_hessian[negative_mask], self.max_hessian[negative_mask], 
+                      c='red', s=100, alpha=0.7, label='Saddle points', zorder=3)
+        
+        ax.axvline(x=0, color='black', linestyle='--', alpha=0.5, zorder=1)
+        ax.set_yscale('log')
+        ax.set_xlabel('Min Eigenvalue')
+        ax.set_ylabel('Max Eigenvalue (Log Scale)')
+        ax.set_title('Reduced Hessian Eigenvalues', fontweight='bold')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+    
+    def _plot_pairwise_distances_ax(self, ax, metric):
+        """Helper method to plot pairwise distances on given axis."""
+        _, pairs = self._calculate_pairwise_distances(metric)
+        pairs.sort(key=lambda x: x[2], reverse=(metric == 'cosine'))
+        top_pairs = pairs[:15]  # Fewer for dashboard
+        
+        labels = [f"{self.row_indices[i]}-{self.row_indices[j]}" for i, j, _ in top_pairs]
+        values = [dist for _, _, dist in top_pairs]
+        
+        colors = plt.cm.viridis(np.linspace(0, 1, len(top_pairs)))
+        ax.bar(range(len(top_pairs)), values, color=colors)
+        
+        ax.set_xlabel('Solution Pairs')
+        ylabel = f'{metric.title()} Similarity' if metric == 'cosine' else f'{metric.title()} Distance'
+        ax.set_ylabel(ylabel)
+        ax.set_title(f'Pairwise {metric.title()} {"Similarity" if metric == "cosine" else "Distances"}', 
+                    fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+    
+    def _plot_distance_heatmap_ax(self, ax, metric):
+        """Helper method to plot distance heatmap on given axis."""
+        distance_matrix, _ = self._calculate_pairwise_distances(metric)
+        np.fill_diagonal(distance_matrix, np.nan)
+        
+        if metric == 'cosine':
+            cmap = 'RdYlGn'
+            vmin, vmax = -1, 1
+        else:
+            cmap = 'RdYlGn_r'
+            vmin, vmax = None, None
+        
+        im = ax.imshow(distance_matrix, cmap=cmap, vmin=vmin, vmax=vmax)
+        
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label(f'{metric.title()} {"Similarity" if metric == "cosine" else "Distance"}')
+        
+        # Add annotations for smaller matrices
+        if self.n_solutions <= 10:
+            for i in range(self.n_solutions):
+                for j in range(self.n_solutions):
+                    if not np.isnan(distance_matrix[i, j]):
+                        ax.text(j, i, f'{distance_matrix[i, j]:.2f}',
+                               ha="center", va="center", color="black", fontsize=8)
+        
+        ax.set_xticks(range(self.n_solutions))
+        ax.set_yticks(range(self.n_solutions))
+        ax.set_xticklabels([str(i) for i in self.row_indices])
+        ax.set_yticklabels([str(i) for i in self.row_indices])
+        ax.set_xlabel('Solution Index')
+        ax.set_ylabel('Solution Index')
+        ax.set_title(f'{metric.title()} {"Similarity" if metric == "cosine" else "Distance"} Heatmap', 
+                    fontweight='bold')
+    
+    def generate_all_plots(self, output_dir: str = './optimization_plots') -> None:
+        """
+        Generate all individual plots and save to directory.
+        
+        Parameters:
+        -----------
+        output_dir : str
+            Directory to save all plots
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Generate individual plots
+        self.plot_objective_function(save_path=os.path.join(output_dir, 'objective_function.png'))
+        self.plot_gradient_norm(save_path=os.path.join(output_dir, 'gradient_norm.png'))
+        self.plot_hessian_eigenvalues(save_path=os.path.join(output_dir, 'hessian_eigenvalues.png'))
+        
+        # Distance plots
+        for metric in ['euclidean', 'manhattan', 'cosine']:
+            self.plot_pairwise_distances(metric=metric, 
+                                       save_path=os.path.join(output_dir, f'pairwise_{metric}.png'))
+            self.plot_distance_heatmap(metric=metric, 
+                                     save_path=os.path.join(output_dir, f'heatmap_{metric}.png'))
+        
+        # Dashboard
+        self.create_dashboard(save_path=os.path.join(output_dir, 'optimization_dashboard.png'))
+        
+        print(f"All plots saved to {output_dir}")
+    
+    def get_summary_statistics(self) -> Dict[str, Any]:
+        """
+        Return dictionary with key statistics.
+        
+        Returns:
+        --------
+        dict
+            Dictionary containing:
+            - best_objective: (row, value)
+            - best_convergence: (row, gradient norm)
+            - local_minima: list of rows with positive min Hessian
+            - most_similar_pair: (rows, distance/similarity)
+            - most_dissimilar_pair: (rows, distance/similarity)
+        """
+        # Best objective
+        best_obj_idx = np.argmin(self.objectives)
+        best_objective = (self.row_indices[best_obj_idx], self.objectives[best_obj_idx])
+        
+        # Best convergence
+        best_conv_idx = np.argmin(self.gradient_norms)
+        best_convergence = (self.row_indices[best_conv_idx], self.gradient_norms[best_conv_idx])
+        
+        # Local minima
+        local_minima = self.row_indices[self.min_hessian > 0].tolist()
+        
+        # Most similar/dissimilar pairs
+        _, pairs = self._calculate_pairwise_distances('euclidean')
+        pairs.sort(key=lambda x: x[2])
+        most_similar = (self.row_indices[pairs[0][0]], self.row_indices[pairs[0][1]], pairs[0][2])
+        most_dissimilar = (self.row_indices[pairs[-1][0]], self.row_indices[pairs[-1][1]], pairs[-1][2])
+        
+        return {
+            'best_objective': best_objective,
+            'best_convergence': best_convergence,
+            'local_minima': local_minima,
+            'most_similar_pair': most_similar,
+            'most_dissimilar_pair': most_dissimilar,
+            'n_solutions': self.n_solutions,
+            'n_parameters': self.n_parameters,
+            'converged_solutions': np.sum(self.gradient_norms <= 1e-6)
+        }
+    
+    def print_summary(self) -> None:
+        """Print formatted summary statistics to console."""
+        stats = self.get_summary_statistics()
+        
+        print("=" * 60)
+        print("OPTIMIZATION RESULTS SUMMARY")
+        print("=" * 60)
+        print(f"Number of solutions: {stats['n_solutions']}")
+        print(f"Number of parameters: {stats['n_parameters']}")
+        print(f"Converged solutions (gradient < 1e-6): {stats['converged_solutions']}")
+        print()
+        print(f"Best objective: Row {stats['best_objective'][0]} = {stats['best_objective'][1]:.6f}")
+        print(f"Best convergence: Row {stats['best_convergence'][0]} = {stats['best_convergence'][1]:.2e}")
+        print(f"Local minima (positive Hessian): {stats['local_minima']}")
+        print()
+        print(f"Most similar pair: Rows {stats['most_similar_pair'][0]}-{stats['most_similar_pair'][1]} "
+              f"(distance: {stats['most_similar_pair'][2]:.6f})")
+        print(f"Most dissimilar pair: Rows {stats['most_dissimilar_pair'][0]}-{stats['most_dissimilar_pair'][1]} "
+              f"(distance: {stats['most_dissimilar_pair'][2]:.6f})")
+        print("=" * 60)

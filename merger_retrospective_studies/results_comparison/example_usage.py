@@ -1,134 +1,218 @@
 """
-Example usage of the VectorComparator module.
+Example Usage Script for Optimization Visualizer
 
-This script demonstrates how to use the VectorComparator class
-to compare optimization result vectors.
+This script demonstrates how to use the OptimizationVisualizer class
+with synthetic data and real optimization results.
+
+Author: Generated for merger retrospective studies
 """
 
 import numpy as np
-from vector_run_comparator import VectorComparator
+import pandas as pd
+import matplotlib.pyplot as plt
+from optimization_visualizer import OptimizationVisualizer
+
+def create_synthetic_data(n_solutions=5, n_parameters=10, seed=42):
+    """
+    Create synthetic optimization data for demonstration.
+    
+    Parameters:
+    -----------
+    n_solutions : int
+        Number of optimization solutions
+    n_parameters : int
+        Number of parameters per solution
+    seed : int
+        Random seed for reproducibility
+        
+    Returns:
+    --------
+    numpy.ndarray
+        Synthetic optimization data
+    """
+    np.random.seed(seed)
+    
+    # Create synthetic data
+    data = np.zeros((n_solutions, 5 + n_parameters))
+    
+    # Row indices
+    data[:, 0] = np.arange(n_solutions)
+    
+    # Objective values (decreasing with some noise)
+    data[:, 1] = np.exp(-np.arange(n_solutions) * 0.5) + np.random.normal(0, 0.1, n_solutions)
+    
+    # Gradient norms (decreasing with some noise)
+    data[:, 2] = np.exp(-np.arange(n_solutions) * 0.8) + np.random.exponential(0.1, n_solutions)
+    
+    # Min Hessian eigenvalues (mix of positive and negative)
+    data[:, 3] = np.random.normal(0.1, 0.5, n_solutions)
+    data[0, 3] = 0.2  # Ensure at least one positive
+    if n_solutions > 1:
+        data[1, 3] = -0.1  # Ensure at least one negative
+    
+    # Max Hessian eigenvalues (positive, increasing)
+    data[:, 4] = np.exp(np.arange(n_solutions) * 0.3) + np.random.exponential(1, n_solutions)
+    
+    # Parameters (different scales and patterns)
+    for i in range(n_solutions):
+        # Create different parameter patterns
+        if i == 0:  # Solution 0: all positive
+            data[i, 5:] = np.random.uniform(0.1, 2.0, n_parameters)
+        elif i == 1:  # Solution 1: mixed signs
+            data[i, 5:] = np.random.normal(0, 1, n_parameters)
+        elif i == 2:  # Solution 2: similar to solution 0
+            data[i, 5:] = data[0, 5:] + np.random.normal(0, 0.1, n_parameters)
+        else:  # Other solutions: random
+            data[i, 5:] = np.random.normal(0, 0.5, n_parameters)
+    
+    return data
+
+def load_real_data_example():
+    """
+    Example of how to load real optimization data.
+    
+    This function shows the expected data format and how to load
+    optimization results from various sources.
+    """
+    print("Example of loading real optimization data:")
+    print("=" * 50)
+    
+    # Example 1: Loading from NumPy array
+    print("1. From NumPy array:")
+    print("   data = np.load('optimization_results.npy')")
+    print("   viz = OptimizationVisualizer(data, parameter_start_col=5)")
+    print()
+    
+    # Example 2: Loading from CSV
+    print("2. From CSV file:")
+    print("   df = pd.read_csv('optimization_results.csv')")
+    print("   viz = OptimizationVisualizer(df, parameter_start_col=5)")
+    print()
+    
+    # Example 3: Loading from pickle
+    print("3. From pickle file:")
+    print("   import pickle")
+    print("   with open('optimization_results.pkl', 'rb') as f:")
+    print("       data = pickle.load(f)")
+    print("   viz = OptimizationVisualizer(data, parameter_start_col=5)")
+    print()
+
+def demonstrate_basic_usage():
+    """Demonstrate basic usage of the OptimizationVisualizer."""
+    print("BASIC USAGE DEMONSTRATION")
+    print("=" * 40)
+    
+    # Create synthetic data
+    data = create_synthetic_data(n_solutions=6, n_parameters=8)
+    print(f"Created synthetic data with {data.shape[0]} solutions and {data.shape[1]-5} parameters")
+    
+    # Create visualizer
+    viz = OptimizationVisualizer(data, parameter_start_col=5)
+    
+    # Print summary
+    viz.print_summary()
+    
+    # Generate individual plots
+    print("\nGenerating individual plots...")
+    viz.plot_objective_function(save_path='example_objective.png')
+    viz.plot_gradient_norm(save_path='example_gradient.png')
+    viz.plot_hessian_eigenvalues(save_path='example_hessian.png')
+    
+    # Generate distance plots
+    for metric in ['euclidean', 'manhattan', 'cosine']:
+        viz.plot_pairwise_distances(metric=metric, 
+                                   save_path=f'example_pairwise_{metric}.png')
+        viz.plot_distance_heatmap(metric=metric, 
+                                 save_path=f'example_heatmap_{metric}.png')
+    
+    # Create dashboard
+    print("Creating comprehensive dashboard...")
+    viz.create_dashboard(save_path='example_dashboard.png')
+    
+    print("All example plots saved to current directory!")
+
+def demonstrate_advanced_usage():
+    """Demonstrate advanced usage and customization."""
+    print("\nADVANCED USAGE DEMONSTRATION")
+    print("=" * 40)
+    
+    # Create larger dataset
+    data = create_synthetic_data(n_solutions=10, n_parameters=15, seed=123)
+    viz = OptimizationVisualizer(data, parameter_start_col=5)
+    
+    # Custom figure sizes
+    print("Creating plots with custom sizes...")
+    viz.plot_objective_function(figsize=(12, 8), save_path='custom_objective.png')
+    viz.plot_distance_heatmap(metric='euclidean', figsize=(15, 10), 
+                             save_path='custom_heatmap.png')
+    
+    # Generate all plots to directory
+    print("Generating all plots to directory...")
+    viz.generate_all_plots(output_dir='./example_plots')
+    
+    # Get detailed statistics
+    stats = viz.get_summary_statistics()
+    print(f"\nDetailed Statistics:")
+    print(f"  Best objective: Row {stats['best_objective'][0]} = {stats['best_objective'][1]:.6f}")
+    print(f"  Local minima found: {len(stats['local_minima'])} solutions")
+    print(f"  Convergence rate: {stats['converged_solutions']}/{stats['n_solutions']} solutions")
+
+def demonstrate_error_handling():
+    """Demonstrate error handling and edge cases."""
+    print("\nERROR HANDLING DEMONSTRATION")
+    print("=" * 40)
+    
+    # Test with edge cases
+    try:
+        # Single solution
+        single_data = create_synthetic_data(n_solutions=1, n_parameters=5)
+        viz_single = OptimizationVisualizer(single_data)
+        print("+ Single solution handled correctly")
+    except Exception as e:
+        print(f"- Single solution error: {e}")
+    
+    try:
+        # Identical solutions
+        identical_data = np.ones((3, 8))
+        identical_data[:, 0] = [0, 1, 2]  # Row indices
+        identical_data[:, 1] = [1.0, 1.0, 1.0]  # Same objectives
+        identical_data[:, 2] = [0.001, 0.001, 0.001]  # Same gradients
+        identical_data[:, 3] = [0.1, 0.1, 0.1]  # Same min hessian
+        identical_data[:, 4] = [10.0, 10.0, 10.0]  # Same max hessian
+        # Parameters are all 1.0
+        
+        viz_identical = OptimizationVisualizer(identical_data)
+        print("+ Identical solutions handled correctly")
+        
+        # Test distance calculations with identical solutions
+        viz_identical.plot_distance_heatmap(metric='euclidean', 
+                                          save_path='identical_heatmap.png')
+        print("+ Distance calculations work with identical solutions")
+        
+    except Exception as e:
+        print(f"- Identical solutions error: {e}")
 
 def main():
-    """Demonstrate VectorComparator usage with sample data."""
-    
-    # Create sample optimization result vectors
-    np.random.seed(42)
-    
-    # Simulate different optimization runs with different characteristics
-    vectors = [
-        np.array([1.0, 2.5, 3.2, 4.1, 5.0]),  # Baseline run
-        np.array([1.1, 2.4, 3.3, 4.0, 5.1]),  # Slightly different
-        np.array([0.8, 2.8, 2.9, 4.3, 4.8]),  # More different
-        np.array([1.2, 2.2, 3.5, 3.9, 5.2])   # Another variation
-    ]
-    
-    labels = ["Baseline", "Run_2", "Run_3", "Run_4"]
-    
-    # Sample optimization metrics
-    objective_values = [0.123, 0.145, 0.134, 0.156]  # Final objective values
-    gradient_norms = [1.2e-6, 2.3e-5, 8.7e-7, 4.5e-4]  # Final gradient norms
-    hessian_eigenvals = [
-        np.array([0.1, 0.3, 0.5, 0.8, 1.2]),  # Hessian eigenvalues for each run
-        np.array([0.05, 0.2, 0.4, 0.9, 1.5]),
-        np.array([0.08, 0.25, 0.45, 0.85, 1.3]),
-        np.array([0.02, 0.15, 0.35, 0.7, 1.8])
-    ]
-    
-    print("Vector Comparison Example")
+    """Main demonstration function."""
+    print("OPTIMIZATION VISUALIZER - EXAMPLE USAGE")
     print("=" * 50)
-    print(f"Comparing {len(vectors)} optimization result vectors")
-    print(f"Vector length: {len(vectors[0])}")
-    print()
     
-    # Create comparator with optimization metrics
-    comparator = VectorComparator(vectors, labels, 
-                                objective_values=objective_values,
-                                gradient_norms=gradient_norms,
-                                hessian_eigenvals=hessian_eigenvals)
+    # Show data loading examples
+    load_real_data_example()
     
-    # 1. Statistical Summary
-    print("1. Statistical Summary:")
-    print("-" * 30)
-    stats = comparator.statistical_summary()
-    print(stats.round(3))
-    print()
+    # Basic usage
+    demonstrate_basic_usage()
     
-    # 2. Magnitude Comparison
-    print("2. Magnitude Comparison:")
-    print("-" * 30)
-    mag_comp = comparator.magnitude_comparison()
-    print(f"Euclidean norms: {mag_comp['norms']}")
-    print(f"Rankings (highest to lowest): {mag_comp['rankings']}")
-    print(f"Norm ratio (max/min): {mag_comp['norm_ratio']:.3f}")
-    print()
+    # Advanced usage
+    demonstrate_advanced_usage()
     
-    # 3. Distance Analysis
-    print("3. Distance Matrix (Euclidean):")
-    print("-" * 30)
-    distances = comparator.distance_matrix('euclidean')
-    print(distances.round(3))
-    print()
+    # Error handling
+    demonstrate_error_handling()
     
-    # 4. Similarity Analysis
-    print("4. Similarity Matrix (Cosine):")
-    print("-" * 30)
-    similarities = comparator.similarity_matrix('cosine')
-    print(similarities.round(3))
-    print()
-    
-    # 5. Component-wise Analysis
-    print("5. Component-wise Analysis (vs Baseline):")
-    print("-" * 30)
-    comp_analysis = comparator.component_wise_analysis(reference_idx=0)
-    for label, data in comp_analysis.items():
-        if label != 'reference':
-            print(f"{label}:")
-            print(f"  Max difference: {data['max_difference']:.3f}")
-            print(f"  Mean absolute difference: {data['mean_absolute_difference']:.3f}")
-            print(f"  Max ratio: {data['max_ratio']:.3f}")
-    print()
-    
-    # 6. Optimization Metrics Summary
-    print("6. Optimization Metrics Summary:")
-    print("-" * 30)
-    opt_metrics = comparator.optimization_metrics_summary()
-    print(opt_metrics.round(6))
-    print()
-    
-    # 7. Convergence Analysis
-    print("7. Convergence Analysis:")
-    print("-" * 30)
-    convergence = comparator.optimization_convergence_analysis()
-    print(f"Convergence rate: {convergence['convergence_assessment']['convergence_rate']:.1%}")
-    print(f"Best objective: {convergence['objective_analysis']['best_objective']:.6f}")
-    print(f"Best vector: {convergence['objective_analysis']['best_vector_label']}")
-    print(f"Converged runs: {convergence['gradient_analysis']['converged_runs']}")
-    print()
-    
-    # 8. Normalization Example
-    print("8. Normalization Example:")
-    print("-" * 30)
-    normalized = comparator.normalize_vectors('l2')
-    norm_stats = normalized.statistical_summary()
-    print("After L2 normalization:")
-    print(norm_stats[['Vector', 'Mean', 'Std']].round(3))
-    print()
-    
-    # 9. Generate Comprehensive Report
-    print("9. Generating comprehensive report...")
-    report = comparator.generate_report(include_plots=False)
-    print(f"Report generated with {len(report)} sections")
-    print(f"Summary: {report['summary']}")
-    
-    # 10. Visualization (commented out to avoid display issues in script)
-    print("\n10. Visualization methods available:")
-    print("   - comparator.plot_vectors()")
-    print("   - comparator.plot_distance_heatmap()")
-    print("   - comparator.plot_component_analysis()")
-    print("   - comparator.plot_optimization_metrics()")
-    print("   - comparator.plot_comprehensive_overview()")
-    
-    print("\nExample completed successfully!")
+    print("\n" + "=" * 50)
+    print("DEMONSTRATION COMPLETE!")
+    print("Check the generated PNG files for visualization examples.")
+    print("=" * 50)
 
 if __name__ == "__main__":
     main()
