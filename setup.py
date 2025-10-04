@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='merger_retrospective_studies',
     version='0.1.8',
-    packages=find_packages(),
+    packages=find_packages(include=['merger_retrospective_studies', 'merger_retrospective_studies.*']),
     install_requires=[
         'pandas',
         'numpy',
