@@ -538,15 +538,24 @@ class OptimizationVisualizer:
     
     def _plot_objective_function_ax(self, ax):
         """Helper method to plot objective function on given axis."""
-        # Create histogram
-        n_bins = min(20, max(5, self.n_solutions // 2))  # Adaptive number of bins
-        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, color='skyblue', edgecolor='black')
+        # Create histogram with density=True for probability
+        n_bins = 20   # Adaptive number of bins
+        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, color='skyblue', 
+                                  edgecolor='black', density=True)
         
         # Find best and worst solutions
         best_idx = np.argmin(self.objectives)
         worst_idx = np.argmax(self.objectives)
         best_value = self.objectives[best_idx]
         worst_value = self.objectives[worst_idx]
+        
+        # Calculate 80% range of observations
+        sorted_objectives = np.sort(self.objectives)
+        n_80_percent = int(0.9 * len(sorted_objectives))
+        start_idx = (len(sorted_objectives) - n_80_percent) // 2
+        end_idx = start_idx + n_80_percent
+        x_min_80 = sorted_objectives[start_idx]
+        x_max_80 = sorted_objectives[end_idx - 1]
         
         # Add vertical lines for best and worst
         ax.axvline(x=best_value, color='green', linestyle='--', linewidth=3, 
@@ -555,12 +564,12 @@ class OptimizationVisualizer:
                   label=f'Worst: {worst_value:.6f}')
         
         ax.set_xlabel('Objective Value')
-        ax.set_ylabel('Frequency')
+        ax.set_ylabel('Probability Density')
         ax.set_title('Objective Function Values Distribution', fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
-        # Set the maximum value of the histogram to be equal to ten
-        ax.set_xlim(right=10)
+        # Set x-axis limits to show 80% of observations
+        ax.set_xlim(left=x_min_80, right=x_max_80)
     
     def _plot_gradient_norm_ax(self, ax):
         """Helper method to plot gradient norm on given axis."""
