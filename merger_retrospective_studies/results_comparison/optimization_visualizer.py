@@ -538,23 +538,29 @@ class OptimizationVisualizer:
     
     def _plot_objective_function_ax(self, ax):
         """Helper method to plot objective function on given axis."""
-        colors = self._get_color_palette(self.n_solutions)
-        bars = ax.bar(range(self.n_solutions), self.objectives, color=colors)
+        # Create histogram
+        n_bins = min(20, max(5, self.n_solutions // 2))  # Adaptive number of bins
+        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, color='skyblue', edgecolor='black')
         
+        # Find best and worst solutions
         best_idx = np.argmin(self.objectives)
         worst_idx = np.argmax(self.objectives)
+        best_value = self.objectives[best_idx]
+        worst_value = self.objectives[worst_idx]
         
-        bars[best_idx].set_edgecolor('green')
-        bars[best_idx].set_linewidth(3)
-        bars[worst_idx].set_edgecolor('red')
-        bars[worst_idx].set_linewidth(3)
+        # Add vertical lines for best and worst
+        ax.axvline(x=best_value, color='green', linestyle='--', linewidth=3, 
+                  label=f'Best: {best_value:.6f}')
+        ax.axvline(x=worst_value, color='red', linestyle='--', linewidth=3, 
+                  label=f'Worst: {worst_value:.6f}')
         
-        ax.set_xlabel('Solution Index')
-        ax.set_ylabel('Objective Value')
-        ax.set_title('Objective Function Values', fontweight='bold')
+        ax.set_xlabel('Objective Value')
+        ax.set_ylabel('Frequency')
+        ax.set_title('Objective Function Values Distribution', fontweight='bold')
+        ax.legend()
         ax.grid(True, alpha=0.3)
-        ax.set_xticks(range(self.n_solutions))
-        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+        # Set the maximum value of the histogram to be equal to ten
+        ax.set_xlim(right=10)
     
     def _plot_gradient_norm_ax(self, ax):
         """Helper method to plot gradient norm on given axis."""
@@ -741,3 +747,12 @@ class OptimizationVisualizer:
         print(f"Most dissimilar pair: Rows {stats['most_dissimilar_pair'][0]}-{stats['most_dissimilar_pair'][1]} "
               f"(distance: {stats['most_dissimilar_pair'][2]:.6f})")
         print("=" * 60)
+
+
+if __name__ == "__main__":
+    # Read the CSV file as a pandas DataFrame
+    df = pd.read_csv(r"C:\Users\Andres.DESKTOP-D77KM25\Downloads\resultados_opt_compilados.csv")
+    print("DataFrame loaded. Shape:", df.shape)
+    print(df.head())
+    analisis=OptimizationVisualizer(df.loc[:, 'objective' :'beta_se_prices'])
+    analisis.create_dashboard(save_path='dashboard.png')
