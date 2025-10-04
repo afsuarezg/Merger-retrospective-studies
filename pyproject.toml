@@ -1,34 +1,16 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+# pyproject.toml for modern Python tooling (linting, formatting, etc.)
+# setup.py handles package building and installation
 
-[project]
-name = "merger-retrospective-studies"
-version = "0.1.8"
-description = "A package for cleaning and processing Nielsen data"
-readme = "README.md"
-requires-python = ">=3.6"
-authors = [
-    {name = "Andrés Felipe Suárez G.", email = "asuarezg@stanford.edu"}
-]
-license = {text = "MIT"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-dependencies = [
-    "pandas",
-    "numpy",
-    "scipy",
-    "matplotlib",
-    "plotly>=6.3.0",
-    "scikit-learn>=1.7.2",
-]
+[tool.black]
+line-length = 88
+target-version = ['py36']
 
-[project.urls]
-Homepage = "https://github.com/afsuarezg/Nielsen_data_cleaning"
-Repository = "https://github.com/afsuarezg/Nielsen_data_cleaning"
+[tool.isort]
+profile = "black"
+line_length = 88
 
-[tool.setuptools.packages.find]
-include = ["merger_retrospective_studies*"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+
+# Note: Package metadata and build configuration are in setup.py
