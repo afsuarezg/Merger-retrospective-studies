@@ -231,6 +231,80 @@ class OptimizationVisualizer:
         
         return fig
     
+    def plot_log_scatter(self, 
+                        figsize: Tuple[int, int] = (10, 6), 
+                        show_annotations: bool = True, 
+                        save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Create a log-scale scatter plot of objective vs gradient norm.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        show_annotations : bool
+            Whether to annotate best and worst points
+        show_stats : bool
+            Whether to print summary statistics
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        # Create scatter plot with log scale on y-axis
+        scatter = ax.scatter(self.objectives, 
+                           self.gradient_norms,
+                           c=range(len(self.objectives)),  # Color by iteration order
+                           cmap='viridis',
+                           s=50,
+                           alpha=0.7,
+                           edgecolors='black',
+                           linewidth=0.5)
+        
+        # Set y-axis to log scale
+        ax.set_yscale('log')
+        
+        # Labels and title
+        ax.set_xlabel('Objective Value', fontsize=12)
+        ax.set_ylabel('Projected Gradient Norm (log scale)', fontsize=12)
+        ax.set_title('Objective vs Gradient Norm (Log Scale)', fontsize=14, fontweight='bold')
+        
+        # Add colorbar to show iteration progression
+        # cbar = plt.colorbar(scatter, ax=ax)
+        # cbar.set_label('Solution Index', fontsize=10)
+        
+        # Add grid
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        # Annotate best and worst points
+        if show_annotations:
+            best_idx = np.argmin(self.objectives)
+            worst_idx = np.argmax(self.objectives)
+            
+            ax.annotate(f'Best: {self.objectives[best_idx]:.4f}',
+                        xy=(self.objectives[best_idx], self.gradient_norms[best_idx]),
+                        xytext=(10, 10), textcoords='offset points',
+                        bbox=dict(boxstyle='round,pad=0.5', fc='lightgreen', alpha=0.7),
+                        arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+            
+            ax.annotate(f'Worst: {self.objectives[worst_idx]:.2f}',
+                        xy=(self.objectives[worst_idx], self.gradient_norms[worst_idx]),
+                        xytext=(10, -20), textcoords='offset points',
+                        bbox=dict(boxstyle='round,pad=0.5', fc='lightcoral', alpha=0.7),
+                        arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+        
+        plt.tight_layout()
+               
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+
     def plot_hessian_eigenvalues(self, figsize: Tuple[int, int] = (10, 6), 
                                 save_path: Optional[str] = None) -> plt.Figure:
         """
@@ -501,7 +575,7 @@ class OptimizationVisualizer:
         fig = plt.figure(figsize=figsize)
         
         # Create grid layout
-        gs = fig.add_gridspec(4, 2, hspace=0.3, wspace=0.3)
+        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
         
         # Row 1: Objective function and Gradient norm
         ax1 = fig.add_subplot(gs[0, 0])
@@ -512,21 +586,21 @@ class OptimizationVisualizer:
         
         # Row 2: Hessian scatter and Euclidean distances
         ax3 = fig.add_subplot(gs[1, 0])
-        self._plot_hessian_eigenvalues_ax(ax3)
+        self.plot_log_scatter(ax3)
         
         ax4 = fig.add_subplot(gs[1, 1])
         self._plot_pairwise_distances_ax(ax4, 'euclidean')
         
-        # Row 3: Euclidean and Manhattan heatmaps
-        ax5 = fig.add_subplot(gs[2, 0])
-        self._plot_distance_heatmap_ax(ax5, 'euclidean')
+        # # Row 3: Euclidean and Manhattan heatmaps
+        # ax5 = fig.add_subplot(gs[2, 0])
+        # self._plot_distance_heatmap_ax(ax5, 'euclidean')
         
-        ax6 = fig.add_subplot(gs[2, 1])
-        self._plot_distance_heatmap_ax(ax6, 'manhattan')
+        # ax6 = fig.add_subplot(gs[2, 1])
+        # self._plot_distance_heatmap_ax(ax6, 'manhattan')
         
-        # Row 4: Cosine similarity heatmap (spanning both columns)
-        ax7 = fig.add_subplot(gs[3, :])
-        self._plot_distance_heatmap_ax(ax7, 'cosine')
+        # # Row 4: Cosine similarity heatmap (spanning both columns)
+        # ax7 = fig.add_subplot(gs[3, :])
+        # self._plot_distance_heatmap_ax(ax7, 'cosine')
         
         # Add overall title
         fig.suptitle('Optimization Results Analysis Dashboard', fontsize=16, fontweight='bold')
@@ -538,10 +612,17 @@ class OptimizationVisualizer:
     
     def _plot_objective_function_ax(self, ax):
         """Helper method to plot objective function on given axis."""
-        # Create histogram with density=True for probability
-        n_bins = 20   # Adaptive number of bins
-        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, color='skyblue', 
-                                  edgecolor='black', density=True)
+        # Create histogram with frequency counts
+        n_bins = 100   # Adaptive number of bins
+        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, 
+                                  edgecolor='black', linewidth=0.5, density=False)
+        
+        # Define colors for each bin using viridis colormap
+        colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
+        
+        # Apply different color to each bin
+        for patch, color in zip(patches, colors):
+            patch.set_facecolor(color)
         
         # Find best and worst solutions
         best_idx = np.argmin(self.objectives)
@@ -564,7 +645,7 @@ class OptimizationVisualizer:
                   label=f'Worst: {worst_value:.6f}')
         
         ax.set_xlabel('Objective Value')
-        ax.set_ylabel('Probability Density')
+        ax.set_ylabel('Frequency')
         ax.set_title('Objective Function Values Distribution', fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
@@ -754,6 +835,7 @@ class OptimizationVisualizer:
         # Generate individual plots
         self.plot_objective_function(save_path=os.path.join(output_dir, 'objective_function.png'))
         self.plot_gradient_norm(save_path=os.path.join(output_dir, 'gradient_norm.png'))
+        self.plot_log_scatter(save_path=os.path.join(output_dir, 'log_scatter.png'))
         self.plot_hessian_eigenvalues(save_path=os.path.join(output_dir, 'hessian_eigenvalues.png'))
         
         # Distance plots
@@ -839,7 +921,7 @@ if __name__ == "__main__":
     print(df.head())
     analisis=OptimizationVisualizer(df.loc[:, 'objective' :'beta_se_prices'])
     analisis.create_dashboard(save_path='dashboard.png')
-
-    print(df['projected_gradient_norm'])
     # Save the 'projected_gradient_norm' column to a text file
     df['projected_gradient_norm'].to_csv('projected_gradient_norm.txt', index=False, header=True)
+    df[['objective', 'projected_gradient_norm']].to_csv('objective_projected_gradient_norm.txt', index=False, header=True)
+    analisis.plot_log_scatter(save_path='log_scatter.png')
