@@ -573,21 +573,95 @@ class OptimizationVisualizer:
     
     def _plot_gradient_norm_ax(self, ax):
         """Helper method to plot gradient norm on given axis."""
-        colors = self._get_color_palette(self.n_solutions)
-        ax.bar(range(self.n_solutions), self.gradient_norms, color=colors)
-        ax.set_yscale('log')
+        # Filter out zero and negative values for log space calculation
+        positive_data = self.gradient_norms[self.gradient_norms > 0]
         
+        if len(positive_data) == 0:
+            # If no positive values, use regular histogram
+            n, bins, patches = ax.hist(self.gradient_norms, bins=25, edgecolor='black', linewidth=0.5)
+            colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
+            for patch, color in zip(patches, colors):
+                patch.set_facecolor(color)
+        else:
+            # Create histogram with logarithmic bins (since data spans many orders of magnitude)
+            # Use 25 bins with log spacing
+            bins = np.logspace(np.log10(positive_data.min()), np.log10(self.gradient_norms.max()), 25)
+            
+            # Create histogram and get the patches (bars)
+            n, bins, patches = ax.hist(self.gradient_norms, bins=bins, edgecolor='black', linewidth=0.5)
+            
+            # Define colors for each bin using viridis colormap
+            colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
+            
+            # Apply different color to each bin
+            for patch, color in zip(patches, colors):
+                patch.set_facecolor(color)
+        
+        # Use log scale for x-axis due to wide range of values
+        ax.set_xscale('log')
+        
+        # Add some statistics as text
+        mean_val = np.mean(self.gradient_norms)
+        median_val = np.median(self.gradient_norms)
+        stats_text = f'Mean: {mean_val:.4e}\nMedian: {median_val:.4e}'
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, 
+                verticalalignment='top', bbox=dict(boxstyle='round', 
+                facecolor='wheat', alpha=0.5), fontsize=10)
+        
+        # Customize the plot
+        ax.set_xlabel('Projected Gradient Norm (log scale)', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.set_title('Distribution of Projected Gradient Norms', fontsize=14, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+
+
+
+    def _plot_gradient_norm_ax__(self, ax):
+        """Helper method to plot gradient norm on given axis."""
+        # Create histogram with density=True for probability
+        n_bins = 20  # Fixed number of bins
+        n, bins, patches = ax.hist(self.gradient_norms, bins=n_bins, alpha=0.7, 
+                                  edgecolor='black', density=True)
+        
+        # Color each bin differently
+        colors = self._get_color_palette(n_bins)
+        for patch, color in zip(patches, colors):
+            patch.set_facecolor(color)
+        
+        # Find best and worst solutions
+        best_idx = np.argmin(self.gradient_norms)
+        worst_idx = np.argmax(self.gradient_norms)
+        best_value = self.gradient_norms[best_idx]
+        worst_value = self.gradient_norms[worst_idx]
+        
+        # Calculate 90% range of observations
+        sorted_gradients = np.sort(self.gradient_norms)
+        n_90_percent = int(0.9 * len(sorted_gradients))
+        start_idx = (len(sorted_gradients) - n_90_percent) // 2
+        end_idx = start_idx + n_90_percent
+        x_min_90 = sorted_gradients[start_idx]
+        x_max_90 = sorted_gradients[end_idx - 1]
+        
+        # Add vertical lines for best and worst
+        ax.axvline(x=best_value, color='green', linestyle='--', linewidth=3, 
+                  label=f'Best: {best_value:.2e}')
+        ax.axvline(x=worst_value, color='red', linestyle='--', linewidth=3, 
+                  label=f'Worst: {worst_value:.2e}')
+        
+        # Add convergence threshold line
         threshold = 1e-6
-        ax.axhline(y=threshold, color='red', linestyle='--', linewidth=2, 
+        ax.axvline(x=threshold, color='orange', linestyle=':', linewidth=2, 
                   label=f'Threshold ({threshold})')
         
-        ax.set_xlabel('Solution Index')
-        ax.set_ylabel('Gradient Norm (Log Scale)')
-        ax.set_title('Projected Gradient Norm', fontweight='bold')
+        ax.set_xlabel('Gradient Norm')
+        ax.set_ylabel('Probability Density')
+        ax.set_title('Projected Gradient Norm Distribution', fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
-        ax.set_xticks(range(self.n_solutions))
-        ax.set_xticklabels([f'Row {i}' for i in self.row_indices])
+        # Set x-axis limits to show 90% of observations
+        ax.set_xlim(left=x_min_90, right=x_max_90)
+        # Set log scale for better visualization
+        ax.set_xscale('log')
     
     def _plot_hessian_eigenvalues_ax(self, ax):
         """Helper method to plot Hessian eigenvalues on given axis."""
@@ -765,3 +839,7 @@ if __name__ == "__main__":
     print(df.head())
     analisis=OptimizationVisualizer(df.loc[:, 'objective' :'beta_se_prices'])
     analisis.create_dashboard(save_path='dashboard.png')
+
+    print(df['projected_gradient_norm'])
+    # Save the 'projected_gradient_norm' column to a text file
+    df['projected_gradient_norm'].to_csv('projected_gradient_norm.txt', index=False, header=True)
