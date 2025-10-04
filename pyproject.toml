@@ -8,6 +8,15 @@ version = "0.1.8"
 description = "A package for cleaning and processing Nielsen data"
 readme = "README.md"
 requires-python = ">=3.6"
+authors = [
+    {name = "Andrés Felipe Suárez G.", email = "asuarezg@stanford.edu"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "pandas",
     "numpy",
@@ -16,6 +25,10 @@ dependencies = [
     "plotly>=6.3.0",
     "scikit-learn>=1.7.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/afsuarezg/Nielsen_data_cleaning"
+Repository = "https://github.com/afsuarezg/Nielsen_data_cleaning"
 
 [tool.setuptools.packages.find]
 include = ["merger_retrospective_studies*"]
