@@ -55,15 +55,22 @@ class OptimizationVisualizer:
         parameter_start_col : int
             Column index where parameter values start (default: 5)
         """
-        # Convert to numpy array if needed
+        # Store original data and column names
+        self.original_data = data
+        self.parameter_start_col = parameter_start_col
+        
+        # Convert to numpy array if needed and store column names
         if isinstance(data, pd.DataFrame):
             self.data = data.values
+            self.column_names = data.columns.tolist()
+            self.parameter_names = data.columns[parameter_start_col:-1].tolist()
         else:
             self.data = data.copy()
+            self.column_names = None
+            self.parameter_names = None
         
-        self.parameter_start_col = parameter_start_col
         self.n_solutions, self.n_features = self.data.shape
-        self.n_parameters = self.n_features - parameter_start_col
+        self.n_parameters = self.n_features - parameter_start_col - 1  # -1 for the last column
         
         # Extract key columns
         self.row_indices = self.data[:, 0].astype(int)
@@ -71,7 +78,7 @@ class OptimizationVisualizer:
         self.gradient_norms = self.data[:, 2]
         self.min_hessian = self.data[:, 3]
         self.max_hessian = self.data[:, 4]
-        self.parameters = self.data[:, parameter_start_col:-2]
+        self.parameters = self.data[:, parameter_start_col:-1]
         
         # Validate data
         self._validate_data()
@@ -596,7 +603,6 @@ class OptimizationVisualizer:
         Layout:
         - Row 1: Objective function, Gradient norm
         - Row 2: Log scatter, Euclidean distances (bar)
-        - Row 3: Parameter vectors (spanning both columns)
         
         Parameters:
         -----------
@@ -612,8 +618,8 @@ class OptimizationVisualizer:
         """
         fig = plt.figure(figsize=figsize)
         
-        # Create grid layout - 3 rows, 2 columns
-        gs = fig.add_gridspec(3, 2, hspace=0.3, wspace=0.3)
+        # Create grid layout - 2 rows, 2 columns
+        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
         
         # Row 1: Objective function and Gradient norm
         ax1 = fig.add_subplot(gs[0, 0])
@@ -627,11 +633,7 @@ class OptimizationVisualizer:
         self._plot_log_scatter_ax(ax3)
         
         ax4 = fig.add_subplot(gs[1, 1])
-        self._plot_pairwise_distances_ax(ax4, 'euclidean')
-        
-        # Row 3: Parameter vectors (spanning both columns)
-        ax5 = fig.add_subplot(gs[2, :])
-        self._plot_parameters_ax(ax5)
+        self._plot_distance_heatmap_ax(ax4, 'cosine')
         
         # Add overall title
         fig.suptitle('Optimization Results Analysis Dashboard', fontsize=16, fontweight='bold')
@@ -882,6 +884,32 @@ class OptimizationVisualizer:
         
         print(f"All plots saved to {output_dir}")
     
+    def get_parameter_names(self) -> List[str]:
+        """
+        Return list of parameter names.
+        
+        Returns:
+        --------
+        list
+            List of parameter names, or None if not available
+        """
+        return self.parameter_names
+    
+    def get_parameter_info(self) -> Dict[str, Any]:
+        """
+        Return information about parameters.
+        
+        Returns:
+        --------
+        dict
+            Dictionary containing parameter information
+        """
+        return {
+            'parameter_names': self.parameter_names,
+            'n_parameters': self.n_parameters,
+            'parameter_start_col': self.parameter_start_col
+        }
+
     def get_summary_statistics(self) -> Dict[str, Any]:
         """
         Return dictionary with key statistics.
@@ -921,7 +949,8 @@ class OptimizationVisualizer:
             'most_dissimilar_pair': most_dissimilar,
             'n_solutions': self.n_solutions,
             'n_parameters': self.n_parameters,
-            'converged_solutions': np.sum(self.gradient_norms <= 1e-6)
+            'converged_solutions': np.sum(self.gradient_norms <= 1e-6),
+            'parameter_names': self.parameter_names
         }
     
     def plot_vectors(self, vectors, labels=None, title="Vector Plot", xlabel="Index", ylabel="Value"):
@@ -1005,17 +1034,42 @@ class OptimizationVisualizer:
         # Create labels for each solution
         labels = [f'Row {i}' for i in self.row_indices]
         
-        # Use the plot_vectors method
-        fig, ax = self.plot_vectors(
-            vectors=self.parameters,
-            labels=labels,
-            title="Parameter Vectors Across Solutions",
-            xlabel="Parameter Index",
-            ylabel="Parameter Value"
-        )
+        # Create the plot manually to use parameter names
+        fig, ax = plt.subplots(figsize=figsize)
         
-        # Resize figure
-        fig.set_size_inches(figsize)
+        # Get dimensions
+        n = len(self.parameters)  # number of vectors
+        t = len(self.parameters[0])  # number of values per vector
+        
+        # Create x-axis values - use parameter names if available
+        if self.parameter_names is not None:
+            x = np.arange(t)
+            x_labels = self.parameter_names
+        else:
+            x = np.arange(t)
+            x_labels = [f'Param {i+1}' for i in range(t)]
+        
+        # Plot each vector
+        for i, vector in enumerate(self.parameters):
+            if i < len(labels):
+                label = labels[i]
+            else:
+                label = f"Vector {i+1}"
+            
+            ax.plot(x, vector, marker='o', label=label, linewidth=2, markersize=4)
+        
+        # Customize the plot
+        ax.set_xlabel('Parameter', fontsize=12)
+        ax.set_ylabel('Parameter Value', fontsize=12)
+        ax.set_title('Parameter Vectors Across Solutions', fontsize=14, fontweight='bold')
+        ax.legend(loc='best', fontsize=9)
+        ax.grid(True, alpha=0.3)
+        
+        # Set x-axis labels to parameter names
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_labels, rotation=45, ha='right')
+        
+        plt.tight_layout()
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -1031,8 +1085,13 @@ class OptimizationVisualizer:
         n = len(self.parameters)  # number of vectors
         t = len(self.parameters[0])  # number of values per vector
         
-        # Create x-axis values
-        x = np.arange(t)
+        # Create x-axis values - use parameter names if available
+        if self.parameter_names is not None:
+            x = np.arange(t)
+            x_labels = self.parameter_names
+        else:
+            x = np.arange(t)
+            x_labels = [f'Param {i+1}' for i in range(t)]
         
         # Plot each vector
         for i, vector in enumerate(self.parameters):
@@ -1044,11 +1103,15 @@ class OptimizationVisualizer:
             ax.plot(x, vector, marker='o', label=label, linewidth=2, markersize=3)
         
         # Customize the plot
-        ax.set_xlabel('Parameter Index', fontsize=12)
+        ax.set_xlabel('Parameter', fontsize=12)
         ax.set_ylabel('Parameter Value', fontsize=12)
         ax.set_title('Parameter Vectors Across Solutions', fontsize=14, fontweight='bold')
         ax.legend(loc='best', fontsize=8)
         ax.grid(True, alpha=0.3)
+        
+        # Set x-axis labels to parameter names
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_labels, rotation=45, ha='right')
 
     def print_summary(self) -> None:
         """Print formatted summary statistics to console."""
@@ -1060,6 +1123,13 @@ class OptimizationVisualizer:
         print(f"Number of solutions: {stats['n_solutions']}")
         print(f"Number of parameters: {stats['n_parameters']}")
         print(f"Converged solutions (gradient < 1e-6): {stats['converged_solutions']}")
+        
+        # Print parameter names if available
+        if stats['parameter_names'] is not None:
+            print(f"Parameter names: {stats['parameter_names']}")
+        else:
+            print("Parameter names: Not available (data from numpy array)")
+        
         print()
         print(f"Best objective: Row {stats['best_objective'][0]} = {stats['best_objective'][1]:.6f}")
         print(f"Best convergence: Row {stats['best_convergence'][0]} = {stats['best_convergence'][1]:.2e}")
@@ -1076,10 +1146,15 @@ if __name__ == "__main__":
     # Read the CSV file as a pandas DataFrame
     df = pd.read_csv(r"C:\Users\Andres.DESKTOP-D77KM25\Downloads\resultados_opt_compilados.csv")
     print("DataFrame loaded. Shape:", df.shape)
-    print(df.head())
+    print(df.loc[:, 'objective' :'beta_se_prices'].head())
+    print(df.loc[:, 'sigma_1_1' :'beta_se_prices'].shape)
     analisis=OptimizationVisualizer(df.loc[:, 'objective' :'beta_se_prices'])
     analisis.create_dashboard(save_path='dashboard.png')
     # Save the 'projected_gradient_norm' column to a text file
     df['projected_gradient_norm'].to_csv('projected_gradient_norm.txt', index=False, header=True)
     df[['objective', 'projected_gradient_norm']].to_csv('objective_projected_gradient_norm.txt', index=False, header=True)
     analisis.plot_log_scatter(save_path='log_scatter.png')
+    print(analisis.parameters[0])
+    print(analisis.n_parameters)
+    
+    print(euclidean_distances(analisis.parameters, analisis.parameters))
