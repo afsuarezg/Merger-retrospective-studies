@@ -52,6 +52,42 @@ def load_compiled_product_data(
         return pd.DataFrame()
 
 
+def add_predictions_from_problem_results(
+    compiled_df: pd.DataFrame,
+    results: list,
+    firm_ids_column: str = "firm_ids_post_merger",
+):
+    """Attach predicted prices per problem result as separate columns on compiled_df.
+
+    Each new column is named using the corresponding ProblemResults_sample filename.
+    """
+    if compiled_df is None or compiled_df.empty:
+        print("compiled_df is empty; cannot add predictions.")
+        return compiled_df
+
+    if firm_ids_column not in compiled_df.columns:
+        print(f"Missing required column '{firm_ids_column}' in compiled_df.")
+        return compiled_df
+
+    for path, obj in results:
+        try:
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            column_name = f"price_prediction__{base_name}"
+
+            costs = obj.compute_costs()
+            prices = obj.compute_prices(
+                firm_ids=compiled_df[firm_ids_column],
+                costs=costs,
+            )
+
+            compiled_df[column_name] = prices
+            print(f"Added predictions column: {column_name}")
+        except Exception as exc:
+            print(f"Failed to compute predictions for {path}: {exc}")
+
+    return compiled_df
+
+
 
 if __name__ == "__main__":
     # Known folder with results
@@ -64,16 +100,16 @@ if __name__ == "__main__":
     results = read_pickles_from_folder(folder)
     print(results)
 
-    breakpoint()
+    # breakpoint()
     # Load compiled product data CSV
     compiled_df = load_compiled_product_data()
     if not compiled_df.empty:
         print("Compiled product data loaded:", compiled_df.shape)
         print(compiled_df.head(3))
-    breakpoint()
+    # breakpoint()
     
-    compiled_df['price_prediction'] = results[0][1].compute_prices(firm_ids=compiled_df['firm_ids_post_merger'], costs=results[0][1].compute_costs())
-    print(compiled_df.head(3))
+    compiled_df = add_predictions_from_problem_results(compiled_df, results)
+    print(compiled_df.head(5))
     breakpoint()
 
 
