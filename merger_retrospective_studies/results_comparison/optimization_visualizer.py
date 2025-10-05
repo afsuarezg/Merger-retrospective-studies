@@ -71,7 +71,7 @@ class OptimizationVisualizer:
         self.gradient_norms = self.data[:, 2]
         self.min_hessian = self.data[:, 3]
         self.max_hessian = self.data[:, 4]
-        self.parameters = self.data[:, parameter_start_col:]
+        self.parameters = self.data[:, parameter_start_col:-2]
         
         # Validate data
         self._validate_data()
@@ -595,9 +595,8 @@ class OptimizationVisualizer:
         
         Layout:
         - Row 1: Objective function, Gradient norm
-        - Row 2: Hessian scatter, Euclidean distances (bar)
-        - Row 3: Euclidean heatmap, Manhattan heatmap
-        - Row 4: Cosine similarity heatmap
+        - Row 2: Log scatter, Euclidean distances (bar)
+        - Row 3: Parameter vectors (spanning both columns)
         
         Parameters:
         -----------
@@ -613,8 +612,8 @@ class OptimizationVisualizer:
         """
         fig = plt.figure(figsize=figsize)
         
-        # Create grid layout
-        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+        # Create grid layout - 3 rows, 2 columns
+        gs = fig.add_gridspec(3, 2, hspace=0.3, wspace=0.3)
         
         # Row 1: Objective function and Gradient norm
         ax1 = fig.add_subplot(gs[0, 0])
@@ -630,16 +629,9 @@ class OptimizationVisualizer:
         ax4 = fig.add_subplot(gs[1, 1])
         self._plot_pairwise_distances_ax(ax4, 'euclidean')
         
-        # # Row 3: Euclidean and Manhattan heatmaps
-        # ax5 = fig.add_subplot(gs[2, 0])
-        # self._plot_distance_heatmap_ax(ax5, 'euclidean')
-        
-        # ax6 = fig.add_subplot(gs[2, 1])
-        # self._plot_distance_heatmap_ax(ax6, 'manhattan')
-        
-        # # Row 4: Cosine similarity heatmap (spanning both columns)
-        # ax7 = fig.add_subplot(gs[3, :])
-        # self._plot_distance_heatmap_ax(ax7, 'cosine')
+        # Row 3: Parameter vectors (spanning both columns)
+        ax5 = fig.add_subplot(gs[2, :])
+        self._plot_parameters_ax(ax5)
         
         # Add overall title
         fig.suptitle('Optimization Results Analysis Dashboard', fontsize=16, fontweight='bold')
@@ -876,6 +868,7 @@ class OptimizationVisualizer:
         self.plot_gradient_norm(save_path=os.path.join(output_dir, 'gradient_norm.png'))
         self.plot_log_scatter(save_path=os.path.join(output_dir, 'log_scatter.png'))
         self.plot_hessian_eigenvalues(save_path=os.path.join(output_dir, 'hessian_eigenvalues.png'))
+        self.plot_parameters(save_path=os.path.join(output_dir, 'parameters.png'))
         
         # Distance plots
         for metric in ['euclidean', 'manhattan', 'cosine']:
@@ -931,6 +924,132 @@ class OptimizationVisualizer:
             'converged_solutions': np.sum(self.gradient_norms <= 1e-6)
         }
     
+    def plot_vectors(self, vectors, labels=None, title="Vector Plot", xlabel="Index", ylabel="Value"):
+        """
+        Plot n vectors where each vector has t values.
+        
+        Parameters:
+        -----------
+        vectors : list or array-like
+            List of n vectors, where each vector contains t values.
+            Can be a list of lists, list of arrays, or 2D numpy array.
+        labels : list, optional
+            List of labels for each vector. If None, vectors are labeled as "Vector 1", "Vector 2", etc.
+        title : str, optional
+            Title of the plot (default: "Vector Plot")
+        xlabel : str, optional
+            Label for x-axis (default: "Index")
+        ylabel : str, optional
+            Label for y-axis (default: "Value")
+        
+        Returns:
+        --------
+        fig, ax : matplotlib figure and axes objects
+        
+        Example:
+        --------
+        >>> vec1 = [1, 2, 3, 4, 5]
+        >>> vec2 = [2, 4, 3, 5, 6]
+        >>> vec3 = [1, 3, 2, 4, 5]
+        >>> plot_vectors([vec1, vec2, vec3], labels=['A', 'B', 'C'])
+        """
+        # Convert to numpy array for easier handling
+        vectors = np.array(vectors)
+        
+        # Get dimensions
+        n = len(vectors)  # number of vectors
+        t = len(vectors[0])  # number of values per vector
+        
+        # Create x-axis values
+        x = np.arange(t)
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Plot each vector
+        for i, vector in enumerate(vectors):
+            if labels is not None and i < len(labels):
+                label = labels[i]
+            else:
+                label = f"Vector {i+1}"
+            
+            ax.plot(x, vector, marker='o', label=label, linewidth=2)
+        
+        # Customize the plot
+        ax.set_xlabel(xlabel, fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig, ax
+
+    def plot_parameters(self, figsize: Tuple[int, int] = (10, 6), 
+                       save_path: Optional[str] = None) -> plt.Figure:
+        """
+        Plot parameter vectors for all solutions.
+        
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size (width, height)
+        save_path : str, optional
+            Path to save the figure
+            
+        Returns:
+        --------
+        matplotlib.figure.Figure
+            The created figure
+        """
+        # Create labels for each solution
+        labels = [f'Row {i}' for i in self.row_indices]
+        
+        # Use the plot_vectors method
+        fig, ax = self.plot_vectors(
+            vectors=self.parameters,
+            labels=labels,
+            title="Parameter Vectors Across Solutions",
+            xlabel="Parameter Index",
+            ylabel="Parameter Value"
+        )
+        
+        # Resize figure
+        fig.set_size_inches(figsize)
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        return fig
+
+    def _plot_parameters_ax(self, ax):
+        """Helper method to plot parameters on given axis."""
+        # Create labels for each solution
+        labels = [f'Row {i}' for i in self.row_indices]
+        
+        # Get dimensions
+        n = len(self.parameters)  # number of vectors
+        t = len(self.parameters[0])  # number of values per vector
+        
+        # Create x-axis values
+        x = np.arange(t)
+        
+        # Plot each vector
+        for i, vector in enumerate(self.parameters):
+            if i < len(labels):
+                label = labels[i]
+            else:
+                label = f"Vector {i+1}"
+            
+            ax.plot(x, vector, marker='o', label=label, linewidth=2, markersize=3)
+        
+        # Customize the plot
+        ax.set_xlabel('Parameter Index', fontsize=12)
+        ax.set_ylabel('Parameter Value', fontsize=12)
+        ax.set_title('Parameter Vectors Across Solutions', fontsize=14, fontweight='bold')
+        ax.legend(loc='best', fontsize=8)
+        ax.grid(True, alpha=0.3)
+
     def print_summary(self) -> None:
         """Print formatted summary statistics to console."""
         stats = self.get_summary_statistics()
