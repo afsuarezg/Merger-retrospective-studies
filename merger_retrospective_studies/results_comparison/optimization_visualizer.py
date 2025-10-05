@@ -1080,7 +1080,7 @@ class OptimizationVisualizer:
         """Helper method to plot parameters on given axis."""
         # Select a subset with the smallest objective values
         sorted_indices = np.argsort(self.objectives)
-        n_best = max(1, min(15, int(0.25 * self.n_solutions)))
+        n_best = max(1, min(10, int(0.25 * self.n_solutions)))
         best_indices = sorted_indices[:n_best]
         labels = [f'Row {self.row_indices[i]}' for i in best_indices]
         
@@ -1096,9 +1096,23 @@ class OptimizationVisualizer:
             x = np.arange(t)
             x_labels = [f'Param {i+1}' for i in range(t)]
         
-        # Plot only the selected vectors (lowest objectives)
+        # Determine parameter columns with any non-zero values (using selected subset)
+        selected_parameters = self.parameters[best_indices]
+        nonzero_cols_mask = np.any(selected_parameters != 0, axis=0)
+        # Fallback: if all are zero, keep all columns to avoid empty plot
+        if not np.any(nonzero_cols_mask):
+            nonzero_cols_mask = np.ones(selected_parameters.shape[1], dtype=bool)
+
+        # Update x, labels to only show non-zero parameter columns
+        x = np.arange(np.sum(nonzero_cols_mask))
+        if self.parameter_names is not None:
+            x_labels = [name for name, keep in zip(self.parameter_names, nonzero_cols_mask) if keep]
+        else:
+            x_labels = [f'Param {i+1}' for i, keep in enumerate(nonzero_cols_mask) if keep]
+
+        # Plot only the selected vectors (lowest objectives) with filtered columns
         for idx, label in zip(best_indices, labels):
-            vector = self.parameters[idx]
+            vector = self.parameters[idx][:, ...][nonzero_cols_mask]
             ax.plot(x, vector, marker='o', label=label, linewidth=2, markersize=3)
         
         # Customize the plot
@@ -1153,8 +1167,3 @@ if __name__ == "__main__":
     df['projected_gradient_norm'].to_csv('projected_gradient_norm.txt', index=False, header=True)
     df[['objective', 'projected_gradient_norm']].to_csv('objective_projected_gradient_norm.txt', index=False, header=True)
     analisis.plot_log_scatter(save_path='log_scatter.png')
-    print(analisis.parameters[0])
-    print(analisis.n_parameters)
-    
-    print(euclidean_distances(analisis.parameters, analisis.parameters))
-    print(cosine_similarity(analisis.parameters, analisis.parameters))
