@@ -646,8 +646,8 @@ class OptimizationVisualizer:
     def _plot_objective_function_ax(self, ax):
         """Helper method to plot objective function on given axis."""
         # Create histogram with frequency counts
-        n_bins = 400   # Adaptive number of bins
-        n_array, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, 
+        n_bins = 10000   # Adaptive number of bins
+        n_array, bins, patches = ax.hist(self.objectives, bins='auto', alpha=0.7, 
                                   edgecolor='black', linewidth=0.5, density=False)
         # breakpoint()
         # Define colors for each bin using viridis colormap
@@ -663,13 +663,8 @@ class OptimizationVisualizer:
         best_value = self.objectives[best_idx]
         worst_value = self.objectives[worst_idx]
         
-        # Calculate 80% range of observations
-        sorted_objectives = np.sort(self.objectives)
-        n_80_percent = int(0.9 * len(sorted_objectives))
-        start_idx = (len(sorted_objectives) - n_80_percent) // 2
-        end_idx = start_idx + n_80_percent
-        x_min_80 = sorted_objectives[start_idx]
-        x_max_80 = sorted_objectives[end_idx - 1]
+        # Restrict x-axis to 1st–99th percentile range
+        p1, p95 = np.percentile(self.objectives, [1, 90])
         
         # Add vertical lines for best and worst
         ax.axvline(x=best_value, color='green', linestyle='--', linewidth=3, 
@@ -682,8 +677,8 @@ class OptimizationVisualizer:
         ax.set_title('Objective Function Values Distribution', fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
-        # Set x-axis limits to show 80% of observations
-        ax.set_xlim(left=x_min_80, right=x_max_80)
+        # Set x-axis limits based on percentiles (1st–99th)
+        ax.set_xlim(p1, p95)
     
     def _plot_gradient_norm_ax(self, ax):
         """Helper method to plot gradient norm on given axis."""
