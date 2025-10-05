@@ -687,7 +687,7 @@ class OptimizationVisualizer:
         
         if len(positive_data) == 0:
             # If no positive values, use regular histogram
-            n, bins, patches = ax.hist(self.gradient_norms, bins=25, edgecolor='black', linewidth=0.5)
+            n, bins, patches = ax.hist(self.gradient_norms, bins='auto', edgecolor='black', linewidth=0.5)
             colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
             for patch, color in zip(patches, colors):
                 patch.set_facecolor(color)
@@ -697,7 +697,7 @@ class OptimizationVisualizer:
             bins = np.logspace(np.log10(positive_data.min()), np.log10(self.gradient_norms.max()), 25)
             
             # Create histogram and get the patches (bars)
-            n, bins, patches = ax.hist(self.gradient_norms, bins=bins, edgecolor='black', linewidth=0.5)
+            n, bins, patches = ax.hist(self.gradient_norms, bins='auto', edgecolor='black', linewidth=0.5)
             
             # Define colors for each bin using viridis colormap
             colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
