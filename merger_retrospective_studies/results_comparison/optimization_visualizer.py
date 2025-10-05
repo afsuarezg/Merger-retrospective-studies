@@ -595,7 +595,7 @@ class OptimizationVisualizer:
         
         return fig
     
-    def create_dashboard(self, figsize: Tuple[int, int] = (20, 16), 
+    def create_dashboard(self, figsize: Tuple[int, int] = (20, 20), 
                         save_path: Optional[str] = None) -> plt.Figure:
         """
         Create comprehensive dashboard with all visualizations.
@@ -618,8 +618,8 @@ class OptimizationVisualizer:
         """
         fig = plt.figure(figsize=figsize)
         
-        # Create grid layout - 2 rows, 2 columns
-        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
+        # Create grid layout - 3 rows, 2 columns (last row for parameters)
+        gs = fig.add_gridspec(3, 2, hspace=0.3, wspace=0.3)
         
         # Row 1: Objective function and Gradient norm
         ax1 = fig.add_subplot(gs[0, 0])
@@ -634,6 +634,10 @@ class OptimizationVisualizer:
         
         ax4 = fig.add_subplot(gs[1, 1])
         self._plot_distance_heatmap_ax(ax4, 'cosine')
+        
+        # Row 3: Parameters plot spanning both columns
+        ax5 = fig.add_subplot(gs[2, :])
+        self._plot_parameters_ax(ax5)
         
         # Add overall title
         fig.suptitle('Optimization Results Analysis Dashboard', fontsize=16, fontweight='bold')
@@ -1074,8 +1078,11 @@ class OptimizationVisualizer:
 
     def _plot_parameters_ax(self, ax):
         """Helper method to plot parameters on given axis."""
-        # Create labels for each solution
-        labels = [f'Row {i}' for i in self.row_indices]
+        # Select a subset with the smallest objective values
+        sorted_indices = np.argsort(self.objectives)
+        n_best = max(1, min(15, int(0.25 * self.n_solutions)))
+        best_indices = sorted_indices[:n_best]
+        labels = [f'Row {self.row_indices[i]}' for i in best_indices]
         
         # Get dimensions
         n = len(self.parameters)  # number of vectors
@@ -1089,13 +1096,9 @@ class OptimizationVisualizer:
             x = np.arange(t)
             x_labels = [f'Param {i+1}' for i in range(t)]
         
-        # Plot each vector
-        for i, vector in enumerate(self.parameters):
-            if i < len(labels):
-                label = labels[i]
-            else:
-                label = f"Vector {i+1}"
-            
+        # Plot only the selected vectors (lowest objectives)
+        for idx, label in zip(best_indices, labels):
+            vector = self.parameters[idx]
             ax.plot(x, vector, marker='o', label=label, linewidth=2, markersize=3)
         
         # Customize the plot
