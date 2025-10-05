@@ -88,6 +88,24 @@ def add_predictions_from_problem_results(
     return compiled_df
 
 
+def map_store_to_brands(compiled_df: pd.DataFrame):
+    """Return a dict mapping each store_code_uc to its unique brand_code_uc values.
+
+    If required columns are missing or the DataFrame is empty, returns an empty dict.
+    """
+    if compiled_df is None or compiled_df.empty:
+        print("compiled_df is empty; cannot build store->brands map.")
+        return {}
+
+    required = {"store_code_uc", "brand_code_uc"}
+    if not required.issubset(set(compiled_df.columns)):
+        print("compiled_df missing required columns 'store_code_uc' and/or 'brand_code_uc'.")
+        return {}
+
+    grouped = compiled_df.groupby("store_code_uc")["brand_code_uc"].unique()
+    # Convert numpy arrays to Python lists to ensure JSON-serializable values
+    return {store: list(brands) for store, brands in grouped.to_dict().items()}
+
 
 if __name__ == "__main__":
     # Known folder with results
@@ -106,6 +124,14 @@ if __name__ == "__main__":
     if not compiled_df.empty:
         print("Compiled product data loaded:", compiled_df.shape)
         print(compiled_df.head(3))
+        # Example usage: build mapping from store to available brands
+        store_to_brands = map_store_to_brands(compiled_df)
+        print(f"Stores mapped to brands: {len(store_to_brands)}")
+        # Print a small sample
+        for i, (store, brands) in enumerate(store_to_brands.items()):
+            print(store, brands[:5])
+            if i >= 2:
+                break
     # breakpoint()
     
     compiled_df = add_predictions_from_problem_results(compiled_df, results)
