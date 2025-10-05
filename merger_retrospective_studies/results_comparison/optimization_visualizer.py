@@ -646,10 +646,10 @@ class OptimizationVisualizer:
     def _plot_objective_function_ax(self, ax):
         """Helper method to plot objective function on given axis."""
         # Create histogram with frequency counts
-        n_bins = 100   # Adaptive number of bins
-        n, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, 
+        n_bins = 400   # Adaptive number of bins
+        n_array, bins, patches = ax.hist(self.objectives, bins=n_bins, alpha=0.7, 
                                   edgecolor='black', linewidth=0.5, density=False)
-        
+        # breakpoint()
         # Define colors for each bin using viridis colormap
         colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
         
@@ -822,10 +822,11 @@ class OptimizationVisualizer:
     def _plot_distance_heatmap_ax(self, ax, metric):
         """Helper method to plot distance heatmap on given axis."""
         distance_matrix, _ = self._calculate_pairwise_distances(metric)
-        np.fill_diagonal(distance_matrix, np.nan)
-        
+
+        # np.fill_diagonal(distance_matrix, np.nan)
+
         if metric == 'cosine':
-            cmap = 'RdYlGn'
+            cmap = 'RdYlBu'
             vmin, vmax = -1, 1
         else:
             cmap = 'RdYlGn_r'
@@ -847,8 +848,8 @@ class OptimizationVisualizer:
         
         ax.set_xticks(range(self.n_solutions))
         ax.set_yticks(range(self.n_solutions))
-        ax.set_xticklabels([str(i) for i in self.row_indices])
-        ax.set_yticklabels([str(i) for i in self.row_indices])
+        # ax.set_xticklabels([str(i) for i in self.row_indices])
+        # ax.set_yticklabels([str(i) for i in self.row_indices])
         ax.set_xlabel('Solution Index')
         ax.set_ylabel('Solution Index')
         ax.set_title(f'{metric.title()} {"Similarity" if metric == "cosine" else "Distance"} Heatmap', 
@@ -1158,3 +1159,4 @@ if __name__ == "__main__":
     print(analisis.n_parameters)
     
     print(euclidean_distances(analisis.parameters, analisis.parameters))
+    print(cosine_similarity(analisis.parameters, analisis.parameters))
