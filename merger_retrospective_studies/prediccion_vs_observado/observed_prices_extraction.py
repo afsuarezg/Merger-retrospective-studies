@@ -4,7 +4,7 @@ from typing import List
 import os
 
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
-from datos_comparacion import creating_comparison_product_data_rcl
+from .datos_comparacion import creating_comparison_product_data_rcl
 
 
 def list_retailers_with_predictions(data: pd.DataFrame)-> List:
