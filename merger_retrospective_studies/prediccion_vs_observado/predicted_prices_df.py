@@ -6,6 +6,7 @@ import pickle
 from typing import Any
 import sys
 
+
 def read_pickles_from_folder(folder: str):
     """Read all .pickle/.pkl files from a folder and return a list of (path, object).
 
@@ -115,21 +116,30 @@ if __name__ == "__main__":
         print(f"ProblemResults_sample folder not found: {folder}")
         sys.exit(1)
 
-    results = read_pickles_from_folder(folder)
-    print(results)
+    simulation_results = read_pickles_from_folder(folder)
+    # print(results)
 
     # breakpoint()
     # Load compiled product data CSV
-    compiled_df = load_compiled_product_data()
-    if not compiled_df.empty:
+    base_data = load_compiled_product_data()
+    breakpoint()
+    
+    base_data_plus_predictions = add_predictions_from_problem_results(base_data, simulation_results)
+
+    # print(base_data_plus_predictions.head(5))
+    breakpoint()
+
+    if not base_data_plus_predictions.empty:
         # Example usage: build mapping from store to available brands
-        store_to_brands = map_store_to_brands(compiled_df)
+        store_to_brands = map_store_to_brands(base_data_plus_predictions)
 
     breakpoint()
-    
-    compiled_df = add_predictions_from_problem_results(compiled_df, results)
-    print(compiled_df.head(5))
+    # INSERT_YOUR_CODE
+
+    output_path = os.path.join(folder, "store_to_brands.json")
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(store_to_brands, f, ensure_ascii=False, indent=2)
+    print(f"store_to_brands mapping saved to {output_path}")
     breakpoint()
-
-
     
+
