@@ -1,6 +1,8 @@
 import pandas as pd 
 from typing import List
 
+import os
+
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
 
 
@@ -84,48 +86,22 @@ def long_to_wide(df, id_col, time_col, value_col):
 
 
 def main():
-    iter =6
-    #importar la base de las predicciones
-    # price_predictions = pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140215/l-bfgs-b/price_predictions_0.json')
-    # price_predictions=pd.read_json('/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140111/l-bfgs-b/price_predictions_0.json')
-    # path='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140208/l-bfgs-b/price_predictions_0.json' 
-    path ='/oak/stanford/groups/polinsky/Mergers/Cigarettes/Predicted/20140201/2025-03-04/l-bfgs-b/price_predictions_0.json'
-    price_predictions=pd.read_json(path)
-    print(f"Path of the price_predictions file: {path}")
-
-    #obtener los códigos de los retailers para los que se generaron las comparaciones 
-    dict_retailers_predictions = dict_retailers_brands(price_predictions)
-    print(dict_retailers_predictions)
-
     #crear la base de datos con toda la información
-    first_week:int = 45
-    num_weeks:int = 6
+    num_weeks:int = 10
     year = 2014
-    product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
-                                     movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
-                                     stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
-                                     products_path='Nielsen_data/Master_Files/Latest/products.tsv',
-                                     extra_attributes_path=f'Nielsen_data/{year}/Annual_Files/products_extra_{year}.tsv', 
-                                     first_week=first_week,
-                                     num_weeks=num_weeks)
+
+    for first_week in range(35, 35 + num_weeks):
+        product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
+                                        movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
+                                        stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
+                                        products_path='Nielsen_data/Master_Files/Latest/products.tsv',
+                                        first_week=first_week,
+                                        num_weeks=1)
     
-    print(product_observed_data.shape)
-    product_observed_data.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/product_data_completo_{iter}.json', index=False)
-    #filtrar la base de datos solo por retailers para hacer el proceso más ágil 
-    product_observed_data= product_observed_data[product_observed_data['store_code_uc'].isin(dict_retailers_predictions.keys())]
-    print(product_observed_data.shape)
+        week=product_observed_data['week_end'].iloc[0]
 
-    #filtrar la base de datos a partir de brands por retailer
-    observed_prices_data_long = product_observed_data.groupby('store_code_uc').filter(lambda group: filter_observed_by_predicted_data(group, group.name, dict_retailers_predictions))
-    print(observed_prices_data_long.shape)
-    print(observed_prices_data_long.columns)
-    # observed_prices_data_wide = long_to_wide(observed_prices_data_long, id_col='store_code_uc', time_col='week_end', value_col='prices') #TODO: confirmar las variables para pasar la base de datos de long a wide. 
-    #borrar algunas columnas de observed_prices_data que no son necesarias para la comparación
+        observed_folder = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Observed/{week}'
+        os.makedirs(observed_folder, exist_ok=True)
 
+        product_observed_data.to_json(f'{observed_folder}/product_data_completo_{week}.json', index=False)
 
-    #merge de la base de datos con predicciones con la base de datos de los precios observados 
-    # price_predictions_v_observed=pd.merge(price_predictions, observed_prices_data_long[['store_code_uc', 'brand_code_uc', 'prices']], how='left', on=['store_code_uc', 'brand_code_uc']) #TODO: rellenar esta función para hacer el merge
-
-    #Salvar información
-    # observed_prices_data_wide.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__wide_{iter}.json', index=False)
-    observed_prices_data_long.to_json(f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Pruebas/observed_prices__long_{iter}.json', index=False)
