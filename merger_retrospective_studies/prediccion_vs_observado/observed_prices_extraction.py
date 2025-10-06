@@ -105,6 +105,6 @@ def main():
         observed_folder = f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Observed/{week}'
         os.makedirs(observed_folder, exist_ok=True)
 
-        product_observed_data.to_json(f'{observed_folder}/product_data_completo_{week}.json', index=False)
+        product_observed_data.to_json(f'{observed_folder}/product_data_completo_{week}.json', index=True)
         print(f'Product data saved to: {observed_folder}/product_data_completo_{week}.json')
 
