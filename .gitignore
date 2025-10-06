@@ -3,6 +3,7 @@ Thesis*/*
 Bibliography/*
 Thomson/*
 Thesis_presentation/*
+data_samples/*
 main.py
 *.csv
 *.json

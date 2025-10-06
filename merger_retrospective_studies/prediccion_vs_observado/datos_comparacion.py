@@ -29,7 +29,7 @@ def creating_comparison_product_data_rcl(main_dir: str,
                       stores_path:str,
                       products_path:str,
                       extra_attributes_path: str,
-                      stores_to_include: list[int],
+                      stores_to_include: list[int] = None,
                       first_week: int=0,
                       num_weeks: int=1,
                       ):
@@ -56,29 +56,15 @@ def creating_comparison_product_data_rcl(main_dir: str,
                                     first_week=first_week, 
                                     num_weeks=num_weeks)
     
-    print('movements_data:', movements_data.shape)
-    print(sorted(set(movements_data['week_end'])))
-    
     # Información de las tiendas
     stores_data = stores_file(stores_path=stores_path)
-    print('stores_data: ', stores_data.shape)
     
     # Información de los productos
     products_data = products_file(products_path=products_path)
-    print('product_data: ', products_data.shape)
-    
-    # Información extra o adicional de los productos
-    # extra_attributes_data = extra_attributes_file(extra_attributes_path=extra_attributes_path, 
-    #                                               moves_data=movements_data)
-    # print('extra_ats: ', extra_attributes_data.shape )
 
     # Combina los datos
     product_data = pd.merge(movements_data, stores_data, on='store_code_uc', how='left')
-    print('1 product_data: ', product_data.shape)
     product_data = pd.merge(product_data, products_data, on='upc', how='left')
-    print('2 product_data: ', product_data.shape)
-    # product_data = pd.merge(product_data, extra_attributes_data, on='upc', how='left')
-    # print('3 product_data: ', product_data.shape)
 
     # Crea variables 
     product_data['week_end_ID'] = pd.factorize(product_data['week_end'])[0]
@@ -93,7 +79,6 @@ def creating_comparison_product_data_rcl(main_dir: str,
     # Cambia el nombre de una variable
     product_data.rename(columns={'store_zip3':'zip'}, inplace=True)
 
-    print('product_data columns: ', product_data.columns)
     # Agrega ventas a nivel de mercado y marca 
     product_data = product_data.groupby(['market_ids', 'brand_descr'], as_index=False).agg({
                 'zip':'first' ,
@@ -121,10 +106,9 @@ def creating_comparison_product_data_rcl(main_dir: str,
                 # 'strength_descr': 'first', 
             })
 
-    # product_data.rename(columns={'unitary_price':'unitary_price_x_reemplazar', 'price':'price_x_reemplazar'}, inplace=True)
-    
     # Crea variable precios
     product_data['prices'] = product_data.apply(price, axis=1)
+    product_data['fips'] = product_data.apply(prepend_zeros, axis=1).astype('int')
 
     #-------------------------------------------------------------------
     # # Determinar porción de ventas identificadas para cada tienda (recordar que los mercados se definieron como la combinación entre tienda y semana) a través de ingresos 
@@ -182,7 +166,6 @@ def creating_comparison_product_data_rcl(main_dir: str,
     # Asignación de las marcas por empresa -> Realiza el mapping entre las marcas y las empresas con anterioridad y posterioridad a la integración. 
     # print('Marcas antes de mapping con firmas: ', set(product_data['brand_descr']))
     product_data['brand_descr']=product_data['brand_descr'].str.lower()
-    # print('Diferencia entre base de datos y diccionario: ', set(product_data['brand_descr']).intersection(set(list(chain(*[v for k,v in brands_by_company_pre_merger.items()])))))
 
     product_data['firm']=product_data.apply(find_company_pre_merger, axis=1, company_brands_dict=brands_by_company_pre_merger)
     product_data['firm_ids']=pd.factorize(product_data['firm'])[0]
@@ -209,7 +192,8 @@ def creating_comparison_product_data_rcl(main_dir: str,
 
     # product_data['product_ids'] = pd.factorize(product_data['brand_descr'])[0]
     #-------------------------------------------------------------------
-    product_data = product_data[product_data['store_code_uc'].isin(stores_to_include)]
+    if stores_to_include is not None:
+        product_data = product_data[product_data['store_code_uc'].isin(stores_to_include)]
     # product_data=product_data[['market_ids','zip', 'week_end', 'store_code_uc', 'brand_descr','brand_code_uc', 'prices' ]]
     week=product_data['week_end'].iloc[0]
     product_data.to_pickle(fr'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Comparison_product_data/product_data_stores_week_{week}.pkl')
