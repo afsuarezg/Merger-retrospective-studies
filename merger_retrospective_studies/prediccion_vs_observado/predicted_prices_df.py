@@ -122,17 +122,10 @@ if __name__ == "__main__":
     # Load compiled product data CSV
     compiled_df = load_compiled_product_data()
     if not compiled_df.empty:
-        print("Compiled product data loaded:", compiled_df.shape)
-        print(compiled_df.head(3))
         # Example usage: build mapping from store to available brands
         store_to_brands = map_store_to_brands(compiled_df)
-        print(f"Stores mapped to brands: {len(store_to_brands)}")
-        # Print a small sample
-        for i, (store, brands) in enumerate(store_to_brands.items()):
-            print(store, brands[:5])
-            if i >= 2:
-                break
-    # breakpoint()
+
+    breakpoint()
     
     compiled_df = add_predictions_from_problem_results(compiled_df, results)
     print(compiled_df.head(5))
