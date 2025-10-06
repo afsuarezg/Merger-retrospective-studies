@@ -84,25 +84,19 @@ def creating_comparison_product_data_rcl(main_dir: str,
                 'week_end':'first' ,
                 'week_end_ID':'first',
                 'store_code_uc':'first',
-                #'market_ids_fips':'first',
-                # 'fips_state_code':'first', 
-                # 'fips_state_descr':'first', 
-                # 'fips_county_code':'first', 
-                # 'fips_county_descr':'first',
+                'market_ids_fips':'first',
+                'fips_state_code':'first', 
+                'fips_state_descr':'first', 
+                'fips_county_code':'first', 
+                'fips_county_descr':'first',
                 # 'firm_ids':'first', #No está definido aún. 
                 'brand_code_uc': 'first',
                 'brand_descr':'first',
                 'units': 'sum',
                 # 'unitary_price':'mean',#,No vale la pena agregarlo porque no se puede calcular como el promedio simple de todas las observaciones
-                # 'price': 'mean',
                 'total_individual_units': 'sum',
                 'total_income': 'sum',
-                # 'style_code': 'mean' ,
-                # 'style_descr': 'first',
-                # 'type_code': 'mean' ,
-                # 'type_descr': 'first' ,
-                # 'strength_code': 'mean',
-                # 'strength_descr': 'first', 
+
             })
 
     # Crea variable precios
