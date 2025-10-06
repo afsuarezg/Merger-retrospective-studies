@@ -4,6 +4,7 @@ from typing import List
 import os
 
 from ..nielsen_data_cleaning.product_data_creation import creating_product_data_for_comparison
+from datos_comparacion import creating_comparison_product_data_rcl
 
 
 def list_retailers_with_predictions(data: pd.DataFrame)-> List:
@@ -92,7 +93,7 @@ def main():
 
     for first_week in range(35, 35 + num_weeks):
         print(f'Processing week: {first_week}')
-        product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
+        product_observed_data = creating_comparison_product_data_rcl(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                         movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
                                         stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
                                         products_path='Nielsen_data/Master_Files/Latest/products.tsv',
