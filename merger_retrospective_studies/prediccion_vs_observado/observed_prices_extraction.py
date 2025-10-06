@@ -91,6 +91,7 @@ def main():
     year = 2014
 
     for first_week in range(35, 35 + num_weeks):
+        print(f'Processing week: {first_week}')
         product_observed_data = creating_product_data_for_comparison(main_dir='/oak/stanford/groups/polinsky/Mergers/Cigarettes',
                                         movements_path=f'/oak/stanford/groups/polinsky/Mergers/Cigarettes/Nielsen_data/{year}/Movement_Files/4510_{year}/7460_{year}.tsv' ,
                                         stores_path=f'Nielsen_data/{year}/Annual_Files/stores_{year}.tsv' ,
@@ -104,4 +105,5 @@ def main():
         os.makedirs(observed_folder, exist_ok=True)
 
         product_observed_data.to_json(f'{observed_folder}/product_data_completo_{week}.json', index=False)
+        print(f'Product data saved to: {observed_folder}/product_data_completo_{week}.json')
 
