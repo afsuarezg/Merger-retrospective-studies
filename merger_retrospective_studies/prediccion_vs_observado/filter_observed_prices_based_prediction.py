@@ -277,5 +277,42 @@ def main():
     print("Processing complete!")
 
 
+def main2():
+    """
+    Read and display information about the filtered_observed_prices.csv file.
+    """
+    # Define path to the existing CSV file
+    csv_file_path = "filtered_observed_prices.csv"
+    
+    try:
+        # Read the CSV file
+        print(f"Reading filtered observed prices from: {csv_file_path}")
+        df = pd.read_csv(csv_file_path, index_col=[0, 1])  # Assuming first two columns are store_code and brand_code
+        breakpoint()
+        # Display basic information about the data
+        print(f"\nData loaded successfully!")
+        print(f"Shape: {df.shape}")
+        print(f"Columns: {list(df.columns)}")
+        print(f"Index levels: {df.index.names}")
+        
+        # Display first few rows
+        print(f"\nFirst 5 rows:")
+        print(df.head())
+        
+        # Display summary statistics
+        print(f"\nSummary statistics:")
+        print(df.describe())
+        
+        # Display data types
+        print(f"\nData types:")
+        print(df.dtypes)
+        
+    except FileNotFoundError:
+        print(f"Error: File {csv_file_path} not found.")
+        print("Please make sure the file exists in the current directory.")
+    except Exception as e:
+        print(f"Error reading file: {e}")
+
+
 if __name__ == "__main__":
-    main()
+    main2()
