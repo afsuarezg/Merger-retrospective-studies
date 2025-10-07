@@ -840,7 +840,7 @@ class PredictionObservationComparison:
         
         # Adjust layout
         plt.tight_layout()
-        
+
         # Save if path provided
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print(f"Index levels: {df.index.names}")
 
     merged_df = pd.merge(base_data_plus_predictions, df, left_on=['store_code_uc', 'brand_code_uc'], right_on=['store_code', 'brand_code'], how='left')
-    breakpoint()
+
     # INSERT_YOUR_CODE
     output_path = os.path.join(os.path.dirname(__file__), "merged_predicted_plus_observed.csv")
     merged_df.to_csv(output_path, index=False)
