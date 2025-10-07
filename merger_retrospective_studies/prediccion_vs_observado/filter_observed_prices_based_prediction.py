@@ -282,13 +282,13 @@ def main2():
     Read and display information about the filtered_observed_prices.csv file.
     """
     # Define path to the existing CSV file
-    csv_file_path = "filtered_observed_prices.csv"
-    
+    csv_file_path = "merger_retrospective_studies/prediccion_vs_observado/filtered_observed_prices.csv"
+
     try:
         # Read the CSV file
+        breakpoint()
         print(f"Reading filtered observed prices from: {csv_file_path}")
         df = pd.read_csv(csv_file_path, index_col=[0, 1])  # Assuming first two columns are store_code and brand_code
-        breakpoint()
         # Display basic information about the data
         print(f"\nData loaded successfully!")
         print(f"Shape: {df.shape}")
