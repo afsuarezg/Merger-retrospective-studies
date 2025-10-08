@@ -26,6 +26,13 @@ def read_pickles_from_folder(folder: str):
             continue
         try:
             with open(path, "rb") as fh:
+                # Try to load with numpy.rec compatibility fix
+                import numpy as np
+                # Create a temporary numpy.rec module for compatibility
+                import types
+                if not hasattr(np, 'rec'):
+                    np.rec = types.ModuleType('rec')
+                    np.rec.array = np.recarray
                 obj = pickle.load(fh)
             results.append((path, obj))
         except Exception as exc:
