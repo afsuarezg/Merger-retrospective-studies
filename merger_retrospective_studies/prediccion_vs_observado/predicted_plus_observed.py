@@ -29,7 +29,7 @@ def filter_columns(df):
     product_data_cols = [col for col in df.columns if col.startswith('product_data_completo')]
     
     # Combine all desired columns
-    desired_columns = ['store_code_uc', 'brand_code_uc'] + price_prediction_cols + product_data_cols
+    desired_columns = ['store_code_uc', 'brand_code_uc','prices'] + price_prediction_cols + product_data_cols
     
     # Filter to only include columns that exist in the DataFrame
     existing_columns = [col for col in desired_columns if col in df.columns]
@@ -73,6 +73,7 @@ if __name__ == "__main__":
 
     merged_df = pd.merge(base_data_plus_predictions, df, left_on=['store_code_uc', 'brand_code_uc'], right_on=['store_code', 'brand_code'], how='left')
 
+    breakpoint()
     # INSERT_YOUR_CODE
     output_path = os.path.join(os.path.dirname(__file__), "merged_predicted_plus_observed.csv")
     merged_df.to_csv(output_path, index=False)
